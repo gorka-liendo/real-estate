@@ -1,0 +1,5 @@
+/* Entrada de estilos del design system del dashboard.
+   El host importa: import "@rep/ui/styles.css"; */
+@import "./fonts.css";
+@import "./tokens.css";
+@import "./base.css";

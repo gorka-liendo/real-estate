@@ -1,1 +1,81 @@
 @import "tailwindcss";
+
+/* Chrome del dashboard (sidebar + header). Colores SIEMPRE desde --ui-* de @rep/ui. */
+.dash-shell {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: 100vh;
+}
+.dash-sidebar {
+  display: flex;
+  flex-direction: column;
+  background: var(--ui-surface);
+  border-right: 1px solid var(--ui-border);
+  padding: var(--ui-sp-5) var(--ui-sp-4);
+}
+.dash-brand {
+  font-family: var(--ui-font-display);
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+  padding: 0 var(--ui-sp-3);
+  margin-bottom: var(--ui-sp-6);
+}
+.dash-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.dash-nav__item {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-sp-3);
+  padding: var(--ui-sp-2) var(--ui-sp-3);
+  border-radius: var(--ui-radius);
+  color: var(--ui-muted);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+}
+.dash-nav__item:hover {
+  background: var(--ui-hover);
+  color: var(--ui-text);
+}
+.dash-nav__item[data-active="true"] {
+  background: var(--ui-active);
+  color: var(--ui-text);
+}
+.dash-sidebar__foot {
+  margin-top: auto;
+  padding-top: var(--ui-sp-4);
+  border-top: 1px solid var(--ui-border);
+}
+.dash-user {
+  font-size: 13px;
+  color: var(--ui-muted);
+  padding: 0 var(--ui-sp-3);
+  margin-bottom: var(--ui-sp-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dash-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.dash-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-sp-4);
+  padding: var(--ui-sp-4) var(--ui-sp-6);
+  border-bottom: 1px solid var(--ui-border);
+  background: var(--ui-surface);
+}
+.dash-content {
+  padding: var(--ui-sp-6);
+  max-width: 960px;
+  width: 100%;
+}

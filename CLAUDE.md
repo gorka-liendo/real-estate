@@ -50,7 +50,8 @@ packages/
   config/         # @rep/config — env con Zod, fail-fast, un slice por app (api, dashboard…)
   db/             # @rep/db — schema Drizzle + migraciones + seed + tenant scoping
   auth/           # @rep/auth — wrapper Better-Auth multi-tenant (Fase B, paso 5)
-  ui/             # @rep/ui — design system interno del dashboard (NO personalizable)
+  ui/             # @rep/ui — design system interno del dashboard: tokens --ui-* +
+                  #   primitivos du-* (Button/Input/Select/Label/Card/Badge). NO personalizable
   ui-tenant/      # @rep/ui-tenant — design system white-label (base "Dwell")
   modules/        # @rep/modules — feature flags por tenant + gestión superadmin
   queue/          # @rep/queue — BullMQ; enqueue no-op sin Redis (local)
@@ -215,7 +216,15 @@ packages/
       `TRUSTED_ORIGINS`. Verificado en navegador (Playwright): guard → login →
       home (owner de martinez, módulo `microsite`) → logout → sesión cerrada.
       Rutas en `lib/routes.ts`, API URL en `NEXT_PUBLIC_API_URL`.
-- [ ] **Dashboard: layout definitivo** (sidebar + tabs gateadas por módulo).
+- [x] **Dashboard: design system `@rep/ui` + shell** — sistema interno con fuente
+      única de verdad (`styles/tokens.css`, vars `--ui-*`), fuentes self-hosted
+      (Archivo + Hanken, mismo ADN que los micrositios), paleta neutra sin acento
+      cromático (color solo para estado semántico), primitivos `du-*` (Button,
+      Input, Select, Label, Card, Badge). Login y home refactorizados sobre él;
+      shell con sidebar + header + selector de inmobiliaria (iconos lucide-react).
+      Regla: prohibido color/tamaño arbitrario en componentes — todo sale de `--ui-*`.
+      4 tests + verificado en navegador (Playwright).
+- [ ] **Dashboard: tabs gateadas por módulo** en el sidebar (según `useModule`).
 - [ ] **Dashboard: panel superadmin** (UI de `/admin/*` — gestión de módulos por tenant).
 
 > Solo se empieza un módulo funcional cuando los pasos 1-7 están completos.

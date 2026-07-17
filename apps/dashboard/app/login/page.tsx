@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Button, Card, Input, Label } from "@rep/ui";
 import { useAuth } from "@/contexts/auth-context";
 import { ApiError } from "@/lib/api";
 import { routes } from "@/lib/routes";
@@ -14,7 +15,6 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // ya autenticado → fuera del login
   useEffect(() => {
     if (status === "authenticated") router.replace(routes.home);
   }, [status, router]);
@@ -38,61 +38,53 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="grid min-h-screen place-items-center px-4">
-      <div className="w-full max-w-sm">
-        <div className="mb-8 text-center">
-          <h1 className="text-lg font-semibold tracking-tight">Real Estate Platform</h1>
-          <p className="mt-1 text-sm text-neutral-500">Panel de gestión</p>
+    <main style={{ display: "grid", placeItems: "center", minHeight: "100vh", padding: 16 }}>
+      <div style={{ width: "100%", maxWidth: 380 }}>
+        <div style={{ textAlign: "center", marginBottom: "var(--ui-sp-6)" }}>
+          <div className="du-h1" style={{ fontWeight: 800 }}>
+            Real Estate Platform
+          </div>
+          <p className="du-muted" style={{ marginTop: 4 }}>
+            Panel de gestión
+          </p>
         </div>
 
-        <form
-          onSubmit={onSubmit}
-          className="space-y-4 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm"
-        >
-          <div className="space-y-1.5">
-            <label htmlFor="email" className="text-sm font-medium text-neutral-700">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900"
-            />
-          </div>
+        <Card>
+          <form onSubmit={onSubmit} style={{ display: "grid", gap: "var(--ui-sp-4)" }}>
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="password">Contraseña</Label>
+              <Input
+                id="password"
+                type="password"
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
 
-          <div className="space-y-1.5">
-            <label htmlFor="password" className="text-sm font-medium text-neutral-700">
-              Contraseña
-            </label>
-            <input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900"
-            />
-          </div>
+            {error ? (
+              <p role="alert" className="du-alert">
+                {error}
+              </p>
+            ) : null}
 
-          {error ? (
-            <p role="alert" className="text-sm text-red-600">
-              {error}
-            </p>
-          ) : null}
-
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full rounded-lg bg-neutral-900 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-neutral-700 disabled:opacity-50"
-          >
-            {submitting ? "Entrando…" : "Iniciar sesión"}
-          </button>
-        </form>
+            <Button type="submit" disabled={submitting} style={{ width: "100%" }}>
+              {submitting ? "Entrando…" : "Iniciar sesión"}
+            </Button>
+          </form>
+        </Card>
       </div>
     </main>
   );

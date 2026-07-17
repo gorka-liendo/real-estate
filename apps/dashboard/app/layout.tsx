@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import "@rep/ui/styles.css";
 import { AuthProvider } from "@/contexts/auth-context";
 import "./globals.css";
 
@@ -12,7 +13,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="es" className="h-full">
-      <body className="min-h-full bg-neutral-50 text-neutral-900 antialiased">
+      <body className="du-app min-h-full">
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

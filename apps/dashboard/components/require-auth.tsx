@@ -16,7 +16,10 @@ export function RequireAuth({ children }: { children: ReactNode }) {
 
   if (status !== "authenticated") {
     return (
-      <div className="grid min-h-screen place-items-center text-sm text-neutral-400">
+      <div
+        className="du-muted"
+        style={{ display: "grid", placeItems: "center", minHeight: "100vh", fontSize: 14 }}
+      >
         Cargando…
       </div>
     );

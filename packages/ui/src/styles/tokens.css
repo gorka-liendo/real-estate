@@ -1,0 +1,54 @@
+/*
+ * @rep/ui — design system INTERNO del dashboard (producto propio, NO personalizable).
+ * Fuente única de verdad de color, tipografía, radios y espaciado.
+ * Comparte ADN con Dwell (Archivo + Hanken, paleta neutra de 3 tonos, sin acento
+ * cromático) pero afinado para una herramienta densa, no una web editorial.
+ * Prohibido escribir valores arbitrarios en componentes: todo sale de estas vars.
+ */
+:root {
+  /* --- superficies y tinta (neutro, sin acento cromático) --- */
+  --ui-bg: #fbfbfb; /* fondo de la app */
+  --ui-surface: #ffffff; /* tarjetas, barras */
+  --ui-text: #0a0a0a; /* texto principal */
+  --ui-muted: #737373; /* texto secundario */
+  --ui-border: rgba(10, 10, 10, 0.1);
+  --ui-border-strong: rgba(10, 10, 10, 0.22);
+  --ui-hover: rgba(10, 10, 10, 0.04);
+  --ui-active: rgba(10, 10, 10, 0.08);
+
+  /* acción = negro (on-brand, sin color) */
+  --ui-primary: #111111;
+  --ui-primary-hover: #2b2b2b;
+  --ui-on-primary: #fbfbfb;
+  --ui-ring: rgba(17, 17, 17, 0.28);
+
+  /* color SOLO para estado semántico (nunca como decoración) */
+  --ui-success: #0f7b4f;
+  --ui-success-bg: #e7f4ee;
+  --ui-danger: #b42318;
+  --ui-danger-bg: #fdeceb;
+  --ui-warning: #8a5a00;
+  --ui-warning-bg: #fdf3e2;
+
+  /* --- tipografía (self-hosted, misma familia que los micrositios) --- */
+  --ui-font-display: "Archivo Variable", "Archivo", sans-serif;
+  --ui-font-body: "Hanken Grotesk Variable", "Hanken Grotesk", sans-serif;
+
+  /* --- radios (herramienta: radios suaves; el pill se reserva a micrositios) --- */
+  --ui-radius-sm: 6px;
+  --ui-radius: 8px;
+  --ui-radius-lg: 12px;
+
+  /* --- espaciado --- */
+  --ui-sp-1: 4px;
+  --ui-sp-2: 8px;
+  --ui-sp-3: 12px;
+  --ui-sp-4: 16px;
+  --ui-sp-5: 24px;
+  --ui-sp-6: 32px;
+  --ui-sp-7: 48px;
+
+  /* --- sombras --- */
+  --ui-shadow-sm: 0 1px 2px rgba(10, 10, 10, 0.05);
+  --ui-shadow: 0 4px 16px rgba(10, 10, 10, 0.06);
+}
