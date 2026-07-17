@@ -303,7 +303,12 @@ packages/
       guardas + `requireModule('properties')`. Front `/propiedades` (tabla + alta +
       borrado, precio formateado es-ES). Seed activa properties en martinez.
       49 tests API. Verificado en navegador.
-- [ ] **Conectar propiedades al micrositio** (tenant-site) — mostrar las
-      `published` como landing por inmueble con datos reales (SIGUIENTE natural).
+- [x] **Propiedades → micrositio** — endpoint público `GET /tenant/listings`
+      (gateado por `microsite`, solo `published`). `@rep/ui-tenant`: componente
+      `PropertyGrid` + clases `rt-listing*` / `rt-eyebrow` / `rt-section-title`
+      100% con tokens `--tenant-*` (fuentes, espacios, radius Dwell). tenant-site
+      `fetchListings` + sección "Propiedades" con ISR. Verificado: el micrositio de
+      martinez muestra "Ático con terraza · 320.000 €" en estética Dwell.
+- [ ] **Landing por inmueble** (`/s/[tenant]/propiedad/[id]`) — ficha individual (futuro).
 - [ ] **Pendiente retomar**: theming/fuentes por inmobiliaria (ver gotcha de
       next/font arriba) y edición de marca en Ajustes.

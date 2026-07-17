@@ -10,6 +10,13 @@ export async function listProperties(): Promise<Property[]> {
   return rows.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 }
 
+// Solo las publicadas — para el micrositio público. Usa el tenant del contexto
+// (lo pone tenantMiddleware), así que funciona también en rutas públicas.
+export async function listPublishedProperties(): Promise<Property[]> {
+  const rows = await tenantDb().select(properties, eq(properties.status, "published"));
+  return rows.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+}
+
 export async function createProperty(input: CreatePropertyInput): Promise<Property> {
   const rows = (await tenantDb().insert(properties, input).returning()) as Property[];
   return rows[0]!;

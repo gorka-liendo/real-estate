@@ -16,6 +16,7 @@ import { tenantMiddleware, type TenantEnv } from "./middlewares/tenant.middlewar
 import { admin } from "./modules/admin/admin.routes.js";
 import { clients } from "./modules/clients/clients.routes.js";
 import { properties } from "./modules/properties/properties.routes.js";
+import { listPublishedProperties } from "./modules/properties/properties.service.js";
 
 // app sin listen() — importable en tests (mismo patrón que app.ts/server.ts en Express)
 export const app = new Hono();
@@ -77,6 +78,11 @@ tenant.get("/modules", async (c) => {
 tenant.get("/microsite", requireModule("microsite"), (c) => {
   const t = c.get("tenant");
   return c.json({ slug: t.slug, name: t.name, brandConfig: t.brandConfig });
+});
+
+// PÚBLICO: propiedades publicadas para el micrositio (gateado por 'microsite').
+tenant.get("/listings", requireModule("microsite"), async (c) => {
+  return c.json({ properties: await listPublishedProperties() });
 });
 
 // --- rutas tenant-scoped privadas (dashboard): sesión + membership obligatorias ---

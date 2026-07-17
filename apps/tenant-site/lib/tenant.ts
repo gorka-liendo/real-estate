@@ -23,3 +23,23 @@ export async function fetchTenant(slug: string): Promise<TenantData | null> {
   if (!res.ok) throw new Error(`API ${res.status} al cargar tenant '${slug}'`);
   return (await res.json()) as TenantData;
 }
+
+export type PublicProperty = {
+  id: string;
+  title: string;
+  operation: "sale" | "rent";
+  kind: "flat" | "house" | "commercial" | "land" | "garage";
+  price: number | null;
+  areaM2: number | null;
+  city: string | null;
+};
+
+/** Propiedades publicadas del tenant (para el micrositio). Vacío si no aplica. */
+export async function fetchListings(slug: string): Promise<PublicProperty[]> {
+  const res = await fetch(`${tenantSiteEnv.NEXT_PUBLIC_API_URL}/tenant/listings`, {
+    headers: { "x-tenant-slug": slug },
+    next: { revalidate: REVALIDATE_SECONDS, tags: [`listings:${slug}`] },
+  });
+  if (!res.ok) return [];
+  return ((await res.json()) as { properties: PublicProperty[] }).properties;
+}

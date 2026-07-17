@@ -5,12 +5,32 @@ import {
   BigNumber,
   brandConfigToCssVars,
   Footer,
-  PhotoPair,
   PillButton,
+  PropertyGrid,
   Steps,
   WordmarkBleed,
+  type Listing,
 } from "@rep/ui-tenant";
-import { fetchTenant } from "@/lib/tenant";
+import { fetchListings, fetchTenant, type PublicProperty } from "@/lib/tenant";
+
+const KIND_LABEL: Record<PublicProperty["kind"], string> = {
+  flat: "Piso",
+  house: "Casa",
+  commercial: "Local",
+  land: "Terreno",
+  garage: "Garaje",
+};
+
+function toListing(p: PublicProperty): Listing {
+  const meta = [KIND_LABEL[p.kind], p.city, p.areaM2 ? `${p.areaM2} m²` : null]
+    .filter(Boolean)
+    .join(" · ");
+  const price =
+    p.price == null
+      ? "Consultar"
+      : `${new Intl.NumberFormat("es-ES").format(p.price)} €${p.operation === "rent" ? "/mes" : ""}`;
+  return { id: p.id, title: p.title, meta, price };
+}
 
 export const revalidate = 60; // ISR
 
@@ -31,15 +51,23 @@ export default async function Microsite({ params }: Params) {
   const tenant = await fetchTenant(slug);
   if (!tenant) notFound();
 
+  const listings = (await fetchListings(slug)).map(toListing);
+
   // Capa 2 white-label: el brand_config sobreescribe los defaults Dwell en runtime.
   const brandVars = brandConfigToCssVars(tenant.brandConfig);
 
   return (
     <div className="rt-root" style={{ ...brandVars, minHeight: "100vh" }}>
-      <div style={{ maxWidth: 1240, margin: "0 auto", padding: "48px 32px" }}>
+      <div
+        style={{
+          maxWidth: 1240,
+          margin: "0 auto",
+          padding: "var(--tenant-sp-6) var(--tenant-sp-5)",
+        }}
+      >
         <WordmarkBleed text={tenant.name.toUpperCase()} />
 
-        <div style={{ padding: "48px 0" }}>
+        <div style={{ padding: "var(--tenant-sp-6) 0" }}>
           <AboutColumns
             columns={[
               {
@@ -60,11 +88,15 @@ export default async function Microsite({ params }: Params) {
           </p>
         </BigNumber>
 
-        <PhotoPair
-          photos={[{ caption: "Verified Listing." }, { caption: "Private Tour." }]}
-        />
+        {listings.length > 0 ? (
+          <section style={{ padding: "var(--tenant-sp-8) 0" }}>
+            <div className="rt-eyebrow">En venta y alquiler</div>
+            <h2 className="rt-section-title">Propiedades</h2>
+            <PropertyGrid items={listings} />
+          </section>
+        ) : null}
 
-        <div style={{ display: "flex", gap: 16, margin: "48px 0", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: "var(--tenant-sp-3)", margin: "var(--tenant-sp-7) 0", flexWrap: "wrap" }}>
           <PillButton>Reservar visita</PillButton>
           <PillButton variant="outline">Ver todas las propiedades</PillButton>
         </div>
@@ -78,7 +110,7 @@ export default async function Microsite({ params }: Params) {
           ]}
         />
 
-        <div style={{ marginTop: 64 }}>
+        <div style={{ marginTop: "var(--tenant-sp-7)" }}>
           <Footer
             brandHeading={`${tenant.name} · Real Estate`}
             tagline="Listamos una casa cada vez. Cada propiedad se verifica en persona antes de llegar a la plataforma."

@@ -10,3 +10,4 @@ export { PillButton, PillLink } from "./components/pill-button.js";
 export { Steps, type Step } from "./components/steps.js";
 export { MobileMenu, type MenuItem } from "./components/mobile-menu.js";
 export { Footer, type FooterColumn, type FooterLink } from "./components/footer.js";
+export { PropertyGrid, type Listing } from "./components/property-grid.js";

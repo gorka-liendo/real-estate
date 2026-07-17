@@ -93,6 +93,71 @@
   margin-top: var(--tenant-sp-2);
 }
 
+/* ===== cabecera de sección (eyebrow + título) — del HTML Dwell ===== */
+.rt-eyebrow {
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--tenant-muted);
+  margin-bottom: var(--tenant-sp-3);
+}
+.rt-section-title {
+  font-family: var(--tenant-font-display);
+  font-weight: 800;
+  font-size: 56px;
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+  margin: 0 0 var(--tenant-sp-6) 0;
+}
+@media (max-width: 860px) {
+  .rt-section-title {
+    font-size: 40px;
+  }
+}
+
+/* ===== grid de propiedades (listado del micrositio) — todo con tokens Dwell ===== */
+.rt-listings {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--tenant-sp-6);
+}
+.rt-listing {
+  display: block;
+  text-decoration: none;
+  color: var(--tenant-text);
+}
+.rt-listing__img {
+  aspect-ratio: 4 / 3;
+  width: 100%;
+  object-fit: cover;
+  background: linear-gradient(160deg, #d8d5d0, #bdb9b2);
+  border-radius: var(--tenant-radius);
+  display: block;
+}
+.rt-listing__body {
+  padding-top: var(--tenant-sp-3);
+}
+.rt-listing__title {
+  font-family: var(--tenant-font-display);
+  font-weight: 700;
+  font-size: 22px;
+  line-height: 1.1;
+  margin: 0;
+}
+.rt-listing__meta {
+  color: var(--tenant-muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: var(--tenant-sp-2);
+}
+.rt-listing__price {
+  font-family: var(--tenant-font-display);
+  font-weight: 800;
+  font-size: 20px;
+  margin-top: var(--tenant-sp-2);
+}
+
 /* ===== botón píldora — signature #5, único elemento redondeado ===== */
 .rt-btn {
   display: inline-flex;
