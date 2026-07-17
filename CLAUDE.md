@@ -165,7 +165,17 @@ packages/
       `@rep/ui-tenant/styles.css`. 14 tests (SSR + white-label). Preview visual:
       `scripts/build-preview.tsx` → `preview.html` (gitignored). Se cablea al
       tenant-site en el paso 9.
-- [ ] **Paso 9** — tenant-site: resolución por dominio (middleware Next) + ISR.
+- [x] **Paso 9** — tenant-site cableado: `proxy.ts` (antes middleware — Next 16
+      renombró la convención) resuelve el tenant por Host/subdominio y reescribe a
+      `/s/<slug>` (soporta `*.localhost` y `?__tenant=` en dev). `app/s/[tenant]/page.tsx`
+      hace `fetchTenant` a la API, inyecta `brandConfigToCssVars` en `.rt-root` y
+      renderiza el micrositio con los 8 componentes. **ISR** `revalidate=60`.
+      Metadata SEO por tenant. Layout importa `@rep/ui-tenant/styles.css`.
+      Verificado en prod build: martinez (azul #1e3a8a + radius 8px inyectados) vs
+      lopez (Dwell puro), 404 en tenant inexistente, fuentes servidas desde
+      `/_next/static/media/*.woff2` (self-hosted, cero CDN).
+      Nota infra: `.npmrc` con `verify-deps-before-run=false` (pnpm 11 lanzaba un
+      install mal ubicado antes de cada script de Next).
 
 ### Fase E — Infra de producción
 - [ ] **Paso 10** — Redis + BullMQ, R2 (presigned uploads), Resend.

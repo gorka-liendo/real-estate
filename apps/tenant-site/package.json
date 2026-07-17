@@ -9,6 +9,11 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@fontsource-variable/archivo": "^5.2.0",
+    "@fontsource-variable/hanken-grotesk": "^5.2.0",
+    "@rep/config": "workspace:*",
+    "@rep/db": "workspace:*",
+    "@rep/ui-tenant": "workspace:*",
     "next": "16.2.10",
     "react": "19.2.4",
     "react-dom": "19.2.4"
