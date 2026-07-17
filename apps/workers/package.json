@@ -10,9 +10,9 @@
     "lint": "eslint src"
   },
   "dependencies": {
-    "@rep/config": "workspace:*",
-    "bullmq": "^5.44.0",
-    "ioredis": "^5.6.0"
+    "@rep/email": "workspace:*",
+    "@rep/queue": "workspace:*",
+    "@rep/storage": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

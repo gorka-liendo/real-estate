@@ -49,7 +49,21 @@ packages/
   auth/           # @rep/auth — wrapper Better-Auth multi-tenant (Fase B, paso 5)
   ui/             # @rep/ui — design system interno del dashboard (NO personalizable)
   ui-tenant/      # @rep/ui-tenant — design system white-label (base "Dwell")
+  modules/        # @rep/modules — feature flags por tenant + gestión superadmin
+  queue/          # @rep/queue — BullMQ; enqueue no-op sin Redis (local)
+  storage/        # @rep/storage — driver local (fs) por defecto · R2 en prod
+  email/          # @rep/email — driver console por defecto · Resend en prod
 ```
+
+### Infraestructura con drivers (local por defecto, cloud por env)
+- **Regla**: los módulos usan SIEMPRE la interfaz (`getStorage()`, `getEmailer()`,
+  `enqueue()`), nunca el cliente concreto. El driver se cambia por variable de
+  entorno sin tocar código.
+- **Local (sin credenciales)**: `@rep/queue` sin `REDIS_URL` → `enqueue` no-op y
+  workers idle · `@rep/storage` `STORAGE_DRIVER=local` (filesystem) ·
+  `@rep/email` `EMAIL_DRIVER=console` (loguea, no envía).
+- **Cloud**: `REDIS_URL` (Redis) · `STORAGE_DRIVER=r2` + `R2_*` · `EMAIL_DRIVER=resend`
+  + `RESEND_API_KEY`. Los SDK pesados (AWS, Resend) se cargan de forma perezosa.
 
 ### Multi-tenancy (decisión estructural)
 - **Shared database + shared schema**: cada tabla tenant-scoped lleva `tenant_id`.
@@ -178,7 +192,15 @@ packages/
       install mal ubicado antes de cada script de Next).
 
 ### Fase E — Infra de producción
-- [ ] **Paso 10** — Redis + BullMQ, R2 (presigned uploads), Resend.
+- [x] **Paso 10 (preparado, sin conectar)** — infra con drivers, todo funciona en
+      local sin credenciales; activar cloud = poner env. `@rep/queue` (BullMQ,
+      conexión IORedis lazy, `enqueue` no-op sin `REDIS_URL`, `registerWorker`),
+      `@rep/storage` (interfaz + `LocalStorage` fs por defecto + `R2Storage` lazy,
+      `signedUploadUrl`), `@rep/email` (interfaz + `ConsoleEmailer` + `ResendEmailer`
+      lazy + plantilla `invitationEmail`). App `workers` cableada (idle sin Redis).
+      Redis añadido al docker-compose. 10 tests (adaptadores locales) + roundtrip
+      enqueue→worker verificado con Redis real. Falta cablear: endpoint de upload
+      en la API y el servido HTTP de `/uploads` (cuando se necesite media).
 - [ ] **Paso 11** — Deploy Vercel + Railway, GitHub Actions, Sentry.
 
 > Solo se empieza un módulo funcional cuando los pasos 1-7 están completos.

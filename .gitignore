@@ -19,3 +19,7 @@ coverage/
 
 # preview generada de @rep/ui-tenant
 packages/ui-tenant/preview.html
+
+# uploads del storage local (dev)
+.uploads/
+**/.uploads/

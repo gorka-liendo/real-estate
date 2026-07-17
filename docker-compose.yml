@@ -19,5 +19,22 @@ services:
       timeout: 3s
       retries: 10
 
+  # Cola de trabajos asíncronos (BullMQ). Opcional en local: sin él, enqueue()
+  # hace no-op y los workers quedan idle (ver @rep/queue).
+  redis:
+    image: redis:7-alpine
+    container_name: rep-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - rep_redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
 volumes:
   rep_pgdata:
+  rep_redisdata:
