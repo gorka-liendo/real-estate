@@ -125,6 +125,27 @@
   border-color: var(--ui-primary);
   box-shadow: 0 0 0 3px var(--ui-ring);
 }
+.du-textarea {
+  width: 100%;
+  min-height: 84px;
+  padding: var(--ui-sp-2) var(--ui-sp-3);
+  font-family: var(--ui-font-body);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ui-text);
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border-strong);
+  border-radius: var(--ui-radius);
+  outline: none;
+  resize: vertical;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+.du-textarea:focus {
+  border-color: var(--ui-primary);
+  box-shadow: 0 0 0 3px var(--ui-ring);
+}
 .du-select {
   cursor: pointer;
   appearance: none;

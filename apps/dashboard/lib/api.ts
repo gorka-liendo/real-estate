@@ -55,6 +55,18 @@ export type ClientInput = {
   notes?: string;
 };
 
+export type SocialLink = { label: string; url: string };
+export type SiteConfig = {
+  template?: "editorial" | "minimal" | "bold";
+  heroEyebrow?: string;
+  heroTitle?: string;
+  heroSubtitle?: string;
+  about?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  social?: SocialLink[];
+};
+
 export type PropertyOperation = "sale" | "rent";
 export type PropertyKind = "flat" | "house" | "commercial" | "land" | "garage";
 export type PropertyStatus = "draft" | "published" | "archived";
@@ -124,6 +136,20 @@ export const api = {
     request<{ id: string; slug: string; name: string; brandConfig: BrandConfig }>("/tenant", {
       headers: { "x-tenant-slug": slug },
     }),
+
+  // --- editor del micrositio (site_config) ---
+  site: {
+    get: (slug: string) =>
+      request<{ siteConfig: SiteConfig }>("/tenant/site", {
+        headers: { "x-tenant-slug": slug },
+      }),
+    update: (slug: string, data: SiteConfig) =>
+      request<{ siteConfig: SiteConfig }>("/tenant/site", {
+        method: "PATCH",
+        headers: { "x-tenant-slug": slug },
+        body: JSON.stringify(data),
+      }),
+  },
 
   // --- módulo Clientes (CRM) ---
   clients: {

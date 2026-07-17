@@ -317,8 +317,14 @@ packages/
       martinez (modelo **híbrido**: nosotros en onboarding, editable por el cliente
       después). 3 capas: brand_config (marca) / site_config (contenido) / properties
       (datos). Verificado: hero de martinez sale de su site_config.
-- [ ] **Editor de site_config en el dashboard** (sección Micrositio/Ajustes) →
-      self-serve. Y **landing por inmueble** (`/s/[tenant]/propiedad/[id]`) + pulido
-      (hero con imagen, ficha, menú móvil, plantillas editorial/minimal/bold).
+- [x] **Editor del micrositio (self-serve)** — sección Micrositio del dashboard es
+      ahora un editor de `site_config`. API `apps/api/src/modules/site/` (`GET/PATCH
+      /tenant/site`, auth+membership+`requireModule('microsite')`; el tenant se edita
+      a sí mismo por id del contexto). UI: Portada (antetítulo/titular/subtítulo),
+      Sobre, Contacto (email/teléfono/redes dinámicas) con `@rep/ui` (+ nuevo
+      `Textarea`). Guarda vía PATCH → BBDD → micrositio en ≤60s (ISR). Cierra el
+      modelo híbrido. Verificado: editar+guardar persiste en BBDD.
+- [ ] **Landing por inmueble** (`/s/[tenant]/propiedad/[id]`) + pulido (hero con
+      imagen, ficha con galería, menú móvil, plantillas editorial/minimal/bold).
 - [ ] **Pendiente retomar**: theming/fuentes por inmobiliaria (ver gotcha de
       next/font arriba) y edición de marca en Ajustes.

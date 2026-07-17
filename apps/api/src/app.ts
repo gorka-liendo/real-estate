@@ -17,6 +17,7 @@ import { admin } from "./modules/admin/admin.routes.js";
 import { clients } from "./modules/clients/clients.routes.js";
 import { properties } from "./modules/properties/properties.routes.js";
 import { listPublishedProperties } from "./modules/properties/properties.service.js";
+import { site } from "./modules/site/site.routes.js";
 
 // app sin listen() — importable en tests (mismo patrón que app.ts/server.ts en Express)
 export const app = new Hono();
@@ -102,6 +103,9 @@ team.get("/", async (c) => {
 });
 
 tenant.route("/team", team);
+
+// --- editor del micrositio (contenido) ---
+tenant.route("/site", site);
 
 // --- módulos funcionales tenant-scoped ---
 tenant.route("/clients", clients);
