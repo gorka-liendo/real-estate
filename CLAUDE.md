@@ -16,12 +16,13 @@ de ahí se portan **conceptos**, nunca código.
 ## Comandos esenciales
 
 ```bash
-# Raíz del monorepo
-pnpm dev:up           # docker compose up -d (db+redis) + turbo dev — entorno completo
-pnpm dev              # turbo dev — todas las apps en paralelo (infra ya levantada)
+# Raíz del monorepo — DESARROLLO (con hot-reload). NO usar `next start` para desarrollar.
+pnpm dev:up           # limpia puertos + docker compose up -d (db+redis) + turbo dev
+pnpm dev              # limpia puertos + turbo dev (infra ya levantada)
+pnpm dev:clean        # mata procesos de dev colgados y libera 3000-3002
 pnpm infra:up         # solo docker compose up -d (db + redis)
 pnpm infra:down       # docker compose down
-pnpm build            # turbo build
+pnpm build            # turbo build (producción; para verificar, NO para desarrollar)
 pnpm lint             # turbo lint
 pnpm test             # turbo test
 
@@ -33,8 +34,15 @@ pnpm db:seed          # seed idempotente (2 tenants: martinez, lopez)
 pnpm db:studio        # Drizzle Studio
 
 # Puertos fijos
-# dashboard :3000 · tenant-site :3001 · api :3002 · postgres :5433 (host)
+# dashboard :3000 · tenant-site :3001 · api :3002 · postgres :5433 (host) · redis :6379
 ```
+
+**Desarrollo del frontend**: usar SIEMPRE `pnpm dev`/`dev:up` (hot-reload vía
+`next dev` + `tsc --watch` de los packages). NUNCA `next start` (build de producción,
+sin reload) para desarrollar. Si algo "se cae" o hay que "tirar todo": suele ser un
+`turbo dev` a medias (watchers vivos, servidores Next muertos por choque de puertos)
+→ `pnpm dev:clean` y volver a `pnpm dev`. Los hooks `predev`/`predev:up` ya limpian
+puertos automáticamente antes de arrancar.
 
 ---
 

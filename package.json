@@ -6,8 +6,11 @@
     "node": ">=24"
   },
   "scripts": {
+    "predev": "bash scripts/dev-clean.sh",
     "dev": "turbo dev --concurrency=20",
+    "predev:up": "bash scripts/dev-clean.sh",
     "dev:up": "docker compose up -d && turbo dev --concurrency=20",
+    "dev:clean": "bash scripts/dev-clean.sh",
     "infra:up": "docker compose up -d",
     "infra:down": "docker compose down",
     "build": "turbo build",
