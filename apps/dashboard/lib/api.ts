@@ -25,6 +25,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     const body = (await res.json().catch(() => ({}))) as { error?: string };
     throw new ApiError(res.status, body.error ?? `HTTP ${res.status}`);
   }
+  if (res.status === 204) return undefined as T;
   return (await res.json()) as T;
 }
 
@@ -33,6 +34,25 @@ export type Me = {
   user: { id: string; email: string; name: string };
   memberships: Membership[];
   isPlatformAdmin: boolean;
+};
+
+export type ClientStage = "lead" | "active" | "closed";
+export type Client = {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  stage: ClientStage;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+export type ClientInput = {
+  name: string;
+  email?: string;
+  phone?: string;
+  stage?: ClientStage;
+  notes?: string;
 };
 
 export type CatalogModule = {
@@ -71,6 +91,32 @@ export const api = {
     request<{ id: string; slug: string; name: string; brandConfig: BrandConfig }>("/tenant", {
       headers: { "x-tenant-slug": slug },
     }),
+
+  // --- módulo Clientes (CRM) ---
+  clients: {
+    list: (slug: string) =>
+      request<{ clients: Client[] }>("/tenant/clients", { headers: { "x-tenant-slug": slug } }),
+
+    create: (slug: string, data: ClientInput) =>
+      request<{ client: Client }>("/tenant/clients", {
+        method: "POST",
+        headers: { "x-tenant-slug": slug },
+        body: JSON.stringify(data),
+      }),
+
+    update: (slug: string, id: string, data: Partial<ClientInput>) =>
+      request<{ client: Client }>(`/tenant/clients/${id}`, {
+        method: "PATCH",
+        headers: { "x-tenant-slug": slug },
+        body: JSON.stringify(data),
+      }),
+
+    remove: (slug: string, id: string) =>
+      request<void>(`/tenant/clients/${id}`, {
+        method: "DELETE",
+        headers: { "x-tenant-slug": slug },
+      }),
+  },
 
   // --- superadmin ---
   adminCatalog: () => request<{ modules: CatalogModule[] }>("/admin/catalog"),

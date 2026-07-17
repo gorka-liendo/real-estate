@@ -288,5 +288,12 @@ packages/
       en navegador que Archivo se dibuja de verdad (no era fallback; el problema era
       el tratamiento tímido, no la familia). Seed hecho **autoritativo** (deja el
       estado exacto de módulos, no acumula toggles de pruebas). 13 tests @rep/ui.
-- [ ] **Módulo Clientes (CRM)** — primer módulo funcional real (modelo Drizzle
-      `clients` tenant-scoped + CRUD API + UI). SIGUIENTE.
+- [x] **Módulo Clientes (CRM)** — primer módulo funcional real. Modelo Drizzle
+      `clients` tenant-scoped (name/email/phone/stage lead|active|closed/notes),
+      migración `0002`. API `apps/api/src/modules/clients/` (schema Zod, service
+      vía `tenantDb`, routes bajo `/tenant/clients`) con cadena de guardas
+      tenant→auth→membership→`requireModule('clients')`. CRUD completo. Front:
+      `/clientes` con tabla + alta (form) + borrado usando `@rep/ui`.
+      43 tests API (CRUD + aislamiento A/B + gating). Verificado en navegador.
+- [ ] **Pendiente retomar**: theming/fuentes por inmobiliaria (ver gotcha de
+      next/font arriba) y edición de marca en Ajustes.

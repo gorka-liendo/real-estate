@@ -14,6 +14,7 @@ import {
 import { requireModule } from "./middlewares/module.middleware.js";
 import { tenantMiddleware, type TenantEnv } from "./middlewares/tenant.middleware.js";
 import { admin } from "./modules/admin/admin.routes.js";
+import { clients } from "./modules/clients/clients.routes.js";
 
 // app sin listen() — importable en tests (mismo patrón que app.ts/server.ts en Express)
 export const app = new Hono();
@@ -88,5 +89,8 @@ team.get("/", async (c) => {
 });
 
 tenant.route("/team", team);
+
+// --- módulo Clientes (CRM) — bajo /tenant/clients ---
+tenant.route("/clients", clients);
 
 app.route("/tenant", tenant);
