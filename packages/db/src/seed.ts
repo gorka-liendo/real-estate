@@ -1,5 +1,5 @@
 import { db } from "./client.js";
-import { memberships, modules, subscriptions, tenants, users } from "./schema/index.js";
+import { modules, subscriptions, tenants } from "./schema/index.js";
 
 // Seed idempotente: upsert por slug/email/code — ejecutable N veces sin efectos secundarios.
 async function main() {
@@ -55,20 +55,8 @@ async function main() {
     seededTenants.push(row!);
   }
 
-  // --- usuario owner de cada tenant ---
-  for (const tenant of seededTenants) {
-    const email = `owner@${tenant.slug}.example.com`;
-    const [user] = await db
-      .insert(users)
-      .values({ email, name: `Owner ${tenant.name}` })
-      .onConflictDoUpdate({ target: users.email, set: { name: `Owner ${tenant.name}` } })
-      .returning();
-
-    await db
-      .insert(memberships)
-      .values({ userId: user!.id, tenantId: tenant.id, role: "owner" })
-      .onConflictDoNothing();
-  }
+  // (los usuarios owner + memberships los crea el seed de @rep/auth,
+  //  que usa el hash de password de Better-Auth)
 
   // --- martinez con el módulo microsite activo; lopez sin módulos ---
   const martinez = seededTenants.find((t) => t!.slug === "martinez")!;

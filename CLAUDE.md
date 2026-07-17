@@ -128,7 +128,13 @@ packages/
       con filtro tenant_id inescapable) + `tenantMiddleware` en Hono (header
       `x-tenant-slug` o subdominio del Host) + **12 tests de aislamiento A/B**
       (leer/modificar/borrar cross-tenant forzando ids → imposible; sin contexto → excepción).
-- [ ] **Paso 5** — Better-Auth multi-tenant (organizations → tenants), roles owner/agent.
+- [x] **Paso 5** — Better-Auth en `@rep/auth` (email/password, sesiones httpOnly,
+      scrypt). Decisión: SIN plugin de organizations — `tenants`/`memberships`
+      propias siguen siendo la fuente de verdad del multi-tenancy. Tabla `user`
+      de Better-Auth sustituye a `users`. Middlewares: `authMiddleware` (401),
+      `requireMembership` (403 cross-tenant), `requireRole(...)`. Rutas: `/api/auth/*`,
+      `/me`, `/tenant/team` (privada). Seed de owners vía `auth.api.signUpEmail`
+      (password en `SEED_OWNER_PASSWORD`, idempotente). 20 tests en verde.
 
 ### Fase C — Feature flags y billing
 - [ ] **Paso 6** — `hasModule` / `requireModule` / `useModule` con caché Redis.

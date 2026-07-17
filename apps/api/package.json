@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.14.0",
+    "@rep/auth": "workspace:*",
     "@rep/config": "workspace:*",
     "@rep/db": "workspace:*",
     "drizzle-orm": "^0.44.0",
