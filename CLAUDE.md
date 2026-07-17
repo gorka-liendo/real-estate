@@ -224,8 +224,16 @@ packages/
       shell con sidebar + header + selector de inmobiliaria (iconos lucide-react).
       Regla: prohibido color/tamaño arbitrario en componentes — todo sale de `--ui-*`.
       4 tests + verificado en navegador (Playwright).
-- [ ] **Dashboard: tabs gateadas por módulo** en el sidebar (según `useModule`).
-- [ ] **Dashboard: panel superadmin** (UI de `/admin/*` — gestión de módulos por tenant).
+- [x] **Dashboard: tabs gateadas por módulo + panel superadmin** — route group
+      `app/(app)/` con layout compartido (guard + `WorkspaceProvider` + shell).
+      `WorkspaceProvider`: tenant seleccionado (persistido en localStorage), sus
+      módulos activos, `hasModule`, `isPlatformAdmin` (nuevo campo en `/me`).
+      Sidebar con nav gateada: ítem `module` visible si el tenant lo tiene activo,
+      ítem `adminOnly` solo para superadmin. Panel `/admin`: tabla inmobiliarias ×
+      módulos con `Switch` (nuevo primitivo `du-switch`) que llama a
+      `PUT /admin/tenants/:slug/modules/:code`; guard cliente + 403 en backend.
+      Verificado en navegador: owner ve "Micrositio" (módulo activo) y NO Admin;
+      superadmin ve "Admin" y NO Micrositio; toggle persiste en BBDD. 37+4 tests.
 
 > Solo se empieza un módulo funcional cuando los pasos 1-7 están completos.
 > Primer módulo previsto: **micrositio + landing por inmueble**.

@@ -4,3 +4,4 @@ export { Button, ButtonLink, type ButtonVariant, type ButtonSize } from "./compo
 export { Input, Select, Label } from "./components/input.js";
 export { Card } from "./components/card.js";
 export { Badge, type BadgeVariant } from "./components/badge.js";
+export { Switch } from "./components/switch.js";

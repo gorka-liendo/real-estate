@@ -31,6 +31,22 @@ export type Membership = { slug: string; name: string; role: "owner" | "agent" |
 export type Me = {
   user: { id: string; email: string; name: string };
   memberships: Membership[];
+  isPlatformAdmin: boolean;
+};
+
+export type CatalogModule = {
+  id: string;
+  code: string;
+  name: string;
+  priceMonthly: number;
+};
+export type AdminTenant = {
+  id: string;
+  slug: string;
+  name: string;
+  status: string;
+  customDomain: string | null;
+  activeModules: string[];
 };
 
 export const api = {
@@ -49,4 +65,15 @@ export const api = {
     request<{ modules: string[] }>("/tenant/modules", {
       headers: { "x-tenant-slug": slug },
     }),
+
+  // --- superadmin ---
+  adminCatalog: () => request<{ modules: CatalogModule[] }>("/admin/catalog"),
+
+  adminTenants: () => request<{ tenants: AdminTenant[] }>("/admin/tenants"),
+
+  adminSetModule: (slug: string, code: string, active: boolean) =>
+    request<{ tenant: string; module: string; active: boolean; activeModules: string[] }>(
+      `/admin/tenants/${slug}/modules/${code}`,
+      { method: "PUT", body: JSON.stringify({ active }) },
+    ),
 };

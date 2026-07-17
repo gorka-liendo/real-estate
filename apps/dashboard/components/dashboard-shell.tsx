@@ -1,63 +1,91 @@
 "use client";
 
-import { Building2, LayoutDashboard, LogOut } from "lucide-react";
+import {
+  Building2,
+  Globe,
+  LayoutDashboard,
+  LogOut,
+  Shield,
+  type LucideIcon,
+} from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
-import { Button, Select } from "@rep/ui";
+import { Select } from "@rep/ui";
 import { useAuth } from "@/contexts/auth-context";
-import type { Membership } from "@/lib/api";
+import { useWorkspace } from "@/contexts/workspace-context";
+import { routes } from "@/lib/routes";
 
-type NavItem = { label: string; icon: ReactNode; active?: boolean };
+type NavItem = {
+  label: string;
+  href: string;
+  icon: LucideIcon;
+  module?: string; // gatea por feature flag del tenant
+  adminOnly?: boolean; // solo superadmin de plataforma
+};
 
-const nav: NavItem[] = [
-  { label: "Inicio", icon: <LayoutDashboard size={16} />, active: true },
+const NAV: NavItem[] = [
+  { label: "Inicio", href: routes.home, icon: LayoutDashboard },
+  { label: "Micrositio", href: routes.microsite, icon: Globe, module: "microsite" },
+  { label: "Administración", href: routes.admin, icon: Shield, adminOnly: true },
 ];
 
-export function DashboardShell({
-  title,
-  memberships,
-  selectedSlug,
-  onSelectTenant,
-  children,
-}: {
-  title: string;
-  memberships: Membership[];
-  selectedSlug: string | null;
-  onSelectTenant: (slug: string) => void;
-  children: ReactNode;
-}) {
+export function DashboardShell({ children }: { children: ReactNode }) {
   const { me, logout } = useAuth();
+  const { memberships, selected, selectSlug, hasModule, isPlatformAdmin } = useWorkspace();
+  const pathname = usePathname();
+
+  const visible = NAV.filter((item) => {
+    if (item.adminOnly) return isPlatformAdmin;
+    if (item.module) return hasModule(item.module);
+    return true;
+  });
 
   return (
     <div className="dash-shell">
       <aside className="dash-sidebar">
         <div className="dash-brand">Real Estate</div>
         <nav className="dash-nav">
-          {nav.map((item) => (
-            <span key={item.label} className="dash-nav__item" data-active={item.active}>
-              {item.icon}
-              {item.label}
-            </span>
-          ))}
+          {visible.map((item) => {
+            const active = item.href === routes.home
+              ? pathname === item.href
+              : pathname.startsWith(item.href);
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="dash-nav__item"
+                data-active={active}
+              >
+                <Icon size={16} />
+                {item.label}
+              </Link>
+            );
+          })}
         </nav>
         <div className="dash-sidebar__foot">
           <div className="dash-user">{me?.user.email}</div>
-          <Button variant="ghost" size="sm" onClick={() => void logout()}>
+          <button className="du-btn du-btn--ghost du-btn--sm" onClick={() => void logout()}>
             <LogOut size={15} />
             Cerrar sesión
-          </Button>
+          </button>
         </div>
       </aside>
 
       <div className="dash-main">
         <header className="dash-header">
-          <h1 className="du-h1">{title}</h1>
+          <span className="du-muted" style={{ fontSize: 13 }}>
+            Panel de gestión
+          </span>
           {memberships.length > 0 ? (
-            <label className="du-muted" style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}>
-              <Building2 size={15} />
+            <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <Building2 size={15} color="var(--ui-muted)" />
               <Select
-                value={selectedSlug ?? ""}
-                onChange={(e) => onSelectTenant(e.target.value)}
+                value={selected?.slug ?? ""}
+                onChange={(e) => selectSlug(e.target.value)}
                 style={{ width: "auto", minWidth: 200 }}
+                aria-label="Inmobiliaria"
               >
                 {memberships.map((m) => (
                   <option key={m.slug} value={m.slug}>

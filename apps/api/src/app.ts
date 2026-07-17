@@ -3,7 +3,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { auth, authEnv } from "@rep/auth";
-import { db, memberships, subscriptions, tenantDb, tenants } from "@rep/db";
+import { db, memberships, platformAdmins, subscriptions, tenantDb, tenants } from "@rep/db";
 import { getActiveModules } from "@rep/modules";
 import {
   authMiddleware,
@@ -38,9 +38,13 @@ me.get("/", async (c) => {
     .from(memberships)
     .innerJoin(tenants, eq(tenants.id, memberships.tenantId))
     .where(eq(memberships.userId, currentUser.id));
+  const platformAdmin = await db.query.platformAdmins.findFirst({
+    where: eq(platformAdmins.userId, currentUser.id),
+  });
   return c.json({
     user: { id: currentUser.id, email: currentUser.email, name: currentUser.name },
     memberships: rows,
+    isPlatformAdmin: Boolean(platformAdmin),
   });
 });
 app.route("/me", me);
