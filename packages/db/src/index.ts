@@ -1,2 +1,4 @@
-export { db } from "./client";
-export * from "./schema";
+export { closeDb, db } from "./client.js";
+export * from "./schema/index.js";
+export * from "./tenant-context.js";
+export * from "./tenant-scope.js";

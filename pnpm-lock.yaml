@@ -26,6 +26,12 @@ importers:
       '@rep/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@rep/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      drizzle-orm:
+        specifier: ^0.44.0
+        version: 0.44.7(@types/pg@8.20.0)(pg@8.22.0)
       hono:
         specifier: ^4.7.0
         version: 4.12.30
@@ -170,6 +176,9 @@ importers:
         specifier: ^4.0.0
         version: 4.4.3
     devDependencies:
+      '@types/node':
+        specifier: ^24.13.3
+        version: 24.13.3
       '@types/pg':
         specifier: ^8.15.0
         version: 8.20.0

@@ -1,5 +1,5 @@
 import { pgEnum, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
-import { tenants } from "./tenants";
+import { tenants } from "./tenants.js";
 
 // Un usuario puede pertenecer a varios tenants — el rol vive en la membership,
 // nunca en users. (Better-Auth añadirá sus propias tablas de sesión en el paso 5.)

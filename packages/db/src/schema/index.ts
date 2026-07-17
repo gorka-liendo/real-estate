@@ -1,3 +1,3 @@
-export * from "./tenants";
-export * from "./users";
-export * from "./modules";
+export * from "./tenants.js";
+export * from "./users.js";
+export * from "./modules.js";

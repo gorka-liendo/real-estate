@@ -21,6 +21,8 @@ export type BrandConfig = {
   micrositeStyle?: "editorial" | "minimal" | "bold";
 };
 
+export type Tenant = typeof tenants.$inferSelect;
+
 export const tenants = pgTable("tenants", {
   id: uuid("id").primaryKey().defaultRandom(),
   slug: text("slug").notNull().unique(), // subdominio: <slug>.plataforma.app

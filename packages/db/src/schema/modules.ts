@@ -7,7 +7,7 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import { tenants } from "./tenants";
+import { tenants } from "./tenants.js";
 
 // Catálogo de módulos vendibles (feature flags con billing acoplado).
 export const modules = pgTable("modules", {

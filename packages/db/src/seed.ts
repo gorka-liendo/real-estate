@@ -1,5 +1,5 @@
-import { db } from "./client";
-import { memberships, modules, subscriptions, tenants, users } from "./schema";
+import { db } from "./client.js";
+import { memberships, modules, subscriptions, tenants, users } from "./schema/index.js";
 
 // Seed idempotente: upsert por slug/email/code — ejecutable N veces sin efectos secundarios.
 async function main() {
