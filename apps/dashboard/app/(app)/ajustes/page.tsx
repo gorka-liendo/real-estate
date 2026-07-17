@@ -1,61 +1,161 @@
 "use client";
 
-import { Card } from "@rep/ui";
+import { ImagePlus, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Badge, Button, brandConfigToUiVars, Card, type BrandConfig } from "@rep/ui";
 import { useWorkspace } from "@/contexts/workspace-context";
+import { api } from "@/lib/api";
 
-// Ajustes de la inmobiliaria: marca, dominio y datos. (Edición: próximamente;
-// hoy muestra el branding actual que ya tiñe el dashboard y el micrositio.)
-function Swatch({ label, color }: { label: string; color?: string }) {
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-      <span
-        style={{
-          width: 22,
-          height: 22,
-          borderRadius: 6,
-          border: "1px solid var(--ui-border)",
-          background: color ?? "transparent",
-        }}
-      />
-      <span style={{ fontSize: 13 }}>
-        {label}: <span className="du-muted">{color ?? "por defecto"}</span>
-      </span>
-    </div>
-  );
-}
+function LogoManager({ slug, name }: { slug: string; name: string }) {
+  const { brandConfig: wsBrand, setBrandConfig } = useWorkspace();
+  const [brand, setBrand] = useState<BrandConfig | null>(wsBrand);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-export default function AjustesPage() {
-  const { selected, brandConfig } = useWorkspace();
+  const load = useCallback(async () => {
+    try {
+      setBrand((await api.brand.get(slug)).brandConfig ?? {});
+    } catch {
+      setError("No se pudo cargar la marca.");
+    }
+  }, [slug]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  async function onFile(file: File | null) {
+    if (!file) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const { brandConfig } = await api.brand.uploadLogo(slug, file);
+      setBrand(brandConfig);
+      setBrandConfig(brandConfig); // el sidebar muestra el logo al instante
+    } catch {
+      setError("No se pudo subir el logo (jpg/png/webp/svg, máx 2 MB).");
+    } finally {
+      setBusy(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  }
+
+  async function removeLogo() {
+    const { brandConfig } = await api.brand.removeLogo(slug);
+    setBrand(brandConfig);
+    setBrandConfig(brandConfig);
+  }
+
+  if (brand === null) return <p className="du-muted">Cargando…</p>;
+
+  const previewVars = brandConfigToUiVars(brand);
 
   return (
     <div style={{ display: "grid", gap: "var(--ui-sp-5)" }}>
       <div>
         <h1 className="du-h1">Ajustes</h1>
         <p className="du-muted" style={{ marginTop: 4 }}>
-          La marca de {selected?.name} y la configuración de su web.
+          El logo y la marca de {name}.
         </p>
       </div>
 
+      {error ? <p className="du-alert">{error}</p> : null}
+
       <Card>
         <h2 className="du-h3" style={{ marginBottom: "var(--ui-sp-4)" }}>
-          Marca
+          Logo
         </h2>
-        <div style={{ display: "grid", gap: "var(--ui-sp-3)" }}>
-          <Swatch label="Color principal" color={brandConfig?.primaryColor} />
-          <Swatch label="Color de acento" color={brandConfig?.accentColor} />
-          <Swatch label="Fondo" color={brandConfig?.background} />
-          <div style={{ fontSize: 13 }}>
-            Tipografía:{" "}
-            <span className="du-muted">
-              {brandConfig?.fontDisplay ?? "por defecto"}
-            </span>
+        <div style={{ display: "flex", alignItems: "center", gap: "var(--ui-sp-4)" }}>
+          <div
+            style={{
+              width: 120,
+              height: 72,
+              borderRadius: "var(--ui-radius)",
+              border: "1px solid var(--ui-border)",
+              background: "var(--ui-hover)",
+              display: "grid",
+              placeItems: "center",
+              overflow: "hidden",
+            }}
+          >
+            {brand.logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={brand.logoUrl}
+                alt={name}
+                style={{ maxWidth: "88%", maxHeight: "80%", objectFit: "contain" }}
+              />
+            ) : (
+              <span className="du-muted" style={{ fontSize: 12 }}>
+                Sin logo
+              </span>
+            )}
+          </div>
+          <div style={{ display: "flex", gap: "var(--ui-sp-2)" }}>
+            <Button variant="outline" size="sm" onClick={() => inputRef.current?.click()} disabled={busy}>
+              <ImagePlus size={15} />
+              {busy ? "Subiendo…" : brand.logoUrl ? "Cambiar logo" : "Subir logo"}
+            </Button>
+            {brand.logoUrl ? (
+              <Button variant="ghost" size="sm" onClick={() => void removeLogo()}>
+                <Trash2 size={15} />
+                Quitar
+              </Button>
+            ) : null}
           </div>
         </div>
-        <p className="du-muted" style={{ fontSize: 12, marginTop: "var(--ui-sp-4)" }}>
-          La edición de marca y dominio llegará aquí. Estos valores ya tiñen tu
-          dashboard y tu micrositio.
+        <p className="du-muted" style={{ fontSize: 12, marginTop: "var(--ui-sp-3)" }}>
+          Formatos jpg, png, webp o svg. Si lo quitas, se muestra el nombre de la inmobiliaria.
+        </p>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/svg+xml"
+          hidden
+          onChange={(e) => void onFile(e.target.files?.[0] ?? null)}
+        />
+      </Card>
+
+      <Card>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "var(--ui-sp-4)" }}>
+          <h2 className="du-h3">Tu diseño</h2>
+          <Badge variant="muted">gestionado por nosotros</Badge>
+        </div>
+        <div
+          className="du-app"
+          style={{
+            ...previewVars,
+            borderRadius: "var(--ui-radius)",
+            border: "1px solid var(--ui-border)",
+            padding: "var(--ui-sp-5)",
+          }}
+        >
+          <div className="du-h2" style={{ marginBottom: "var(--ui-sp-2)" }}>
+            {name}
+          </div>
+          <p className="du-muted" style={{ fontSize: 13, marginBottom: "var(--ui-sp-4)" }}>
+            Así se ve tu marca en tu dashboard y tu micrositio.
+          </p>
+          <div style={{ display: "flex", gap: "var(--ui-sp-2)", flexWrap: "wrap" }}>
+            <Button size="sm">Botón principal</Button>
+            <Button variant="outline" size="sm">
+              Secundario
+            </Button>
+            <Badge variant="success">activo</Badge>
+          </div>
+        </div>
+        <p className="du-muted" style={{ fontSize: 12, marginTop: "var(--ui-sp-3)" }}>
+          Diseñamos tu identidad a medida. ¿Quieres cambios de color o estilo? Escríbenos
+          y los aplicamos por ti.
         </p>
       </Card>
     </div>
   );
+}
+
+export default function AjustesPage() {
+  const { selected } = useWorkspace();
+  if (!selected) return <p className="du-muted">Cargando…</p>;
+  return <LogoManager slug={selected.slug} name={selected.name} />;
 }

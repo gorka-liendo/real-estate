@@ -111,6 +111,17 @@ packages/
 - Cada módulo vive aislado (componentes + rutas + jobs + migraciones propias).
   El core solo expone auth, tenant context, DB y colas.
 
+### El design system NO lo edita el cliente (principio de producto)
+- Cada inmobiliaria recibe SU design system personalizado, **diseñado y entregado por
+  la plataforma (superadmin)** — es el valor que se paga. El cliente **NUNCA** edita
+  colores/radios/tipografía. El `brand_config` (design system) se configura desde el
+  superadmin, no desde el dashboard del cliente.
+- El cliente SÍ edita: su **logo** (Ajustes → subir logo), su **contenido**
+  (site_config, editor Micrositio) y sus **datos** (propiedades/clientes).
+- Ajustes del cliente = logo + su diseño en solo-lectura ("gestionado por nosotros").
+  API `/tenant/brand`: GET + `POST/DELETE /logo` (owner). NO hay PATCH de design system
+  para el cliente. (Pendiente: editor de design system en el superadmin.)
+
 ### Dashboard de la inmobiliaria (revisión de concepto — jul 2026)
 - El dashboard es **module-first y white-label TOTAL**. El cliente entra y ve SU
   marca (logo/colores/tipografía vía `brand_config` → `brandConfigToUiVars` que tiñe
@@ -332,7 +343,14 @@ packages/
       galería (clases `rt-gallery`/`rt-detail*` 100% tokens Dwell); la tarjeta del
       grid usa la 1ª foto y enlaza a la ficha. Verificado E2E: subir foto → BBDD →
       servida por HTTP → grid + ficha. 49 tests.
+- [x] **Ajustes del cliente = logo + diseño en solo-lectura** (corrección de
+      concepto: el design system NO lo toca el cliente). API `/tenant/brand` GET +
+      `POST/DELETE /logo` (owner, sube logo a `@rep/storage`). Ajustes: subir/quitar
+      logo (se ve al instante en el sidebar) + preview read-only "gestionado por
+      nosotros". Se quitaron los selectores de color/radio del cliente.
+- [ ] **Editor de design system en el superadmin** — donde la plataforma entrega
+      el `brand_config` personalizado por inmobiliaria (colores/radios/tipografía).
 - [ ] **Pulido restante**: hero con imagen, menú móvil, plantillas
-      editorial/minimal/bold, edición de marca (colores/logo) en Ajustes.
+      editorial/minimal/bold.
 - [ ] **Pendiente retomar**: theming/fuentes por inmobiliaria (ver gotcha de
       next/font arriba) y edición de marca en Ajustes.

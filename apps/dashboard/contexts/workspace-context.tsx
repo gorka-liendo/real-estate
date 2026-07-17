@@ -21,6 +21,7 @@ type WorkspaceValue = {
   selected: Membership | null;
   selectSlug: (slug: string) => void;
   brandConfig: BrandConfig | null;
+  setBrandConfig: (b: BrandConfig) => void; // re-tiñe el dashboard al instante
   activeModules: string[] | null; // null = cargando
   hasModule: (code: string) => boolean;
   isPlatformAdmin: boolean;
@@ -69,6 +70,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     selected: memberships.find((m) => m.slug === selectedSlug) ?? null,
     selectSlug,
     brandConfig,
+    setBrandConfig,
     activeModules,
     hasModule: (code) => (activeModules ?? []).includes(code),
     isPlatformAdmin: me?.isPlatformAdmin ?? false,

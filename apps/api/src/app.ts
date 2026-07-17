@@ -15,6 +15,7 @@ import {
 import { requireModule } from "./middlewares/module.middleware.js";
 import { tenantMiddleware, type TenantEnv } from "./middlewares/tenant.middleware.js";
 import { admin } from "./modules/admin/admin.routes.js";
+import { brand } from "./modules/brand/brand.routes.js";
 import { clients } from "./modules/clients/clients.routes.js";
 import { properties } from "./modules/properties/properties.routes.js";
 import {
@@ -121,7 +122,8 @@ team.get("/", async (c) => {
 
 tenant.route("/team", team);
 
-// --- editor del micrositio (contenido) ---
+// --- editores de marca (dashboard + micrositio) y contenido del micrositio ---
+tenant.route("/brand", brand);
 tenant.route("/site", site);
 
 // --- módulos funcionales tenant-scoped ---

@@ -138,6 +138,34 @@ export const api = {
       headers: { "x-tenant-slug": slug },
     }),
 
+  // --- marca: el cliente SOLO gestiona el logo (el design system lo pone la plataforma) ---
+  brand: {
+    get: (slug: string) =>
+      request<{ brandConfig: BrandConfig }>("/tenant/brand", {
+        headers: { "x-tenant-slug": slug },
+      }),
+    uploadLogo: async (slug: string, file: File) => {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch(`${API_URL}/tenant/brand/logo`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "x-tenant-slug": slug },
+        body: fd,
+      });
+      if (!res.ok) {
+        const b = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new ApiError(res.status, b.error ?? `HTTP ${res.status}`);
+      }
+      return (await res.json()) as { brandConfig: BrandConfig };
+    },
+    removeLogo: (slug: string) =>
+      request<{ brandConfig: BrandConfig }>("/tenant/brand/logo", {
+        method: "DELETE",
+        headers: { "x-tenant-slug": slug },
+      }),
+  },
+
   // --- editor del micrositio (site_config) ---
   site: {
     get: (slug: string) =>
