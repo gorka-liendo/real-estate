@@ -1,0 +1,9 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+# Dependencias con scripts de build nativos permitidas explícitamente
+allowBuilds:
+  esbuild: true
+  msgpackr-extract: true
+  sharp: true
+  unrs-resolver: true
