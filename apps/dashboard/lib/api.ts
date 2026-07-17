@@ -70,6 +70,23 @@ export type SiteConfig = {
 export type PropertyOperation = "sale" | "rent";
 export type PropertyKind = "flat" | "house" | "commercial" | "land" | "garage";
 export type PropertyStatus = "draft" | "published" | "archived";
+export type PropertyCondition = "new" | "good" | "renew";
+export type PropertyDetails = {
+  reference?: string;
+  subtype?: string;
+  condition?: PropertyCondition;
+  floor?: string;
+  exterior?: boolean;
+  furnished?: boolean;
+  equippedKitchen?: boolean;
+  energyCert?: string;
+  yearBuilt?: number;
+  usableM2?: number;
+  province?: string;
+  neighborhood?: string;
+  latitude?: number;
+  longitude?: number;
+};
 export type Property = {
   id: string;
   title: string;
@@ -84,6 +101,9 @@ export type Property = {
   city: string | null;
   address: string | null;
   photos: string[];
+  videos: string[];
+  features: string[];
+  details: PropertyDetails;
   createdAt: string;
   updatedAt: string;
 };
@@ -99,6 +119,8 @@ export type PropertyInput = {
   bathrooms?: number;
   description?: string;
   address?: string;
+  features?: string[];
+  details?: PropertyDetails;
 };
 
 export type CatalogModule = {
@@ -254,6 +276,28 @@ export const api = {
     removePhoto: (slug: string, id: string, url: string) =>
       request<{ property: Property }>(
         `/tenant/properties/${id}/photos?url=${encodeURIComponent(url)}`,
+        { method: "DELETE", headers: { "x-tenant-slug": slug } },
+      ),
+
+    uploadVideo: async (slug: string, id: string, file: File) => {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch(`${API_URL}/tenant/properties/${id}/videos`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "x-tenant-slug": slug },
+        body: fd,
+      });
+      if (!res.ok) {
+        const b = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new ApiError(res.status, b.error ?? `HTTP ${res.status}`);
+      }
+      return (await res.json()) as { property: Property };
+    },
+
+    removeVideo: (slug: string, id: string, url: string) =>
+      request<{ property: Property }>(
+        `/tenant/properties/${id}/videos?url=${encodeURIComponent(url)}`,
         { method: "DELETE", headers: { "x-tenant-slug": slug } },
       ),
   },

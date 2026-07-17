@@ -256,6 +256,141 @@
   white-space: pre-line;
 }
 
+/* ===== ficha premium: layout dos columnas (contenido + aside pegajoso) ===== */
+.rt-detail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: var(--tenant-sp-7);
+  align-items: start;
+}
+.rt-detail__main {
+  min-width: 0;
+}
+.rt-detail__aside {
+  position: sticky;
+  top: 96px;
+}
+
+/* bloque temático dentro de la ficha (Descripción, Características, Vídeos…) */
+.rt-block {
+  padding-top: var(--tenant-sp-6);
+  margin-top: var(--tenant-sp-6);
+  border-top: 1px solid var(--tenant-border);
+}
+.rt-block:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+.rt-block__title {
+  font-family: var(--tenant-font-display);
+  font-weight: 700;
+  font-size: 24px;
+  letter-spacing: -0.01em;
+  margin: 0 0 var(--tenant-sp-4) 0;
+}
+
+/* rejilla de características con check */
+.rt-features {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--tenant-sp-3) var(--tenant-sp-4);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.rt-feature {
+  display: flex;
+  align-items: center;
+  gap: var(--tenant-sp-2);
+  font-size: 15px;
+  color: var(--tenant-text);
+}
+.rt-feature__dot {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--tenant-radius-pill);
+  background: color-mix(in srgb, var(--tenant-accent) 14%, transparent);
+  color: var(--tenant-accent);
+}
+
+/* vídeos */
+.rt-videos {
+  display: grid;
+  gap: var(--tenant-sp-4);
+}
+.rt-video {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--tenant-radius);
+  background: #000;
+  display: block;
+  object-fit: cover;
+}
+
+/* tarjeta de contacto pegajosa */
+.rt-contactcard {
+  border: 1px solid var(--tenant-border);
+  border-radius: var(--tenant-radius);
+  padding: var(--tenant-sp-5);
+  background: color-mix(in srgb, var(--tenant-text) 3%, var(--tenant-bg));
+}
+.rt-contactcard__op {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--tenant-muted);
+}
+.rt-contactcard__price {
+  font-family: var(--tenant-font-display);
+  font-weight: 800;
+  font-size: 34px;
+  line-height: 1;
+  margin: var(--tenant-sp-2) 0 var(--tenant-sp-4);
+}
+.rt-contactcard__agency {
+  font-family: var(--tenant-font-display);
+  font-weight: 700;
+  font-size: 16px;
+  margin: 0 0 var(--tenant-sp-1);
+}
+.rt-contactcard__row {
+  display: flex;
+  align-items: center;
+  gap: var(--tenant-sp-2);
+  color: var(--tenant-muted);
+  font-size: 14px;
+  text-decoration: none;
+  margin-top: var(--tenant-sp-2);
+}
+.rt-contactcard__row:hover {
+  color: var(--tenant-text);
+}
+.rt-contactcard .rt-btn {
+  width: 100%;
+  justify-content: center;
+  margin-bottom: var(--tenant-sp-4);
+}
+.rt-contactcard__sep {
+  border: none;
+  border-top: 1px solid var(--tenant-border);
+  margin: var(--tenant-sp-4) 0;
+}
+
+@media (max-width: 900px) {
+  .rt-detail {
+    grid-template-columns: 1fr;
+    gap: var(--tenant-sp-6);
+  }
+  .rt-detail__aside {
+    position: static;
+  }
+}
+
 /* ===== grid de propiedades (listado del micrositio) — todo con tokens Dwell ===== */
 .rt-listings {
   display: grid;

@@ -17,6 +17,12 @@ const EXT: Record<string, string> = {
   "image/webp": "webp",
   "image/avif": "avif",
 };
+const VIDEO_ALLOWED = new Set(["video/mp4", "video/webm", "video/quicktime"]);
+const VIDEO_EXT: Record<string, string> = {
+  "video/mp4": "mp4",
+  "video/webm": "webm",
+  "video/quicktime": "mov",
+};
 
 // Rutas del módulo Propiedades, bajo /tenant/properties.
 // Guardas: tenantMiddleware (app.ts) → auth → membership → módulo 'properties'.
@@ -75,6 +81,35 @@ properties.delete("/:id/photos", async (c) => {
   const url = c.req.query("url");
   if (!url) return c.json({ error: "missing_url" }, 400);
   const updated = await service.removePhoto(c.req.param("id"), url);
+  if (!updated) return c.json({ error: "not_found" }, 404);
+  return c.json({ property: updated });
+});
+
+// --- vídeos (self-hosted; en dev disco local, en prod R2/Railway) ---
+properties.post("/:id/videos", async (c) => {
+  const body = await c.req.parseBody();
+  const file = body["file"];
+  if (!(file instanceof File)) return c.json({ error: "no_file" }, 400);
+  if (!VIDEO_ALLOWED.has(file.type)) return c.json({ error: "invalid_type" }, 400);
+  if (file.size > 200 * 1024 * 1024) return c.json({ error: "too_large" }, 400);
+
+  const tenantId = c.get("tenant").id;
+  const id = c.req.param("id");
+  const key = tenantKey(tenantId, "properties", id, `${randomUUID()}.${VIDEO_EXT[file.type]}`);
+  const { url } = await getStorage().put(
+    key,
+    Buffer.from(await file.arrayBuffer()),
+    file.type,
+  );
+  const updated = await service.addVideo(id, url);
+  if (!updated) return c.json({ error: "not_found" }, 404);
+  return c.json({ property: updated }, 201);
+});
+
+properties.delete("/:id/videos", async (c) => {
+  const url = c.req.query("url");
+  if (!url) return c.json({ error: "missing_url" }, 400);
+  const updated = await service.removeVideo(c.req.param("id"), url);
   if (!updated) return c.json({ error: "not_found" }, 404);
   return c.json({ property: updated });
 });

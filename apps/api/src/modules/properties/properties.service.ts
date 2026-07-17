@@ -64,6 +64,26 @@ export async function removePhoto(id: string, url: string): Promise<Property | n
   return rows[0] ?? null;
 }
 
+export async function addVideo(id: string, url: string): Promise<Property | null> {
+  const p = await getProperty(id);
+  if (!p) return null;
+  const videos = [...(p.videos ?? []), url];
+  const rows = (await tenantDb()
+    .update(properties, { videos }, eq(properties.id, id))
+    .returning()) as Property[];
+  return rows[0] ?? null;
+}
+
+export async function removeVideo(id: string, url: string): Promise<Property | null> {
+  const p = await getProperty(id);
+  if (!p) return null;
+  const videos = (p.videos ?? []).filter((u) => u !== url);
+  const rows = (await tenantDb()
+    .update(properties, { videos }, eq(properties.id, id))
+    .returning()) as Property[];
+  return rows[0] ?? null;
+}
+
 /** Propiedad publicada por id — para la ficha pública del micrositio. */
 export async function getPublishedProperty(id: string): Promise<Property | null> {
   const [row] = await tenantDb().select(

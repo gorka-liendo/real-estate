@@ -15,6 +15,27 @@ export type PropertyOperation = (typeof propertyOperation.enumValues)[number];
 export type PropertyKind = (typeof propertyKind.enumValues)[number];
 export type PropertyStatus = (typeof propertyStatus.enumValues)[number];
 
+// Amenidades (features[]) — ids de PROPERTY_FEATURES. Inspirado en Idealista.
+export type PropertyCondition = "new" | "good" | "renew";
+
+// Detalles extensibles (jsonb) — el resto de la ficha estilo Idealista.
+export type PropertyDetails = {
+  reference?: string;
+  subtype?: string; // apartamento, ático, dúplex, estudio, chalet, adosado…
+  condition?: PropertyCondition;
+  floor?: string; // planta (bajo, 1, 2, ático…)
+  exterior?: boolean;
+  furnished?: boolean;
+  equippedKitchen?: boolean;
+  energyCert?: string; // A–G
+  yearBuilt?: number;
+  usableM2?: number;
+  province?: string;
+  neighborhood?: string;
+  latitude?: number;
+  longitude?: number;
+};
+
 // Propiedades de una inmobiliaria. TENANT-SCOPED → acceso solo vía tenantDb().
 // (Alimentará el micrositio público cuando se conecte.)
 export const properties = pgTable("properties", {
@@ -34,6 +55,9 @@ export const properties = pgTable("properties", {
   city: text("city"),
   address: text("address"),
   photos: jsonb("photos").$type<string[]>().notNull().default([]), // URLs
+  videos: jsonb("videos").$type<string[]>().notNull().default([]), // URLs
+  features: jsonb("features").$type<string[]>().notNull().default([]), // ids de PROPERTY_FEATURES
+  details: jsonb("details").$type<PropertyDetails>().notNull().default({}),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()

@@ -1,16 +1,18 @@
 "use client";
 
-import { ImageIcon, ImagePlus, Plus, Trash2, X } from "lucide-react";
+import { FileVideo, ImageIcon, ImagePlus, Plus, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Badge, Button, Card, Input, Label, Select } from "@rep/ui";
+import { Badge, Button, Card, Input, Label, Select, Textarea } from "@rep/ui";
 import { useRequireModule, useWorkspace } from "@/contexts/workspace-context";
 import {
   api,
   type Property,
+  type PropertyDetails,
   type PropertyKind,
   type PropertyOperation,
   type PropertyStatus,
 } from "@/lib/api";
+import { CONDITIONS, PROPERTY_FEATURES, SUBTYPES } from "@/lib/property-meta";
 
 const KIND_LABEL: Record<PropertyKind, string> = {
   flat: "Piso",
@@ -220,7 +222,9 @@ function PhotoManager({
   onClose: () => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
+  const [videoBusy, setVideoBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function onFiles(files: FileList | null) {
@@ -241,15 +245,38 @@ function PhotoManager({
     }
   }
 
+  async function onVideoFiles(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    setVideoBusy(true);
+    setError(null);
+    try {
+      let latest = property;
+      for (const file of Array.from(files)) {
+        latest = (await api.properties.uploadVideo(slug, property.id, file)).property;
+      }
+      onChange(latest);
+    } catch {
+      setError("No se pudo subir el vídeo (mp4/webm/mov, máx 200 MB).");
+    } finally {
+      setVideoBusy(false);
+      if (videoRef.current) videoRef.current.value = "";
+    }
+  }
+
   async function removePhoto(url: string) {
     const { property: updated } = await api.properties.removePhoto(slug, property.id, url);
+    onChange(updated);
+  }
+
+  async function removeVideo(url: string) {
+    const { property: updated } = await api.properties.removeVideo(slug, property.id, url);
     onChange(updated);
   }
 
   return (
     <Card>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <h2 className="du-h3">Fotos · {property.title}</h2>
+        <h2 className="du-h3">Fotos y vídeos · {property.title}</h2>
         <Button variant="ghost" size="sm" onClick={onClose} aria-label="Cerrar">
           <X size={15} />
         </Button>
@@ -333,6 +360,79 @@ function PhotoManager({
         hidden
         onChange={(e) => void onFiles(e.target.files)}
       />
+
+      <h3 className="du-h3" style={{ marginTop: "var(--ui-sp-5)", marginBottom: "var(--ui-sp-3)" }}>
+        Vídeos
+      </h3>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+          gap: "var(--ui-sp-3)",
+        }}
+      >
+        {property.videos.map((url) => (
+          <div key={url} style={{ position: "relative" }}>
+            <video
+              src={url}
+              controls
+              style={{
+                width: "100%",
+                aspectRatio: "16 / 9",
+                borderRadius: "var(--ui-radius)",
+                background: "#000",
+                objectFit: "cover",
+              }}
+            />
+            <button
+              onClick={() => void removeVideo(url)}
+              aria-label="Eliminar vídeo"
+              style={{
+                position: "absolute",
+                top: 6,
+                right: 6,
+                background: "rgba(0,0,0,0.6)",
+                color: "#fff",
+                border: "none",
+                borderRadius: 999,
+                width: 24,
+                height: 24,
+                cursor: "pointer",
+                display: "grid",
+                placeItems: "center",
+              }}
+            >
+              <Trash2 size={13} />
+            </button>
+          </div>
+        ))}
+        <button
+          onClick={() => videoRef.current?.click()}
+          disabled={videoBusy}
+          style={{
+            aspectRatio: "16 / 9",
+            border: "1px dashed var(--ui-border-strong)",
+            borderRadius: "var(--ui-radius)",
+            background: "transparent",
+            color: "var(--ui-muted)",
+            cursor: "pointer",
+            display: "grid",
+            placeItems: "center",
+            gap: 6,
+          }}
+        >
+          <FileVideo size={20} />
+          <span style={{ fontSize: 12 }}>{videoBusy ? "Subiendo…" : "Añadir vídeo"}</span>
+        </button>
+      </div>
+      <input
+        ref={videoRef}
+        type="file"
+        accept="video/mp4,video/webm,video/quicktime"
+        multiple
+        hidden
+        onChange={(e) => void onVideoFiles(e.target.files)}
+      />
     </Card>
   );
 }
@@ -352,23 +452,52 @@ function NewPropertyForm({
   const [status, setStatus] = useState<PropertyStatus>("draft");
   const [price, setPrice] = useState("");
   const [city, setCity] = useState("");
+  const [province, setProvince] = useState("");
   const [areaM2, setAreaM2] = useState("");
+  const [bedrooms, setBedrooms] = useState("");
+  const [bathrooms, setBathrooms] = useState("");
+  const [subtype, setSubtype] = useState("");
+  const [condition, setCondition] = useState("");
+  const [floor, setFloor] = useState("");
+  const [yearBuilt, setYearBuilt] = useState("");
+  const [energyCert, setEnergyCert] = useState("");
+  const [description, setDescription] = useState("");
+  const [features, setFeatures] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  function toggleFeature(id: string) {
+    setFeatures((f) => (f.includes(id) ? f.filter((x) => x !== id) : [...f, id]));
+  }
+
+  const num = (v: string) => (v ? Number(v) : undefined);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
     try {
+      const details: PropertyDetails = {
+        subtype: subtype || undefined,
+        condition: (condition || undefined) as PropertyDetails["condition"],
+        floor: floor || undefined,
+        yearBuilt: num(yearBuilt),
+        energyCert: energyCert || undefined,
+        province: province || undefined,
+      };
       const { property } = await api.properties.create(slug, {
         title,
         kind,
         operation,
         status,
-        price: price ? Number(price) : undefined,
+        price: num(price),
         city: city || undefined,
-        areaM2: areaM2 ? Number(areaM2) : undefined,
+        areaM2: num(areaM2),
+        bedrooms: num(bedrooms),
+        bathrooms: num(bathrooms),
+        description: description || undefined,
+        features,
+        details,
       });
       onCreated(property);
     } catch {
@@ -378,20 +507,21 @@ function NewPropertyForm({
     }
   }
 
+  const fieldGrid = {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+    gap: "var(--ui-sp-4)",
+  } as const;
+
   return (
     <Card>
-      <form onSubmit={submit} style={{ display: "grid", gap: "var(--ui-sp-4)" }}>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
-            gap: "var(--ui-sp-4)",
-          }}
-        >
-          <div style={{ gridColumn: "1 / -1" }}>
-            <Label htmlFor="p-title">Título</Label>
-            <Input id="p-title" required value={title} onChange={(e) => setTitle(e.target.value)} />
-          </div>
+      <form onSubmit={submit} style={{ display: "grid", gap: "var(--ui-sp-5)" }}>
+        <div>
+          <Label htmlFor="p-title">Título</Label>
+          <Input id="p-title" required value={title} onChange={(e) => setTitle(e.target.value)} />
+        </div>
+
+        <div style={fieldGrid}>
           <div>
             <Label htmlFor="p-kind">Tipo</Label>
             <Select id="p-kind" value={kind} onChange={(e) => setKind(e.target.value as PropertyKind)}>
@@ -403,12 +533,19 @@ function NewPropertyForm({
             </Select>
           </div>
           <div>
+            <Label htmlFor="p-subtype">Subtipo</Label>
+            <Select id="p-subtype" value={subtype} onChange={(e) => setSubtype(e.target.value)}>
+              <option value="">—</option>
+              {SUBTYPES.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div>
             <Label htmlFor="p-op">Operación</Label>
-            <Select
-              id="p-op"
-              value={operation}
-              onChange={(e) => setOperation(e.target.value as PropertyOperation)}
-            >
+            <Select id="p-op" value={operation} onChange={(e) => setOperation(e.target.value as PropertyOperation)}>
               <option value="sale">Venta</option>
               <option value="rent">Alquiler</option>
             </Select>
@@ -418,20 +555,95 @@ function NewPropertyForm({
             <Input id="p-price" type="number" min="0" value={price} onChange={(e) => setPrice(e.target.value)} />
           </div>
           <div>
-            <Label htmlFor="p-area">Superficie (m²)</Label>
-            <Input id="p-area" type="number" min="0" value={areaM2} onChange={(e) => setAreaM2(e.target.value)} />
-          </div>
-          <div>
-            <Label htmlFor="p-city">Ciudad</Label>
-            <Input id="p-city" value={city} onChange={(e) => setCity(e.target.value)} />
-          </div>
-          <div>
             <Label htmlFor="p-status">Estado</Label>
             <Select id="p-status" value={status} onChange={(e) => setStatus(e.target.value as PropertyStatus)}>
               <option value="draft">Borrador</option>
               <option value="published">Publicada</option>
               <option value="archived">Archivada</option>
             </Select>
+          </div>
+        </div>
+
+        <div style={fieldGrid}>
+          <div>
+            <Label htmlFor="p-area">Superficie (m²)</Label>
+            <Input id="p-area" type="number" min="0" value={areaM2} onChange={(e) => setAreaM2(e.target.value)} />
+          </div>
+          <div>
+            <Label htmlFor="p-bed">Habitaciones</Label>
+            <Input id="p-bed" type="number" min="0" value={bedrooms} onChange={(e) => setBedrooms(e.target.value)} />
+          </div>
+          <div>
+            <Label htmlFor="p-bath">Baños</Label>
+            <Input id="p-bath" type="number" min="0" value={bathrooms} onChange={(e) => setBathrooms(e.target.value)} />
+          </div>
+          <div>
+            <Label htmlFor="p-floor">Planta</Label>
+            <Input id="p-floor" placeholder="3, Bajo, Ático…" value={floor} onChange={(e) => setFloor(e.target.value)} />
+          </div>
+          <div>
+            <Label htmlFor="p-cond">Estado conservación</Label>
+            <Select id="p-cond" value={condition} onChange={(e) => setCondition(e.target.value)}>
+              <option value="">—</option>
+              {CONDITIONS.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.label}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div>
+            <Label htmlFor="p-energy">Cert. energético</Label>
+            <Select id="p-energy" value={energyCert} onChange={(e) => setEnergyCert(e.target.value)}>
+              <option value="">—</option>
+              {["A", "B", "C", "D", "E", "F", "G"].map((g) => (
+                <option key={g} value={g}>
+                  {g}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div>
+            <Label htmlFor="p-year">Año construcción</Label>
+            <Input id="p-year" type="number" min="1800" max="2100" value={yearBuilt} onChange={(e) => setYearBuilt(e.target.value)} />
+          </div>
+          <div>
+            <Label htmlFor="p-city">Ciudad</Label>
+            <Input id="p-city" value={city} onChange={(e) => setCity(e.target.value)} />
+          </div>
+          <div>
+            <Label htmlFor="p-prov">Provincia</Label>
+            <Input id="p-prov" value={province} onChange={(e) => setProvince(e.target.value)} />
+          </div>
+        </div>
+
+        <div>
+          <Label htmlFor="p-desc">Descripción</Label>
+          <Textarea
+            id="p-desc"
+            placeholder="Describe la propiedad: luz, reformas, ubicación, extras…"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            style={{ minHeight: 120 }}
+          />
+        </div>
+
+        <div>
+          <Label>Características</Label>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--ui-sp-3)", marginTop: "var(--ui-sp-2)" }}>
+            {PROPERTY_FEATURES.map((f) => (
+              <label
+                key={f.id}
+                style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, cursor: "pointer" }}
+              >
+                <input
+                  type="checkbox"
+                  checked={features.includes(f.id)}
+                  onChange={() => toggleFeature(f.id)}
+                />
+                {f.label}
+              </label>
+            ))}
           </div>
         </div>
 

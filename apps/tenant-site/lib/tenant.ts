@@ -37,6 +37,23 @@ export async function fetchTenant(slug: string): Promise<TenantData | null> {
   return (await res.json()) as TenantData;
 }
 
+export type PropertyCondition = "new" | "good" | "renew";
+export type PropertyDetails = {
+  reference?: string;
+  subtype?: string;
+  condition?: PropertyCondition;
+  floor?: string;
+  exterior?: boolean;
+  furnished?: boolean;
+  equippedKitchen?: boolean;
+  energyCert?: string;
+  yearBuilt?: number;
+  usableM2?: number;
+  province?: string;
+  neighborhood?: string;
+  latitude?: number;
+  longitude?: number;
+};
 export type PublicProperty = {
   id: string;
   title: string;
@@ -50,6 +67,9 @@ export type PublicProperty = {
   city: string | null;
   address: string | null;
   photos: string[];
+  videos: string[];
+  features: string[];
+  details: PropertyDetails;
 };
 
 /** Propiedades publicadas del tenant (para el micrositio). Vacío si no aplica. */
