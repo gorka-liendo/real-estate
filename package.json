@@ -6,8 +6,8 @@
     "node": ">=24"
   },
   "scripts": {
-    "dev": "turbo dev",
-    "dev:up": "docker compose up -d && turbo dev",
+    "dev": "turbo dev --concurrency=20",
+    "dev:up": "docker compose up -d && turbo dev --concurrency=20",
     "infra:up": "docker compose up -d",
     "infra:down": "docker compose down",
     "build": "turbo build",
