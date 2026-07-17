@@ -264,5 +264,14 @@ packages/
       (clients/properties/accounting/whatsapp_bot/microsite). 11 tests @rep/ui.
       Verificado: martinez ve su nombre + azul de marca + Clientes/Micrositio;
       `/propiedades` (no contratado) rebota a Inicio.
+- [x] **Martinez = design system Dwell** (prueba real del white-label total del
+      dashboard). `brand_config` de martinez codifica Dwell: off-white `#FBFBFB`,
+      negro/gris `#878787`/negro sin acento, `borderRadius:0` + `buttonRadius:999`
+      (nuevo token `--ui-radius-btn`: tarjetas rectas + botones píldora, la firma
+      Dwell). Fuentes Archivo+Hanken (defaults). Tratamiento display Dwell en
+      `@rep/ui` (h1 26px/800, tracking -0.02em). Verificado por medición de ancho
+      en navegador que Archivo se dibuja de verdad (no era fallback; el problema era
+      el tratamiento tímido, no la familia). Seed hecho **autoritativo** (deja el
+      estado exacto de módulos, no acumula toggles de pruebas). 13 tests @rep/ui.
 - [ ] **Módulo Clientes (CRM)** — primer módulo funcional real (modelo Drizzle
       `clients` tenant-scoped + CRUD API + UI). SIGUIENTE.

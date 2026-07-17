@@ -17,7 +17,8 @@ export type BrandConfig = {
   faviconUrl?: string;
   fontDisplay?: string;
   fontBody?: string;
-  borderRadius?: 0 | 4 | 8 | 16;
+  borderRadius?: number; // radio general (tarjetas, inputs); Dwell = 0
+  buttonRadius?: number; // radio de botones aparte; Dwell = 999 (píldora)
   micrositeStyle?: "editorial" | "minimal" | "bold";
 };
 

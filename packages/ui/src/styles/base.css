@@ -10,24 +10,26 @@
   -webkit-font-smoothing: antialiased;
 }
 
+/* Tratamiento display estilo Dwell: Archivo pesado (800) y tracking apretado. */
 .du-h1,
 .du-h2,
 .du-h3 {
   font-family: var(--ui-font-display);
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
   margin: 0;
 }
 .du-h1 {
-  font-size: 22px;
-  font-weight: 700;
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.05;
 }
 .du-h2 {
-  font-size: 16px;
-  font-weight: 700;
+  font-size: 17px;
+  font-weight: 800;
 }
 .du-h3 {
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
 }
 .du-muted {
   color: var(--ui-muted);
@@ -45,7 +47,7 @@
   line-height: 1;
   padding: 0 var(--ui-sp-4);
   height: 38px;
-  border-radius: var(--ui-radius);
+  border-radius: var(--ui-radius-btn);
   border: 1px solid transparent;
   cursor: pointer;
   text-decoration: none;

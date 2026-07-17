@@ -30,10 +30,16 @@ async function main() {
     {
       slug: "martinez",
       name: "Inmobiliaria Martínez",
+      // Design system DWELL: off-white / gris / negro, sin acento, esquinas rectas,
+      // botones en píldora. Fuentes = defaults (Archivo + Hanken, los stand-in Dwell).
       brandConfig: {
-        primaryColor: "#1e3a8a",
-        borderRadius: 8 as const,
-        micrositeStyle: "minimal" as const,
+        background: "#FBFBFB",
+        textPrimary: "#000000",
+        textSecondary: "#878787",
+        primaryColor: "#000000",
+        borderRadius: 0,
+        buttonRadius: 999,
+        micrositeStyle: "editorial" as const,
       },
     },
     {
@@ -61,16 +67,22 @@ async function main() {
   //  que usa el hash de password de Better-Auth)
 
   // --- martinez con Clientes + Micrositio activos; lopez sin módulos ---
+  // Seed AUTORITATIVO: deja el estado exacto (activa los previstos, desactiva el resto).
   const martinez = seededTenants.find((t) => t!.slug === "martinez")!;
   const activeForMartinez = ["clients", "microsite"];
-  for (const code of activeForMartinez) {
-    const mod = seededModules.find((m) => m!.code === code)!;
+  for (const mod of seededModules) {
+    const shouldBeActive = activeForMartinez.includes(mod!.code);
     await db
       .insert(subscriptions)
-      .values({ tenantId: martinez.id, moduleId: mod.id, active: true, activatedAt: new Date() })
+      .values({
+        tenantId: martinez.id,
+        moduleId: mod!.id,
+        active: shouldBeActive,
+        activatedAt: shouldBeActive ? new Date() : null,
+      })
       .onConflictDoUpdate({
         target: [subscriptions.tenantId, subscriptions.moduleId],
-        set: { active: true },
+        set: { active: shouldBeActive, activatedAt: shouldBeActive ? new Date() : null },
       });
   }
 

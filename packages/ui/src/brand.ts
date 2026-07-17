@@ -61,9 +61,15 @@ export function brandConfigToUiVars(brand: BrandConfig | null | undefined): CSSP
   if (brand.fontDisplay) vars["--ui-font-display"] = `"${brand.fontDisplay}", sans-serif`;
   if (brand.fontBody) vars["--ui-font-body"] = `"${brand.fontBody}", sans-serif`;
   if (brand.borderRadius !== undefined) {
-    vars["--ui-radius"] = `${brand.borderRadius}px`;
-    vars["--ui-radius-lg"] = `${brand.borderRadius + 4}px`;
-    vars["--ui-radius-sm"] = `${Math.max(0, brand.borderRadius - 2)}px`;
+    const r = brand.borderRadius;
+    vars["--ui-radius"] = `${r}px`;
+    // 0 se mantiene 0 (esquina recta Dwell); >0 escala para jerarquía visual
+    vars["--ui-radius-lg"] = `${r === 0 ? 0 : r + 4}px`;
+    vars["--ui-radius-sm"] = `${Math.max(0, r - 2)}px`;
+    vars["--ui-radius-btn"] = `${r}px`; // por defecto sigue al general
+  }
+  if (brand.buttonRadius !== undefined) {
+    vars["--ui-radius-btn"] = `${brand.buttonRadius}px`; // Dwell: 999 (píldora)
   }
 
   // fondo: si es oscuro, derivamos superficie/borde/tinta para no romper contraste

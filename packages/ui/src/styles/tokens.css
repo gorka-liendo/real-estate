@@ -38,6 +38,9 @@
   --ui-radius-sm: 6px;
   --ui-radius: 8px;
   --ui-radius-lg: 12px;
+  /* radio de botón, independiente del general: permite la firma Dwell
+     (tarjetas rectas + botones píldora). Por defecto sigue al radio general. */
+  --ui-radius-btn: var(--ui-radius);
 
   /* --- espaciado --- */
   --ui-sp-1: 4px;

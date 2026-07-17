@@ -15,7 +15,8 @@ const CSS_VAR_BY_FIELD: Record<keyof BrandConfig, string | null> = {
   fontDisplay: "--tenant-font-display",
   fontBody: "--tenant-font-body",
   borderRadius: "--tenant-radius", // number → px
-  // no son variables CSS:
+  // no aplican al micrositio (el botón ya es píldora por diseño Dwell):
+  buttonRadius: null,
   logoUrl: null,
   faviconUrl: null,
   micrositeStyle: null,

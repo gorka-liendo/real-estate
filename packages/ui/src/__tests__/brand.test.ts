@@ -26,6 +26,19 @@ describe("brandConfigToUiVars (white-label total del dashboard)", () => {
     expect(v["--ui-radius-sm"]).toBe("6px");
   });
 
+  it("borderRadius 0 mantiene TODO recto (firma Dwell)", () => {
+    const v = brandConfigToUiVars({ borderRadius: 0 }) as Record<string, string>;
+    expect(v["--ui-radius"]).toBe("0px");
+    expect(v["--ui-radius-lg"]).toBe("0px");
+    expect(v["--ui-radius-btn"]).toBe("0px");
+  });
+
+  it("buttonRadius independiza el botón (Dwell: recto + botón píldora)", () => {
+    const v = brandConfigToUiVars({ borderRadius: 0, buttonRadius: 999 }) as Record<string, string>;
+    expect(v["--ui-radius"]).toBe("0px");
+    expect(v["--ui-radius-btn"]).toBe("999px");
+  });
+
   it("fondo oscuro deriva superficie/borde/tinta coherentes", () => {
     const v = brandConfigToUiVars({ background: "#0b0b0f" }) as Record<string, string>;
     expect(v["--ui-bg"]).toBe("#0b0b0f");
