@@ -1,5 +1,13 @@
 /* Entrada de estilos del design system del dashboard.
-   El host importa: import "@rep/ui/styles.css"; */
+   El host importa: import "@rep/ui/styles.css";
+
+   Arquitectura: MOTOR (base.css, componentes du-*) + CONTRATO (tokens.css, :root)
+   + TEMAS intercambiables (themes/<id>.css, scoped por [data-theme]).
+   El dashboard activa un tema con data-theme=<brand_config.theme>. */
 @import "./fonts.css";
 @import "./tokens.css";
 @import "./base.css";
+
+/* --- temas (registrar aquí cada tema nuevo) --- */
+@import "./themes/dwell.css";
+@import "./themes/costa.css";

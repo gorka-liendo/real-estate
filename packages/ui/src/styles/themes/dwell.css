@@ -1,0 +1,22 @@
+/* Tema DWELL para el dashboard — off-white / negro / gris, esquinas rectas,
+   botones en píldora. Emparejado con @rep/ui-tenant/themes/dwell.css. */
+[data-theme="dwell"] {
+  --ui-bg: #fbfbfb;
+  --ui-surface: #ffffff;
+  --ui-text: #000000;
+  --ui-muted: #878787;
+  --ui-border: rgba(0, 0, 0, 0.08);
+  --ui-border-strong: rgba(0, 0, 0, 0.2);
+  --ui-hover: rgba(0, 0, 0, 0.04);
+  --ui-active: rgba(0, 0, 0, 0.08);
+
+  --ui-primary: #000000;
+  --ui-primary-hover: #2b2b2b;
+  --ui-on-primary: #fbfbfb;
+  --ui-ring: rgba(0, 0, 0, 0.28);
+
+  --ui-radius-sm: 0px;
+  --ui-radius: 0px; /* tarjetas rectas */
+  --ui-radius-lg: 0px;
+  --ui-radius-btn: 999px; /* botones píldora */
+}

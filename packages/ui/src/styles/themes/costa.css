@@ -1,0 +1,22 @@
+/* Tema COSTA para el dashboard — azul frío, esquinas redondeadas.
+   Emparejado con @rep/ui-tenant/themes/costa.css. */
+[data-theme="costa"] {
+  --ui-bg: #f6f8fb;
+  --ui-surface: #ffffff;
+  --ui-text: #0f2233;
+  --ui-muted: #5b7285;
+  --ui-border: rgba(15, 34, 51, 0.12);
+  --ui-border-strong: rgba(15, 34, 51, 0.28);
+  --ui-hover: rgba(15, 34, 51, 0.05);
+  --ui-active: rgba(15, 34, 51, 0.09);
+
+  --ui-primary: #14507a;
+  --ui-primary-hover: #0f3f61;
+  --ui-on-primary: #ffffff;
+  --ui-ring: rgba(20, 80, 122, 0.3);
+
+  --ui-radius-sm: 10px;
+  --ui-radius: 14px;
+  --ui-radius-lg: 16px;
+  --ui-radius-btn: 14px;
+}

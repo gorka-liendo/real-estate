@@ -1,9 +1,9 @@
 /*
- * @rep/ui — design system INTERNO del dashboard (producto propio, NO personalizable).
- * Fuente única de verdad de color, tipografía, radios y espaciado.
- * Comparte ADN con Dwell (Archivo + Hanken, paleta neutra de 3 tonos, sin acento
- * cromático) pero afinado para una herramienta densa, no una web editorial.
- * Prohibido escribir valores arbitrarios en componentes: todo sale de estas vars.
+ * @rep/ui — design system del dashboard. CONTRATO de tokens --ui-*.
+ * Motor: base.css (componentes du-*, solo variables). Cada TEMA (themes/<id>.css)
+ * rellena estas variables bajo [data-theme="<id>"]; el dashboard pone
+ * data-theme=<brand_config.theme> en la raíz. Mismo id de tema que el micrositio.
+ * :root = defaults neutros de seguridad. Prohibido valores arbitrarios en componentes.
  */
 :root {
   /* --- superficies y tinta (neutro, sin acento cromático) --- */

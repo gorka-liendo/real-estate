@@ -4,7 +4,7 @@ import { House, LogOut, Settings, Shield } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
-import { brandConfigToUiVars, Select } from "@rep/ui";
+import { Select } from "@rep/ui";
 import { useAuth } from "@/contexts/auth-context";
 import { useWorkspace } from "@/contexts/workspace-context";
 import { MODULE_SECTIONS } from "@/lib/modules";
@@ -16,8 +16,8 @@ export function DashboardShell({ children }: { children: ReactNode }) {
     useWorkspace();
   const pathname = usePathname();
 
-  // white-label total: la marca de la inmobiliaria tiñe todo el dashboard
-  const brandVars = brandConfigToUiVars(brandConfig);
+  // el design system del dashboard = el TEMA de la inmobiliaria (data-theme).
+  const theme = brandConfig?.theme ?? "dwell";
   const logoUrl = brandConfig?.logoUrl;
 
   const isActive = (href: string) =>
@@ -26,7 +26,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
   const sections = MODULE_SECTIONS.filter((s) => hasModule(s.code));
 
   return (
-    <div className="dash-shell" style={brandVars}>
+    <div className="dash-shell" data-theme={theme}>
       <aside className="dash-sidebar">
         <div className="dash-brand">
           {logoUrl ? (

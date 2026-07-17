@@ -358,8 +358,15 @@ packages/
       inyecta brandConfigToCssVars (el tema define todo). Verificado: dwell→costa
       transforma la web entera. Añadir tema a medida: copiar `_template.css`,
       rellenar, registrar `@import` en `index.css`, asignar `theme` al tenant.
-- [ ] **Llevar el sistema de temas al dashboard** (@rep/ui, --ui-*) y **editor de
-      temas/design system en el superadmin** (asignar/gestionar el tema por tenant).
+- [x] **Sistema de temas en el dashboard** — `@rep/ui` refactorizado igual que
+      `@rep/ui-tenant`: motor (`base.css`) + contrato (`tokens.css` :root) +
+      `themes/<id>.css` (`dwell`, `costa`, `_template`, scoped `[data-theme]`).
+      El shell pone `data-theme={brandConfig.theme ?? "dwell"}` (ya no inyecta
+      `brandConfigToUiVars`). **Un solo campo `brand_config.theme` tiñe dashboard +
+      micrositio** de forma consistente. Verificado: swap dwell→costa re-tiñe el
+      dashboard (azul/redondeado) igual que el micrositio.
+- [ ] **Editor de temas/design system en el superadmin** — asignar/gestionar el
+      `theme` por inmobiliaria (de momento por seed/BBDD).
 - [ ] **Pulido restante**: hero con imagen, menú móvil, plantillas
       editorial/minimal/bold.
 - [ ] **Pendiente retomar**: theming/fuentes por inmobiliaria (ver gotcha de

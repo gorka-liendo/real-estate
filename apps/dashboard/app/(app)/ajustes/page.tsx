@@ -2,7 +2,7 @@
 
 import { ImagePlus, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Badge, Button, brandConfigToUiVars, Card, type BrandConfig } from "@rep/ui";
+import { Badge, Button, Card, type BrandConfig } from "@rep/ui";
 import { useWorkspace } from "@/contexts/workspace-context";
 import { api } from "@/lib/api";
 
@@ -48,8 +48,6 @@ function LogoManager({ slug, name }: { slug: string; name: string }) {
   }
 
   if (brand === null) return <p className="du-muted">Cargando…</p>;
-
-  const previewVars = brandConfigToUiVars(brand);
 
   return (
     <div style={{ display: "grid", gap: "var(--ui-sp-5)" }}>
@@ -124,8 +122,8 @@ function LogoManager({ slug, name }: { slug: string; name: string }) {
         </div>
         <div
           className="du-app"
+          data-theme={brand.theme ?? "dwell"}
           style={{
-            ...previewVars,
             borderRadius: "var(--ui-radius)",
             border: "1px solid var(--ui-border)",
             padding: "var(--ui-sp-5)",

@@ -1,0 +1,27 @@
+/*
+ * PLANTILLA de tema del dashboard — copia a themes/<inmobiliaria>.css, cambia el id
+ * del selector y rellena. Mismo formato que todos los temas: un bloque de tokens
+ * --ui-* bajo [data-theme="<id>"]. Usa el mismo id que el tema del micrositio.
+ * Los tokens semánticos (success/danger/warning), espaciado y sombras se heredan
+ * de :root salvo que quieras cambiarlos.
+ */
+[data-theme="_template"] {
+  --ui-bg: #fbfbfb;
+  --ui-surface: #ffffff;
+  --ui-text: #0a0a0a;
+  --ui-muted: #737373;
+  --ui-border: rgba(10, 10, 10, 0.1);
+  --ui-border-strong: rgba(10, 10, 10, 0.22);
+  --ui-hover: rgba(10, 10, 10, 0.04);
+  --ui-active: rgba(10, 10, 10, 0.08);
+
+  --ui-primary: #111111;
+  --ui-primary-hover: #2b2b2b;
+  --ui-on-primary: #fbfbfb;
+  --ui-ring: rgba(17, 17, 17, 0.28);
+
+  --ui-radius-sm: 6px;
+  --ui-radius: 8px;
+  --ui-radius-lg: 12px;
+  --ui-radius-btn: 8px;
+}
