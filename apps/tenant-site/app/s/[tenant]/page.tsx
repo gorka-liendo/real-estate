@@ -50,6 +50,25 @@ export default async function Microsite({ params }: Params) {
   const listings = (await fetchListings(slug)).map(toListing);
   const brandVars = brandConfigToCssVars(tenant.brandConfig); // white-label runtime
 
+  // Contenido = site_config del tenant, con defaults sensatos si viene vacío.
+  const site = tenant.siteConfig ?? {};
+  const heroEyebrow = site.heroEyebrow || "Inmobiliaria de confianza";
+  const heroTitle = site.heroTitle || "Encuentra tu próximo hogar.";
+  const heroSubtitle =
+    site.heroSubtitle ||
+    `${tenant.name} verifica cada propiedad en persona antes de publicarla: fotografía real, precios claros y cero ruido.`;
+  const tagline = site.about || "Propiedades verificadas en persona, una a una.";
+
+  const contactLinks = [
+    site.contactEmail
+      ? { label: "Escríbenos", href: `mailto:${site.contactEmail}` }
+      : null,
+    site.contactPhone
+      ? { label: site.contactPhone, href: `tel:${site.contactPhone.replace(/\s/g, "")}` }
+      : null,
+    ...(site.social ?? []).map((s) => ({ label: s.label, href: s.url })),
+  ].filter((x): x is { label: string; href: string } => x !== null);
+
   return (
     <div className="rt-root" style={{ ...brandVars, minHeight: "100vh" }}>
       {/* topbar */}
@@ -66,12 +85,9 @@ export default async function Microsite({ params }: Params) {
       {/* hero */}
       <section className="rt-hero">
         <div className="rt-wrap">
-          <div className="rt-eyebrow">Inmobiliaria de confianza</div>
-          <h1 className="rt-hero__title">Encuentra tu próximo hogar.</h1>
-          <p className="rt-hero__sub">
-            {tenant.name} verifica cada propiedad en persona antes de publicarla:
-            fotografía real, precios claros y cero ruido.
-          </p>
+          <div className="rt-eyebrow">{heroEyebrow}</div>
+          <h1 className="rt-hero__title">{heroTitle}</h1>
+          <p className="rt-hero__sub">{heroSubtitle}</p>
           <PillLink href="#propiedades">Ver propiedades</PillLink>
         </div>
       </section>
@@ -96,7 +112,7 @@ export default async function Microsite({ params }: Params) {
         <div className="rt-wrap">
           <Footer
             brandHeading={tenant.name}
-            tagline="Propiedades verificadas en persona, una a una."
+            tagline={tagline}
             columns={[
               {
                 heading: "Explora",
@@ -107,10 +123,10 @@ export default async function Microsite({ params }: Params) {
               },
               {
                 heading: "Contacto",
-                links: [
-                  { label: "Escríbenos", href: "#" },
-                  { label: "Instagram", href: "#" },
-                ],
+                links:
+                  contactLinks.length > 0
+                    ? contactLinks
+                    : [{ label: "Escríbenos", href: "#" }],
               },
             ]}
           />

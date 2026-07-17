@@ -61,7 +61,13 @@ tenant.use("*", tenantMiddleware);
 
 tenant.get("/", (c) => {
   const t = c.get("tenant");
-  return c.json({ id: t.id, slug: t.slug, name: t.name, brandConfig: t.brandConfig });
+  return c.json({
+    id: t.id,
+    slug: t.slug,
+    name: t.name,
+    brandConfig: t.brandConfig,
+    siteConfig: t.siteConfig,
+  });
 });
 
 tenant.get("/subscriptions", async (c) => {

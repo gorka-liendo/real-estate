@@ -1,11 +1,24 @@
 import { tenantSiteEnv } from "@rep/config/tenant-site";
 import type { BrandConfig } from "@rep/ui-tenant";
 
+export type SocialLink = { label: string; url: string };
+export type SiteConfig = {
+  template?: "editorial" | "minimal" | "bold";
+  heroEyebrow?: string;
+  heroTitle?: string;
+  heroSubtitle?: string;
+  about?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  social?: SocialLink[];
+};
+
 export type TenantData = {
   id: string;
   slug: string;
   name: string;
   brandConfig: BrandConfig;
+  siteConfig: SiteConfig;
 };
 
 const REVALIDATE_SECONDS = 60; // ISR: la ficha se regenera cuando cambia el tenant

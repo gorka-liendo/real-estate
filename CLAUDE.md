@@ -309,6 +309,16 @@ packages/
       100% con tokens `--tenant-*` (fuentes, espacios, radius Dwell). tenant-site
       `fetchListings` + sección "Propiedades" con ISR. Verificado: el micrositio de
       martinez muestra "Ático con terraza · 320.000 €" en estética Dwell.
-- [ ] **Landing por inmueble** (`/s/[tenant]/propiedad/[id]`) — ficha individual (futuro).
+- [x] **Arquitectura micrositio: `site_config` (Capa 2 contenido)** — el contenido
+      del micrositio dejó de estar hardcodeado. Nuevo `tenants.site_config` jsonb
+      (`SiteConfig`: template, heroEyebrow/Title/Subtitle, about, contactEmail/Phone,
+      social[]), migración `0004`. `/tenant` lo devuelve; la plantilla lo lee con
+      defaults sensatos (tenant sin config sigue viéndose bien). Seed pre-rellena
+      martinez (modelo **híbrido**: nosotros en onboarding, editable por el cliente
+      después). 3 capas: brand_config (marca) / site_config (contenido) / properties
+      (datos). Verificado: hero de martinez sale de su site_config.
+- [ ] **Editor de site_config en el dashboard** (sección Micrositio/Ajustes) →
+      self-serve. Y **landing por inmueble** (`/s/[tenant]/propiedad/[id]`) + pulido
+      (hero con imagen, ficha, menú móvil, plantillas editorial/minimal/bold).
 - [ ] **Pendiente retomar**: theming/fuentes por inmobiliaria (ver gotcha de
       next/font arriba) y edición de marca en Ajustes.

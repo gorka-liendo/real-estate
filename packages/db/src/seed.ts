@@ -41,6 +41,22 @@ async function main() {
         buttonRadius: 999,
         micrositeStyle: "editorial" as const,
       },
+      // Contenido pre-rellenado (modelo híbrido). El cliente lo editaría en Ajustes.
+      siteConfig: {
+        template: "editorial" as const,
+        heroEyebrow: "Inmobiliaria en Bilbao",
+        heroTitle: "Tu próximo hogar, verificado.",
+        heroSubtitle:
+          "En Inmobiliaria Martínez visitamos cada propiedad en persona antes de publicarla: fotografía real, precios claros y trato cercano.",
+        about:
+          "Somos una inmobiliaria de barrio con más de 20 años ayudando a familias a comprar, vender y alquilar en Bilbao.",
+        contactEmail: "hola@martinez.example.com",
+        contactPhone: "+34 944 00 00 00",
+        social: [
+          { label: "Instagram", url: "https://instagram.com" },
+          { label: "WhatsApp", url: "https://wa.me/34944000000" },
+        ],
+      },
     },
     {
       slug: "lopez",
@@ -57,7 +73,7 @@ async function main() {
       .values(t)
       .onConflictDoUpdate({
         target: tenants.slug,
-        set: { name: t.name, brandConfig: t.brandConfig },
+        set: { name: t.name, brandConfig: t.brandConfig, siteConfig: t.siteConfig ?? {} },
       })
       .returning();
     seededTenants.push(row!);
