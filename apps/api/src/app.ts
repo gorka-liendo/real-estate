@@ -4,12 +4,14 @@ import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { auth, authEnv } from "@rep/auth";
 import { db, memberships, subscriptions, tenantDb, tenants } from "@rep/db";
+import { getActiveModules } from "@rep/modules";
 import {
   authMiddleware,
   requireMembership,
   type AuthEnv,
   type MemberEnv,
 } from "./middlewares/auth.middleware.js";
+import { requireModule } from "./middlewares/module.middleware.js";
 import { tenantMiddleware, type TenantEnv } from "./middlewares/tenant.middleware.js";
 
 // app sin listen() — importable en tests (mismo patrón que app.ts/server.ts en Express)
@@ -55,6 +57,17 @@ tenant.get("/", (c) => {
 tenant.get("/subscriptions", async (c) => {
   const rows = await tenantDb().select(subscriptions);
   return c.json(rows);
+});
+
+// códigos de módulos activos — lo consume el dashboard (useModule) y el tenant-site
+tenant.get("/modules", async (c) => {
+  return c.json({ modules: await getActiveModules(c.get("tenant").id) });
+});
+
+// demo de ruta gateada por módulo: los datos del micrositio solo si está contratado
+tenant.get("/microsite", requireModule("microsite"), (c) => {
+  const t = c.get("tenant");
+  return c.json({ slug: t.slug, name: t.name, brandConfig: t.brandConfig });
 });
 
 // --- rutas tenant-scoped privadas (dashboard): sesión + membership obligatorias ---

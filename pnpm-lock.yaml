@@ -32,6 +32,9 @@ importers:
       '@rep/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@rep/modules':
+        specifier: workspace:*
+        version: link:../../packages/modules
       drizzle-orm:
         specifier: ^0.44.0
         version: 0.44.7(@types/pg@8.20.0)(kysely@0.29.3)(pg@8.22.0)
@@ -210,6 +213,25 @@ importers:
       tsx:
         specifier: ^4.19.0
         version: 4.23.1
+      typescript:
+        specifier: ^5.9.0
+        version: 5.9.3
+
+  packages/modules:
+    dependencies:
+      '@rep/db':
+        specifier: workspace:*
+        version: link:../db
+      drizzle-orm:
+        specifier: ^0.44.0
+        version: 0.44.7(@types/pg@8.20.0)(kysely@0.29.3)(pg@8.22.0)
+      zod:
+        specifier: ^4.0.0
+        version: 4.4.3
+    devDependencies:
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.13.3
       typescript:
         specifier: ^5.9.0
         version: 5.9.3

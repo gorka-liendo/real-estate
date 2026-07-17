@@ -137,7 +137,13 @@ packages/
       (password en `SEED_OWNER_PASSWORD`, idempotente). 20 tests en verde.
 
 ### Fase C — Feature flags y billing
-- [ ] **Paso 6** — `hasModule` / `requireModule` / `useModule` con caché Redis.
+- [x] **Paso 6** — `@rep/modules`: `hasModule`/`getActiveModules`/`invalidateModules`
+      con caché en memoria (TTL 60s, `MODULE_CACHE_TTL_MS`) detrás de la interfaz
+      `FlagCache` → swap a Redis en Fase E vía `setFlagCache()`. API:
+      `requireModule(code)` (403 `module_not_active`), `GET /tenant/modules`,
+      demo gateada `GET /tenant/microsite`. Los webhooks de Stripe (paso 7)
+      deben llamar a `invalidateModules(tenantId)`. 28 tests en verde.
+      (`useModule` del dashboard llega cuando el dashboard se conecte a la API.)
 - [ ] **Paso 7** — Stripe Billing: producto por módulo, webhooks → `subscriptions`.
 
 ### Fase D — White-label y micrositio
