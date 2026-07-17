@@ -340,6 +340,9 @@ importers:
       '@fontsource-variable/hanken-grotesk':
         specifier: ^5.2.0
         version: 5.2.8
+      '@rep/db':
+        specifier: workspace:*
+        version: link:../db
       lucide-react:
         specifier: ^0.544.0
         version: 0.544.0(react@19.2.4)

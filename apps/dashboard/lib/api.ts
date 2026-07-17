@@ -1,3 +1,4 @@
+import type { BrandConfig } from "@rep/ui";
 import { API_URL } from "./config";
 
 // Cliente de la API. Todas las peticiones llevan credentials:'include' para que
@@ -63,6 +64,11 @@ export const api = {
 
   tenantModules: (slug: string) =>
     request<{ modules: string[] }>("/tenant/modules", {
+      headers: { "x-tenant-slug": slug },
+    }),
+
+  tenant: (slug: string) =>
+    request<{ id: string; slug: string; name: string; brandConfig: BrandConfig }>("/tenant", {
       headers: { "x-tenant-slug": slug },
     }),
 

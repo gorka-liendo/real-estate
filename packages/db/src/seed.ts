@@ -3,11 +3,13 @@ import { modules, subscriptions, tenants } from "./schema/index.js";
 
 // Seed idempotente: upsert por slug/email/code — ejecutable N veces sin efectos secundarios.
 async function main() {
-  // --- catálogo de módulos ---
+  // --- catálogo de módulos (secciones funcionales del dashboard) ---
   const moduleCatalog = [
+    { code: "clients", name: "Clientes (CRM)", priceMonthly: 3900 },
+    { code: "properties", name: "Propiedades", priceMonthly: 3900 },
+    { code: "accounting", name: "Contabilidad", priceMonthly: 4900 },
+    { code: "whatsapp_bot", name: "Chatbot WhatsApp", priceMonthly: 7900 },
     { code: "microsite", name: "Micrositio white-label", priceMonthly: 4900 },
-    { code: "ai_descriptions", name: "Descripciones IA multi-idioma", priceMonthly: 2900 },
-    { code: "whatsapp_bot", name: "Chatbot WhatsApp de cualificación", priceMonthly: 7900 },
   ];
 
   const seededModules = [];
@@ -58,24 +60,22 @@ async function main() {
   // (los usuarios owner + memberships los crea el seed de @rep/auth,
   //  que usa el hash de password de Better-Auth)
 
-  // --- martinez con el módulo microsite activo; lopez sin módulos ---
+  // --- martinez con Clientes + Micrositio activos; lopez sin módulos ---
   const martinez = seededTenants.find((t) => t!.slug === "martinez")!;
-  const microsite = seededModules.find((m) => m!.code === "microsite")!;
-  await db
-    .insert(subscriptions)
-    .values({
-      tenantId: martinez.id,
-      moduleId: microsite.id,
-      active: true,
-      activatedAt: new Date(),
-    })
-    .onConflictDoUpdate({
-      target: [subscriptions.tenantId, subscriptions.moduleId],
-      set: { active: true },
-    });
+  const activeForMartinez = ["clients", "microsite"];
+  for (const code of activeForMartinez) {
+    const mod = seededModules.find((m) => m!.code === code)!;
+    await db
+      .insert(subscriptions)
+      .values({ tenantId: martinez.id, moduleId: mod.id, active: true, activatedAt: new Date() })
+      .onConflictDoUpdate({
+        target: [subscriptions.tenantId, subscriptions.moduleId],
+        set: { active: true },
+      });
+  }
 
   console.log(
-    `✅ Seed: ${seededModules.length} módulos, ${seededTenants.length} tenants (martinez con 'microsite' activo)`,
+    `✅ Seed: ${seededModules.length} módulos, ${seededTenants.length} tenants (martinez con Clientes + Micrositio)`,
   );
 }
 

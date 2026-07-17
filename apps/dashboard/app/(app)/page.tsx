@@ -1,47 +1,60 @@
 "use client";
 
-import { Badge, Card } from "@rep/ui";
+import Link from "next/link";
+import { Card } from "@rep/ui";
 import { useAuth } from "@/contexts/auth-context";
 import { useWorkspace } from "@/contexts/workspace-context";
+import { MODULE_SECTIONS } from "@/lib/modules";
 
 export default function HomePage() {
   const { me } = useAuth();
-  const { memberships, selected, activeModules } = useWorkspace();
+  const { selected, activeModules, hasModule } = useWorkspace();
+  const sections = MODULE_SECTIONS.filter((s) => hasModule(s.code));
 
   return (
-    <div style={{ display: "grid", gap: "var(--ui-sp-5)" }}>
-      <h1 className="du-h1">Hola, {me?.user.name}</h1>
+    <div style={{ display: "grid", gap: "var(--ui-sp-6)" }}>
+      <div>
+        <h1 className="du-h1">Hola, {me?.user.name?.split(" ")[0]}</h1>
+        {selected ? (
+          <p className="du-muted" style={{ marginTop: 4 }}>
+            {selected.name}
+          </p>
+        ) : null}
+      </div>
 
-      {memberships.length === 0 ? (
+      {activeModules === null ? (
+        <p className="du-muted">Cargando…</p>
+      ) : sections.length === 0 ? (
         <Card>
-          <p className="du-muted">Todavía no perteneces a ninguna inmobiliaria.</p>
+          <p className="du-muted">
+            Estamos preparando tus herramientas. En breve las verás aquí.
+          </p>
         </Card>
       ) : (
-        <>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <span className="du-h2">{selected?.name}</span>
-            {selected ? <Badge variant="muted">{selected.role}</Badge> : null}
-          </div>
-
-          <Card>
-            <h2 className="du-h3" style={{ marginBottom: "var(--ui-sp-3)" }}>
-              Módulos activos
-            </h2>
-            {activeModules === null ? (
-              <p className="du-muted">Cargando…</p>
-            ) : activeModules.length === 0 ? (
-              <p className="du-muted">Sin módulos contratados. Contáctanos para activarlos.</p>
-            ) : (
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {activeModules.map((code) => (
-                  <Badge key={code} variant="success">
-                    {code}
-                  </Badge>
-                ))}
-              </div>
-            )}
-          </Card>
-        </>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+            gap: "var(--ui-sp-4)",
+          }}
+        >
+          {sections.map((s) => {
+            const Icon = s.icon;
+            return (
+              <Link key={s.href} href={s.href} style={{ textDecoration: "none" }}>
+                <Card className="dash-tile">
+                  <Icon size={20} color="var(--ui-primary)" />
+                  <div className="du-h3" style={{ marginTop: "var(--ui-sp-3)" }}>
+                    {s.label}
+                  </div>
+                  <p className="du-muted" style={{ fontSize: 13, marginTop: 2 }}>
+                    {s.description}
+                  </p>
+                </Card>
+              </Link>
+            );
+          })}
+        </div>
       )}
     </div>
   );

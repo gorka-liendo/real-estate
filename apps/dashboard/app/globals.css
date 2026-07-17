@@ -79,3 +79,13 @@
   max-width: 960px;
   width: 100%;
 }
+.dash-tile {
+  height: 100%;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+.dash-tile:hover {
+  border-color: var(--ui-border-strong);
+  box-shadow: var(--ui-shadow);
+}

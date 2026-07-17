@@ -2,10 +2,11 @@
 export const routes = {
   login: "/login",
   home: "/",
-  microsite: "/microsite",
+  clientes: "/clientes",
+  propiedades: "/propiedades",
+  contabilidad: "/contabilidad",
+  chatbot: "/chatbot",
+  micrositio: "/micrositio",
+  ajustes: "/ajustes",
   admin: "/admin",
 } as const;
-
-// Ítems de navegación del sidebar. `module` gatea el ítem por feature flag;
-// `admin` lo restringe a superadmins de plataforma.
-export type NavKey = "home" | "microsite" | "admin";

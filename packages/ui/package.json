@@ -24,6 +24,7 @@
   "dependencies": {
     "@fontsource-variable/archivo": "^5.2.0",
     "@fontsource-variable/hanken-grotesk": "^5.2.0",
+    "@rep/db": "workspace:*",
     "lucide-react": "^0.544.0"
   },
   "devDependencies": {

@@ -96,6 +96,18 @@ packages/
 - Cada módulo vive aislado (componentes + rutas + jobs + migraciones propias).
   El core solo expone auth, tenant context, DB y colas.
 
+### Dashboard de la inmobiliaria (revisión de concepto — jul 2026)
+- El dashboard es **module-first y white-label TOTAL**. El cliente entra y ve SU
+  marca (logo/colores/tipografía vía `brand_config` → `brandConfigToUiVars` que tiñe
+  los tokens `--ui-*` con guardarraíles de contraste) y SUS herramientas funcionando.
+- **NUNCA** se muestra al cliente el estado técnico "módulo activo/inactivo": si
+  tiene el módulo, aparece su sección en el sidebar; si no, no existe para él.
+  La activación/desactivación y los dominios son cosa **solo del superadmin** (`/admin`).
+- Secciones = módulos (`lib/modules.ts` → `MODULE_SECTIONS`): Clientes, Propiedades,
+  Contabilidad, Chatbot, Micrositio. Config de marca/dominio en **Ajustes**.
+- Guard: `useRequireModule(code)` protege cada sección (redirige a Inicio si no la tiene).
+- Público objetivo: clientes inmobiliarios, no programadores → producto "ya mascado".
+
 ### Design system white-label — 3 capas
 1. **Base "Dwell"** (`packages/ui-tenant`): tokens `--tenant-*` + componentes signature.
    Referencia original: `~/Downloads/dwell-design-system.html`
@@ -242,6 +254,15 @@ packages/
       `PUT /admin/tenants/:slug/modules/:code`; guard cliente + 403 en backend.
       Verificado en navegador: owner ve "Micrositio" (módulo activo) y NO Admin;
       superadmin ve "Admin" y NO Micrositio; toggle persiste en BBDD. 37+4 tests.
-
-> Solo se empieza un módulo funcional cuando los pasos 1-7 están completos.
-> Primer módulo previsto: **micrositio + landing por inmueble**.
+- [x] **Dashboard module-first + white-label total** (revisión de concepto) —
+      dejó de ser vista de estado/fontanería. Sidebar = secciones funcionales del
+      cliente (Clientes, Micrositio, Ajustes…) gateadas por módulo; nunca muestra
+      "activo/inactivo" al cliente. La marca de la inmobiliaria tiñe TODO el
+      dashboard vía `brandConfigToUiVars` (tokens `--ui-*`, guardarraíl de contraste
+      on-primary, fondo oscuro deriva superficie/tinta). `WorkspaceProvider` carga
+      `brandConfig`; `useRequireModule` protege secciones. Catálogo real en el seed
+      (clients/properties/accounting/whatsapp_bot/microsite). 11 tests @rep/ui.
+      Verificado: martinez ve su nombre + azul de marca + Clientes/Micrositio;
+      `/propiedades` (no contratado) rebota a Inicio.
+- [ ] **Módulo Clientes (CRM)** — primer módulo funcional real (modelo Drizzle
+      `clients` tenant-scoped + CRUD API + UI). SIGUIENTE.

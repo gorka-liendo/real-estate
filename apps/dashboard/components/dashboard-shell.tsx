@@ -1,69 +1,71 @@
 "use client";
 
-import {
-  Building2,
-  Globe,
-  LayoutDashboard,
-  LogOut,
-  Shield,
-  type LucideIcon,
-} from "lucide-react";
+import { House, LogOut, Settings, Shield } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
-import { Select } from "@rep/ui";
+import { brandConfigToUiVars, Select } from "@rep/ui";
 import { useAuth } from "@/contexts/auth-context";
 import { useWorkspace } from "@/contexts/workspace-context";
+import { MODULE_SECTIONS } from "@/lib/modules";
 import { routes } from "@/lib/routes";
-
-type NavItem = {
-  label: string;
-  href: string;
-  icon: LucideIcon;
-  module?: string; // gatea por feature flag del tenant
-  adminOnly?: boolean; // solo superadmin de plataforma
-};
-
-const NAV: NavItem[] = [
-  { label: "Inicio", href: routes.home, icon: LayoutDashboard },
-  { label: "Micrositio", href: routes.microsite, icon: Globe, module: "microsite" },
-  { label: "Administración", href: routes.admin, icon: Shield, adminOnly: true },
-];
 
 export function DashboardShell({ children }: { children: ReactNode }) {
   const { me, logout } = useAuth();
-  const { memberships, selected, selectSlug, hasModule, isPlatformAdmin } = useWorkspace();
+  const { memberships, selected, selectSlug, brandConfig, hasModule, isPlatformAdmin } =
+    useWorkspace();
   const pathname = usePathname();
 
-  const visible = NAV.filter((item) => {
-    if (item.adminOnly) return isPlatformAdmin;
-    if (item.module) return hasModule(item.module);
-    return true;
-  });
+  // white-label total: la marca de la inmobiliaria tiñe todo el dashboard
+  const brandVars = brandConfigToUiVars(brandConfig);
+  const logoUrl = brandConfig?.logoUrl;
+
+  const isActive = (href: string) =>
+    href === routes.home ? pathname === href : pathname.startsWith(href);
+
+  const sections = MODULE_SECTIONS.filter((s) => hasModule(s.code));
 
   return (
-    <div className="dash-shell">
+    <div className="dash-shell" style={brandVars}>
       <aside className="dash-sidebar">
-        <div className="dash-brand">Real Estate</div>
+        <div className="dash-brand">
+          {logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={logoUrl} alt={selected?.name ?? ""} style={{ maxHeight: 28 }} />
+          ) : (
+            (selected?.name ?? "Real Estate")
+          )}
+        </div>
+
         <nav className="dash-nav">
-          {visible.map((item) => {
-            const active = item.href === routes.home
-              ? pathname === item.href
-              : pathname.startsWith(item.href);
-            const Icon = item.icon;
+          <Link href={routes.home} className="dash-nav__item" data-active={isActive(routes.home)}>
+            <House size={16} />
+            Inicio
+          </Link>
+
+          {sections.map((s) => {
+            const Icon = s.icon;
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="dash-nav__item"
-                data-active={active}
-              >
+              <Link key={s.href} href={s.href} className="dash-nav__item" data-active={isActive(s.href)}>
                 <Icon size={16} />
-                {item.label}
+                {s.label}
               </Link>
             );
           })}
+
+          <Link href={routes.ajustes} className="dash-nav__item" data-active={isActive(routes.ajustes)}>
+            <Settings size={16} />
+            Ajustes
+          </Link>
+
+          {isPlatformAdmin ? (
+            <Link href={routes.admin} className="dash-nav__item" data-active={isActive(routes.admin)}>
+              <Shield size={16} />
+              Administración
+            </Link>
+          ) : null}
         </nav>
+
         <div className="dash-sidebar__foot">
           <div className="dash-user">{me?.user.email}</div>
           <button className="du-btn du-btn--ghost du-btn--sm" onClick={() => void logout()}>
@@ -75,25 +77,20 @@ export function DashboardShell({ children }: { children: ReactNode }) {
 
       <div className="dash-main">
         <header className="dash-header">
-          <span className="du-muted" style={{ fontSize: 13 }}>
-            Panel de gestión
-          </span>
-          {memberships.length > 0 ? (
-            <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <Building2 size={15} color="var(--ui-muted)" />
-              <Select
-                value={selected?.slug ?? ""}
-                onChange={(e) => selectSlug(e.target.value)}
-                style={{ width: "auto", minWidth: 200 }}
-                aria-label="Inmobiliaria"
-              >
-                {memberships.map((m) => (
-                  <option key={m.slug} value={m.slug}>
-                    {m.name}
-                  </option>
-                ))}
-              </Select>
-            </label>
+          <span />
+          {memberships.length > 1 ? (
+            <Select
+              value={selected?.slug ?? ""}
+              onChange={(e) => selectSlug(e.target.value)}
+              style={{ width: "auto", minWidth: 200 }}
+              aria-label="Inmobiliaria"
+            >
+              {memberships.map((m) => (
+                <option key={m.slug} value={m.slug}>
+                  {m.name}
+                </option>
+              ))}
+            </Select>
           ) : null}
         </header>
         <div className="dash-content">{children}</div>
