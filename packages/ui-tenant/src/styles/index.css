@@ -1,0 +1,5 @@
+/* Punto de entrada de estilos del design system white-label.
+   El host (tenant-site) importa: import "@rep/ui-tenant/styles.css"; */
+@import "./fonts.css";
+@import "./tokens.css";
+@import "./dwell.css";

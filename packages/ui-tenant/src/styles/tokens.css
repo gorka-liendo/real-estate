@@ -1,0 +1,36 @@
+/*
+ * Design system white-label — Capa 1 (base "Dwell").
+ * Estos son los DEFAULTS. brand_config del tenant sobreescribe las --tenant-*
+ * en runtime (Capa 2) inyectando un style con esas mismas variables.
+ * Referencia original: ~/Downloads/dwell-design-system.html
+ */
+:root {
+  /* --- color: sin acento, la fotografía aporta el color --- */
+  --tenant-bg: #fbfbfb; /* off-white */
+  --tenant-text: #000000; /* black */
+  --tenant-muted: #878787; /* gray */
+  --tenant-primary: #000000; /* botones, énfasis */
+  --tenant-secondary: #1a1a1a;
+  --tenant-accent: #000000;
+  --tenant-on-primary: #fbfbfb; /* texto sobre primary */
+  --tenant-border: rgba(0, 0, 0, 0.08);
+
+  /* --- tipografía --- */
+  --tenant-font-display: "Archivo Variable", "Archivo", sans-serif; /* stand-in de Acid Grotesk */
+  --tenant-font-body: "Hanken Grotesk Variable", "Hanken Grotesk", sans-serif; /* stand-in de Neue Montreal */
+
+  /* --- radios: fotos/tarjetas rectas; solo el botón es píldora --- */
+  --tenant-radius: 0px;
+  --tenant-radius-pill: 999px;
+
+  /* --- espaciado (escala Dwell) --- */
+  --tenant-sp-1: 4px;
+  --tenant-sp-2: 8px;
+  --tenant-sp-3: 16px;
+  --tenant-sp-4: 24px;
+  --tenant-sp-5: 32px;
+  --tenant-sp-6: 48px;
+  --tenant-sp-7: 64px;
+  --tenant-sp-8: 96px;
+  --tenant-sp-9: 140px;
+}

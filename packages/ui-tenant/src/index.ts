@@ -1,5 +1,12 @@
-// Design system white-label del micrositio.
-// Capa 1: base "Dwell" (tokens --tenant-* + 8 componentes signature) — Fase D.
-// Capa 2: brand_config por tenant sobreescribe tokens en runtime.
-// Capa 3: themes dedicados que EXTIENDEN la base, nunca la copian.
-export {};
+// Design system white-label del micrositio (base "Dwell").
+// Estilos: import "@rep/ui-tenant/styles.css" en el host.
+export * from "./brand.js";
+
+export { WordmarkBleed } from "./components/wordmark-bleed.js";
+export { AboutColumns, type AboutColumn } from "./components/about-columns.js";
+export { BigNumber } from "./components/big-number.js";
+export { PhotoPair, type Photo } from "./components/photo-pair.js";
+export { PillButton, PillLink } from "./components/pill-button.js";
+export { Steps, type Step } from "./components/steps.js";
+export { MobileMenu, type MenuItem } from "./components/mobile-menu.js";
+export { Footer, type FooterColumn, type FooterLink } from "./components/footer.js";

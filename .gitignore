@@ -16,3 +16,6 @@ out/
 .DS_Store
 *.log
 coverage/
+
+# preview generada de @rep/ui-tenant
+packages/ui-tenant/preview.html

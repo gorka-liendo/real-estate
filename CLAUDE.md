@@ -155,7 +155,16 @@ packages/
       admin activa módulo → ruta gateada del tenant pasa de 403 a 200. 37 tests en verde.
 
 ### Fase D — White-label y micrositio
-- [ ] **Paso 8** — `@rep/ui-tenant`: tokens Dwell + 8 componentes signature.
+- [x] **Paso 8** — `@rep/ui-tenant`: design system white-label base "Dwell".
+      Tokens `--tenant-*` (defaults Dwell) en `styles/tokens.css`; clases `rt-*`
+      en `dwell.css`; fuentes self-hosted (Archivo + Hanken Grotesk vía
+      `@fontsource-variable`, sin CDN). `brand.ts`: `brandConfigToCssVars` /
+      `brandConfigToStyleString` (Capa 2 — override en runtime). 8 componentes
+      signature React (WordmarkBleed, AboutColumns, BigNumber, PhotoPair,
+      PillButton/PillLink, Steps, MobileMenu, Footer). Estilos exportados como
+      `@rep/ui-tenant/styles.css`. 14 tests (SSR + white-label). Preview visual:
+      `scripts/build-preview.tsx` → `preview.html` (gitignored). Se cablea al
+      tenant-site en el paso 9.
 - [ ] **Paso 9** — tenant-site: resolución por dominio (middleware Next) + ISR.
 
 ### Fase E — Infra de producción
