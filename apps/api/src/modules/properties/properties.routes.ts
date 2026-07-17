@@ -1,4 +1,6 @@
+import { randomUUID } from "node:crypto";
 import { Hono } from "hono";
+import { getStorage, tenantKey } from "@rep/storage";
 import {
   authMiddleware,
   requireMembership,
@@ -7,6 +9,14 @@ import {
 import { requireModule } from "../../middlewares/module.middleware.js";
 import { createPropertySchema, updatePropertySchema } from "./properties.schema.js";
 import * as service from "./properties.service.js";
+
+const ALLOWED = new Set(["image/jpeg", "image/png", "image/webp", "image/avif"]);
+const EXT: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/avif": "avif",
+};
 
 // Rutas del módulo Propiedades, bajo /tenant/properties.
 // Guardas: tenantMiddleware (app.ts) → auth → membership → módulo 'properties'.
@@ -38,4 +48,33 @@ properties.delete("/:id", async (c) => {
   const ok = await service.deleteProperty(c.req.param("id"));
   if (!ok) return c.json({ error: "not_found" }, 404);
   return c.body(null, 204);
+});
+
+// --- fotos ---
+properties.post("/:id/photos", async (c) => {
+  const body = await c.req.parseBody();
+  const file = body["file"];
+  if (!(file instanceof File)) return c.json({ error: "no_file" }, 400);
+  if (!ALLOWED.has(file.type)) return c.json({ error: "invalid_type" }, 400);
+  if (file.size > 8 * 1024 * 1024) return c.json({ error: "too_large" }, 400);
+
+  const tenantId = c.get("tenant").id;
+  const id = c.req.param("id");
+  const key = tenantKey(tenantId, "properties", id, `${randomUUID()}.${EXT[file.type]}`);
+  const { url } = await getStorage().put(
+    key,
+    Buffer.from(await file.arrayBuffer()),
+    file.type,
+  );
+  const updated = await service.addPhoto(id, url);
+  if (!updated) return c.json({ error: "not_found" }, 404);
+  return c.json({ property: updated }, 201);
+});
+
+properties.delete("/:id/photos", async (c) => {
+  const url = c.req.query("url");
+  if (!url) return c.json({ error: "missing_url" }, 400);
+  const updated = await service.removePhoto(c.req.param("id"), url);
+  if (!updated) return c.json({ error: "not_found" }, 404);
+  return c.json({ property: updated });
 });

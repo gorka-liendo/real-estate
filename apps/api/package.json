@@ -16,6 +16,7 @@
     "@rep/config": "workspace:*",
     "@rep/db": "workspace:*",
     "@rep/modules": "workspace:*",
+    "@rep/storage": "workspace:*",
     "drizzle-orm": "^0.44.0",
     "hono": "^4.7.0",
     "zod": "^4.4.3"

@@ -35,6 +35,9 @@ importers:
       '@rep/modules':
         specifier: workspace:*
         version: link:../../packages/modules
+      '@rep/storage':
+        specifier: workspace:*
+        version: link:../../packages/storage
       drizzle-orm:
         specifier: ^0.44.0
         version: 0.44.7(@types/pg@8.20.0)(kysely@0.29.3)(pg@8.22.0)

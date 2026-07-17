@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { properties, tenantDb, type Property } from "@rep/db";
 import type { CreatePropertyInput, UpdatePropertyInput } from "./properties.schema.js";
 
@@ -37,4 +37,38 @@ export async function deleteProperty(id: string): Promise<boolean> {
     .delete(properties, eq(properties.id, id))
     .returning()) as Property[];
   return rows.length > 0;
+}
+
+async function getProperty(id: string): Promise<Property | null> {
+  const [row] = await tenantDb().select(properties, eq(properties.id, id));
+  return row ?? null;
+}
+
+export async function addPhoto(id: string, url: string): Promise<Property | null> {
+  const p = await getProperty(id);
+  if (!p) return null;
+  const photos = [...(p.photos ?? []), url];
+  const rows = (await tenantDb()
+    .update(properties, { photos }, eq(properties.id, id))
+    .returning()) as Property[];
+  return rows[0] ?? null;
+}
+
+export async function removePhoto(id: string, url: string): Promise<Property | null> {
+  const p = await getProperty(id);
+  if (!p) return null;
+  const photos = (p.photos ?? []).filter((u) => u !== url);
+  const rows = (await tenantDb()
+    .update(properties, { photos }, eq(properties.id, id))
+    .returning()) as Property[];
+  return rows[0] ?? null;
+}
+
+/** Propiedad publicada por id — para la ficha pública del micrositio. */
+export async function getPublishedProperty(id: string): Promise<Property | null> {
+  const [row] = await tenantDb().select(
+    properties,
+    and(eq(properties.id, id), eq(properties.status, "published")),
+  );
+  return row ?? null;
 }

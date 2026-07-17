@@ -25,7 +25,14 @@ function toListing(p: PublicProperty): Listing {
     p.price == null
       ? "Consultar"
       : `${new Intl.NumberFormat("es-ES").format(p.price)} €${p.operation === "rent" ? "/mes" : ""}`;
-  return { id: p.id, title: p.title, meta, price };
+  return {
+    id: p.id,
+    title: p.title,
+    meta,
+    price,
+    imageUrl: p.photos[0],
+    href: `/propiedad/${p.id}`,
+  };
 }
 
 export const revalidate = 60; // ISR

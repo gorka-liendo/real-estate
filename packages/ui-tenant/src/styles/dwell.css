@@ -121,6 +121,8 @@
   font-size: 18px;
   letter-spacing: -0.01em;
   text-transform: uppercase;
+  color: var(--tenant-text);
+  text-decoration: none;
 }
 .rt-topbar__nav {
   display: flex;
@@ -185,6 +187,72 @@
   .rt-section-title {
     font-size: 40px;
   }
+}
+
+/* ===== ficha de propiedad (galería + detalle) ===== */
+.rt-detail__back {
+  display: inline-block;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--tenant-muted);
+  text-decoration: none;
+  margin-bottom: var(--tenant-sp-4);
+}
+.rt-detail__back:hover {
+  color: var(--tenant-text);
+}
+.rt-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--tenant-sp-3);
+  margin-bottom: var(--tenant-sp-6);
+}
+.rt-gallery__img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: var(--tenant-radius);
+  background: linear-gradient(160deg, #d8d5d0, #bdb9b2);
+  display: block;
+}
+.rt-gallery__img--main {
+  grid-column: 1 / -1;
+  aspect-ratio: 16 / 9;
+}
+.rt-detail__price {
+  font-family: var(--tenant-font-display);
+  font-weight: 800;
+  font-size: 32px;
+  margin: var(--tenant-sp-3) 0 var(--tenant-sp-2);
+}
+.rt-detail__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tenant-sp-5);
+  padding: var(--tenant-sp-4) 0;
+  border-top: 1px solid var(--tenant-border);
+  border-bottom: 1px solid var(--tenant-border);
+  margin: var(--tenant-sp-4) 0;
+}
+.rt-detail__fact-k {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--tenant-muted);
+}
+.rt-detail__fact-v {
+  font-family: var(--tenant-font-display);
+  font-weight: 700;
+  font-size: 20px;
+  margin-top: 2px;
+}
+.rt-detail__desc {
+  color: var(--tenant-text);
+  font-size: 16px;
+  line-height: 1.7;
+  max-width: 65ch;
+  white-space: pre-line;
 }
 
 /* ===== grid de propiedades (listado del micrositio) — todo con tokens Dwell ===== */

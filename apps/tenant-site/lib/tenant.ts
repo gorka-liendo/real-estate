@@ -40,11 +40,16 @@ export async function fetchTenant(slug: string): Promise<TenantData | null> {
 export type PublicProperty = {
   id: string;
   title: string;
+  description: string | null;
   operation: "sale" | "rent";
   kind: "flat" | "house" | "commercial" | "land" | "garage";
   price: number | null;
+  bedrooms: number | null;
+  bathrooms: number | null;
   areaM2: number | null;
   city: string | null;
+  address: string | null;
+  photos: string[];
 };
 
 /** Propiedades publicadas del tenant (para el micrositio). Vacío si no aplica. */
@@ -55,4 +60,17 @@ export async function fetchListings(slug: string): Promise<PublicProperty[]> {
   });
   if (!res.ok) return [];
   return ((await res.json()) as { properties: PublicProperty[] }).properties;
+}
+
+/** Ficha de una propiedad publicada por id. */
+export async function fetchProperty(
+  slug: string,
+  id: string,
+): Promise<PublicProperty | null> {
+  const res = await fetch(`${tenantSiteEnv.NEXT_PUBLIC_API_URL}/tenant/listings/${id}`, {
+    headers: { "x-tenant-slug": slug },
+    next: { revalidate: REVALIDATE_SECONDS, tags: [`listings:${slug}`] },
+  });
+  if (!res.ok) return null;
+  return ((await res.json()) as { property: PublicProperty }).property;
 }

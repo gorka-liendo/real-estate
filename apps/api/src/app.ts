@@ -1,3 +1,4 @@
+import { serveStatic } from "@hono/node-server/serve-static";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
@@ -16,7 +17,10 @@ import { tenantMiddleware, type TenantEnv } from "./middlewares/tenant.middlewar
 import { admin } from "./modules/admin/admin.routes.js";
 import { clients } from "./modules/clients/clients.routes.js";
 import { properties } from "./modules/properties/properties.routes.js";
-import { listPublishedProperties } from "./modules/properties/properties.service.js";
+import {
+  getPublishedProperty,
+  listPublishedProperties,
+} from "./modules/properties/properties.service.js";
 import { site } from "./modules/site/site.routes.js";
 
 // app sin listen() — importable en tests (mismo patrón que app.ts/server.ts en Express)
@@ -28,6 +32,12 @@ app.use("*", logger());
 app.use("*", cors({ origin: authEnv.TRUSTED_ORIGINS, credentials: true }));
 
 app.get("/health", (c) => c.json({ status: "ok" }));
+
+// Sirve las imágenes del storage local (dev). En prod las sirve R2/CDN.
+app.use(
+  "/uploads/*",
+  serveStatic({ root: "./.uploads", rewriteRequestPath: (p) => p.replace(/^\/uploads/, "") }),
+);
 
 // --- auth: Better-Auth gestiona /api/auth/* (sign-up, sign-in, sign-out, session…) ---
 app.on(["GET", "POST"], "/api/auth/*", (c) => auth.handler(c.req.raw));
@@ -90,6 +100,13 @@ tenant.get("/microsite", requireModule("microsite"), (c) => {
 // PÚBLICO: propiedades publicadas para el micrositio (gateado por 'microsite').
 tenant.get("/listings", requireModule("microsite"), async (c) => {
   return c.json({ properties: await listPublishedProperties() });
+});
+
+// PÚBLICO: ficha de una propiedad publicada por id.
+tenant.get("/listings/:id", requireModule("microsite"), async (c) => {
+  const property = await getPublishedProperty(c.req.param("id"));
+  if (!property) return c.json({ error: "not_found" }, 404);
+  return c.json({ property });
 });
 
 // --- rutas tenant-scoped privadas (dashboard): sesión + membership obligatorias ---

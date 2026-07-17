@@ -83,6 +83,7 @@ export type Property = {
   areaM2: number | null;
   city: string | null;
   address: string | null;
+  photos: string[];
   createdAt: string;
   updatedAt: string;
 };
@@ -203,6 +204,29 @@ export const api = {
         method: "DELETE",
         headers: { "x-tenant-slug": slug },
       }),
+
+    // subida multipart: sin content-type manual (el navegador pone el boundary)
+    uploadPhoto: async (slug: string, id: string, file: File) => {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch(`${API_URL}/tenant/properties/${id}/photos`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "x-tenant-slug": slug },
+        body: fd,
+      });
+      if (!res.ok) {
+        const b = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new ApiError(res.status, b.error ?? `HTTP ${res.status}`);
+      }
+      return (await res.json()) as { property: Property };
+    },
+
+    removePhoto: (slug: string, id: string, url: string) =>
+      request<{ property: Property }>(
+        `/tenant/properties/${id}/photos?url=${encodeURIComponent(url)}`,
+        { method: "DELETE", headers: { "x-tenant-slug": slug } },
+      ),
   },
 
   // --- superadmin ---

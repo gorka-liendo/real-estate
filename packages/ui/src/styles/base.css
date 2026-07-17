@@ -255,6 +255,12 @@
   border-bottom: 1px solid var(--ui-border);
   vertical-align: middle;
 }
+.du-table tbody tr:hover {
+  background: var(--ui-hover);
+}
+.du-table tbody tr[data-active="true"] {
+  background: var(--ui-active);
+}
 .du-table tr:last-child td {
   border-bottom: none;
 }

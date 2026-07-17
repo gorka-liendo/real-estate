@@ -1,4 +1,4 @@
-import { integer, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { integer, jsonb, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { tenants } from "./tenants.js";
 
 export const propertyOperation = pgEnum("property_operation", ["sale", "rent"]);
@@ -33,6 +33,7 @@ export const properties = pgTable("properties", {
   areaM2: integer("area_m2"),
   city: text("city"),
   address: text("address"),
+  photos: jsonb("photos").$type<string[]>().notNull().default([]), // URLs
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()

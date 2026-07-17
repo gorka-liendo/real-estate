@@ -1,7 +1,7 @@
 "use client";
 
-import { Plus, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { ImageIcon, ImagePlus, Plus, Trash2, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Badge, Button, Card, Input, Label, Select } from "@rep/ui";
 import { useRequireModule, useWorkspace } from "@/contexts/workspace-context";
 import {
@@ -41,6 +41,7 @@ function PropiedadesInner({ slug }: { slug: string }) {
   const [items, setItems] = useState<Property[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -54,10 +55,17 @@ function PropiedadesInner({ slug }: { slug: string }) {
     void load();
   }, [load]);
 
+  function updateItem(p: Property) {
+    setItems((prev) => (prev ?? []).map((x) => (x.id === p.id ? p : x)));
+  }
+
   async function remove(id: string) {
     await api.properties.remove(slug, id);
     setItems((prev) => (prev ?? []).filter((p) => p.id !== id));
+    if (selectedId === id) setSelectedId(null);
   }
+
+  const selected = (items ?? []).find((p) => p.id === selectedId) ?? null;
 
   return (
     <div style={{ display: "grid", gap: "var(--ui-sp-5)" }}>
@@ -77,8 +85,18 @@ function PropiedadesInner({ slug }: { slug: string }) {
           onCreated={(p) => {
             setItems((prev) => [p, ...(prev ?? [])]);
             setShowForm(false);
+            setSelectedId(p.id);
           }}
           onCancel={() => setShowForm(false)}
+        />
+      ) : null}
+
+      {selected ? (
+        <PhotoManager
+          slug={slug}
+          property={selected}
+          onChange={updateItem}
+          onClose={() => setSelectedId(null)}
         />
       ) : null}
 
@@ -96,6 +114,7 @@ function PropiedadesInner({ slug }: { slug: string }) {
             <table className="du-table">
               <thead>
                 <tr>
+                  <th style={{ width: 56 }}>Foto</th>
                   <th>Título</th>
                   <th>Tipo</th>
                   <th>Operación</th>
@@ -106,7 +125,15 @@ function PropiedadesInner({ slug }: { slug: string }) {
               </thead>
               <tbody>
                 {items.map((p) => (
-                  <tr key={p.id}>
+                  <tr
+                    key={p.id}
+                    data-active={p.id === selectedId}
+                    onClick={() => setSelectedId(p.id === selectedId ? null : p.id)}
+                    style={{ cursor: "pointer" }}
+                  >
+                    <td>
+                      <Thumb url={p.photos[0]} count={p.photos.length} />
+                    </td>
                     <td style={{ fontWeight: 500 }}>
                       {p.title}
                       {p.city ? <span className="du-muted"> · {p.city}</span> : null}
@@ -121,7 +148,10 @@ function PropiedadesInner({ slug }: { slug: string }) {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => void remove(p.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void remove(p.id);
+                        }}
                         aria-label={`Eliminar ${p.title}`}
                       >
                         <Trash2 size={15} />
@@ -135,6 +165,175 @@ function PropiedadesInner({ slug }: { slug: string }) {
         )}
       </Card>
     </div>
+  );
+}
+
+function Thumb({ url, count }: { url?: string; count: number }) {
+  return (
+    <div
+      style={{
+        position: "relative",
+        width: 40,
+        height: 40,
+        borderRadius: "var(--ui-radius-sm)",
+        overflow: "hidden",
+        background: "var(--ui-hover)",
+        display: "grid",
+        placeItems: "center",
+      }}
+    >
+      {url ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+      ) : (
+        <ImageIcon size={16} color="var(--ui-muted)" />
+      )}
+      {count > 1 ? (
+        <span
+          style={{
+            position: "absolute",
+            bottom: 0,
+            right: 0,
+            fontSize: 10,
+            fontWeight: 600,
+            background: "var(--ui-primary)",
+            color: "var(--ui-on-primary)",
+            padding: "0 4px",
+          }}
+        >
+          {count}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+function PhotoManager({
+  slug,
+  property,
+  onChange,
+  onClose,
+}: {
+  slug: string;
+  property: Property;
+  onChange: (p: Property) => void;
+  onClose: () => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function onFiles(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    setBusy(true);
+    setError(null);
+    try {
+      let latest = property;
+      for (const file of Array.from(files)) {
+        latest = (await api.properties.uploadPhoto(slug, property.id, file)).property;
+      }
+      onChange(latest);
+    } catch {
+      setError("No se pudo subir la foto (formato jpg/png/webp, máx 8 MB).");
+    } finally {
+      setBusy(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  }
+
+  async function removePhoto(url: string) {
+    const { property: updated } = await api.properties.removePhoto(slug, property.id, url);
+    onChange(updated);
+  }
+
+  return (
+    <Card>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <h2 className="du-h3">Fotos · {property.title}</h2>
+        <Button variant="ghost" size="sm" onClick={onClose} aria-label="Cerrar">
+          <X size={15} />
+        </Button>
+      </div>
+
+      {error ? (
+        <p className="du-alert" style={{ marginTop: "var(--ui-sp-2)" }}>
+          {error}
+        </p>
+      ) : null}
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))",
+          gap: "var(--ui-sp-3)",
+          marginTop: "var(--ui-sp-4)",
+        }}
+      >
+        {property.photos.map((url) => (
+          <div
+            key={url}
+            style={{
+              position: "relative",
+              aspectRatio: "4 / 3",
+              borderRadius: "var(--ui-radius)",
+              overflow: "hidden",
+              background: "var(--ui-hover)",
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            <button
+              onClick={() => void removePhoto(url)}
+              aria-label="Eliminar foto"
+              style={{
+                position: "absolute",
+                top: 6,
+                right: 6,
+                background: "rgba(0,0,0,0.6)",
+                color: "#fff",
+                border: "none",
+                borderRadius: 999,
+                width: 24,
+                height: 24,
+                cursor: "pointer",
+                display: "grid",
+                placeItems: "center",
+              }}
+            >
+              <Trash2 size={13} />
+            </button>
+          </div>
+        ))}
+
+        <button
+          onClick={() => inputRef.current?.click()}
+          disabled={busy}
+          style={{
+            aspectRatio: "4 / 3",
+            border: "1px dashed var(--ui-border-strong)",
+            borderRadius: "var(--ui-radius)",
+            background: "transparent",
+            color: "var(--ui-muted)",
+            cursor: "pointer",
+            display: "grid",
+            placeItems: "center",
+            gap: 6,
+          }}
+        >
+          <ImagePlus size={20} />
+          <span style={{ fontSize: 12 }}>{busy ? "Subiendo…" : "Añadir fotos"}</span>
+        </button>
+      </div>
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/avif"
+        multiple
+        hidden
+        onChange={(e) => void onFiles(e.target.files)}
+      />
+    </Card>
   );
 }
 

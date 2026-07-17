@@ -1,0 +1,1 @@
+ALTER TABLE "properties" ADD COLUMN "photos" jsonb DEFAULT '[]'::jsonb NOT NULL;

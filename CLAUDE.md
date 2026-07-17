@@ -324,7 +324,15 @@ packages/
       Sobre, Contacto (email/teléfono/redes dinámicas) con `@rep/ui` (+ nuevo
       `Textarea`). Guarda vía PATCH → BBDD → micrositio en ≤60s (ISR). Cierra el
       modelo híbrido. Verificado: editar+guardar persiste en BBDD.
-- [ ] **Landing por inmueble** (`/s/[tenant]/propiedad/[id]`) + pulido (hero con
-      imagen, ficha con galería, menú móvil, plantillas editorial/minimal/bold).
+- [x] **Fotos de propiedades + ficha por inmueble** — `@rep/storage` cableado:
+      `POST/DELETE /tenant/properties/:id/photos` (multipart, valida tipo/tamaño),
+      `properties.photos` jsonb, `app.use("/uploads/*", serveStatic)` (local en dev,
+      R2 en prod). Dashboard: gestor de fotos por propiedad (subir/borrar/miniaturas).
+      Público: `GET /tenant/listings/:id` + ficha `/s/[tenant]/propiedad/[id]` con
+      galería (clases `rt-gallery`/`rt-detail*` 100% tokens Dwell); la tarjeta del
+      grid usa la 1ª foto y enlaza a la ficha. Verificado E2E: subir foto → BBDD →
+      servida por HTTP → grid + ficha. 49 tests.
+- [ ] **Pulido restante**: hero con imagen, menú móvil, plantillas
+      editorial/minimal/bold, edición de marca (colores/logo) en Ajustes.
 - [ ] **Pendiente retomar**: theming/fuentes por inmobiliaria (ver gotcha de
       next/font arriba) y edición de marca en Ajustes.
