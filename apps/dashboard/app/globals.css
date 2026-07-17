@@ -16,8 +16,9 @@
 .dash-brand {
   font-family: var(--ui-font-display);
   font-weight: 800;
-  font-size: 16px;
-  letter-spacing: -0.02em;
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
   padding: 0 var(--ui-sp-3);
   margin-bottom: var(--ui-sp-6);
 }

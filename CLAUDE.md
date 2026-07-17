@@ -44,6 +44,12 @@ sin reload) para desarrollar. Si algo "se cae" o hay que "tirar todo": suele ser
 → `pnpm dev:clean` y volver a `pnpm dev`. Los hooks `predev`/`predev:up` ya limpian
 puertos automáticamente antes de arrancar.
 
+**Gotcha de CSS obsoleto**: el HMR de CSS de Next dev a veces se atasca y sigue
+sirviendo estilos VIEJOS aunque el archivo en disco esté bien (se ve el cambio en el
+código pero no en el navegador). Ante cualquier duda de "no se aplica mi cambio de
+CSS/tokens", usar **`pnpm dev:fresh`** (limpia puertos + borra `apps/*/.next` +
+levanta). Verificar cambios de estilo SIEMPRE con la CSS fresca, no fiarse del HMR.
+
 ---
 
 ## Arquitectura

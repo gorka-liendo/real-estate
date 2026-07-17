@@ -11,6 +11,7 @@
     "predev:up": "bash scripts/dev-clean.sh",
     "dev:up": "docker compose up -d && turbo dev --concurrency=20",
     "dev:clean": "bash scripts/dev-clean.sh",
+    "dev:fresh": "bash scripts/dev-clean.sh && rm -rf apps/*/.next && docker compose up -d && turbo dev --concurrency=20",
     "infra:up": "docker compose up -d",
     "infra:down": "docker compose down",
     "build": "turbo build",
