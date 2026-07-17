@@ -33,6 +33,9 @@ async function main() {
       // Design system DWELL: off-white / gris / negro, sin acento, esquinas rectas,
       // botones en píldora. Fuentes = defaults (Archivo + Hanken, los stand-in Dwell).
       brandConfig: {
+        // theme = design system del micrositio (themes/dwell.css). El dashboard
+        // aún se tiñe con estos tokens (brandConfigToUiVars); el micrositio con el tema.
+        theme: "dwell",
         background: "#FBFBFB",
         textPrimary: "#000000",
         textSecondary: "#878787",

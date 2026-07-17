@@ -1,0 +1,21 @@
+/*
+ * Tema COSTA — ejemplo de diseño a medida distinto de Dwell: fondo claro y frío,
+ * azul profundo de acento, esquinas redondeadas y botones suaves (no píldora).
+ * Demuestra el formato intercambiable: mismo contrato, valores distintos.
+ */
+[data-theme="costa"] {
+  --tenant-bg: #f6f8fb;
+  --tenant-text: #0f2233;
+  --tenant-muted: #5b7285;
+  --tenant-primary: #14507a;
+  --tenant-secondary: #0f2233;
+  --tenant-accent: #14507a;
+  --tenant-on-primary: #ffffff;
+  --tenant-border: rgba(15, 34, 51, 0.12);
+
+  --tenant-font-display: var(--font-display), "Archivo Variable", sans-serif;
+  --tenant-font-body: var(--font-body), "Hanken Grotesk Variable", sans-serif;
+
+  --tenant-radius: 14px; /* tarjetas/imágenes redondeadas */
+  --tenant-radius-pill: 14px; /* botones suaves */
+}

@@ -1,0 +1,31 @@
+/*
+ * PLANTILLA de tema — copia este archivo a themes/<inmobiliaria>.css, cambia el
+ * id del selector y rellena los valores. Ese es el "formato común": todo tema es
+ * este bloque de tokens bajo [data-theme="<id>"]. Opcionalmente puedes sobreescribir
+ * clases rt-* concretas (scoped al tema) para diseños a medida.
+ *
+ * Contrato: define TODAS estas variables para no depender de los defaults.
+ */
+[data-theme="_template"] {
+  /* color */
+  --tenant-bg: #ffffff;
+  --tenant-text: #111111;
+  --tenant-muted: #6b7280;
+  --tenant-primary: #111111;
+  --tenant-secondary: #333333;
+  --tenant-accent: #111111;
+  --tenant-on-primary: #ffffff;
+  --tenant-border: rgba(0, 0, 0, 0.1);
+
+  /* tipografía (usa las familias cargadas por la app, o define las tuyas) */
+  --tenant-font-display: var(--font-display), "Archivo Variable", sans-serif;
+  --tenant-font-body: var(--font-body), "Hanken Grotesk Variable", sans-serif;
+
+  /* radios */
+  --tenant-radius: 8px;
+  --tenant-radius-pill: 8px;
+}
+
+/* Overrides a medida (opcional), SIEMPRE scoped al tema:
+[data-theme="_template"] .rt-hero__title { text-transform: uppercase; }
+*/

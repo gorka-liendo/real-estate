@@ -348,8 +348,18 @@ packages/
       `POST/DELETE /logo` (owner, sube logo a `@rep/storage`). Ajustes: subir/quitar
       logo (se ve al instante en el sidebar) + preview read-only "gestionado por
       nosotros". Se quitaron los selectores de color/radio del cliente.
-- [ ] **Editor de design system en el superadmin** — donde la plataforma entrega
-      el `brand_config` personalizado por inmobiliaria (colores/radios/tipografía).
+- [x] **Sistema de temas del micrositio (motor + temas CSS intercambiables)** —
+      `@rep/ui-tenant` refactorizado: `base.css` (MOTOR, componentes rt-* con solo
+      variables) + `tokens.css` (:root, contrato neutro) + `themes/<id>.css` (cada
+      tema un bloque scoped `[data-theme="<id>"]`, mismo formato; `_template.css` =
+      plantilla). El micrositio pone `data-theme={brandConfig.theme ?? "dwell"}`.
+      Intercambiar diseño = cambiar `brand_config.theme` (un archivo = un diseño a
+      medida). Temas: `dwell` (default), `costa` (ejemplo). El micrositio ya no
+      inyecta brandConfigToCssVars (el tema define todo). Verificado: dwell→costa
+      transforma la web entera. Añadir tema a medida: copiar `_template.css`,
+      rellenar, registrar `@import` en `index.css`, asignar `theme` al tenant.
+- [ ] **Llevar el sistema de temas al dashboard** (@rep/ui, --ui-*) y **editor de
+      temas/design system en el superadmin** (asignar/gestionar el tema por tenant).
 - [ ] **Pulido restante**: hero con imagen, menú móvil, plantillas
       editorial/minimal/bold.
 - [ ] **Pendiente retomar**: theming/fuentes por inmobiliaria (ver gotcha de

@@ -1,0 +1,21 @@
+/*
+ * Tema DWELL (por defecto) — editorial y sobrio: off-white / negro / gris, sin
+ * acento cromático, esquinas rectas, botones en píldora.
+ * Referencia: ~/Downloads/dwell-design-system.html
+ */
+[data-theme="dwell"] {
+  --tenant-bg: #fbfbfb;
+  --tenant-text: #000000;
+  --tenant-muted: #878787;
+  --tenant-primary: #000000;
+  --tenant-secondary: #1a1a1a;
+  --tenant-accent: #000000;
+  --tenant-on-primary: #fbfbfb;
+  --tenant-border: rgba(0, 0, 0, 0.08);
+
+  --tenant-font-display: var(--font-display), "Archivo Variable", sans-serif;
+  --tenant-font-body: var(--font-body), "Hanken Grotesk Variable", sans-serif;
+
+  --tenant-radius: 0px; /* fotos/tarjetas rectas */
+  --tenant-radius-pill: 999px; /* solo el botón es redondo */
+}

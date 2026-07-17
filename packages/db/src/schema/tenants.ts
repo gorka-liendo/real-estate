@@ -19,6 +19,9 @@ export type BrandConfig = {
   fontBody?: string;
   borderRadius?: number; // radio general (tarjetas, inputs); Dwell = 0
   buttonRadius?: number; // radio de botones aparte; Dwell = 999 (píldora)
+  // Tema del design system (Capa 3): id de un archivo themes/<id>.css a medida.
+  // La plataforma lo asigna; el micrositio pone data-theme=<theme>. Default "dwell".
+  theme?: string;
   micrositeStyle?: "editorial" | "minimal" | "bold";
 };
 

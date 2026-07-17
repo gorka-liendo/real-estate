@@ -1,12 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import {
-  brandConfigToCssVars,
-  Footer,
-  PillLink,
-  PropertyGrid,
-  type Listing,
-} from "@rep/ui-tenant";
+import { Footer, PillLink, PropertyGrid, type Listing } from "@rep/ui-tenant";
 import { fetchListings, fetchTenant, type PublicProperty } from "@/lib/tenant";
 
 const KIND_LABEL: Record<PublicProperty["kind"], string> = {
@@ -55,7 +49,6 @@ export default async function Microsite({ params }: Params) {
   if (!tenant) notFound();
 
   const listings = (await fetchListings(slug)).map(toListing);
-  const brandVars = brandConfigToCssVars(tenant.brandConfig); // white-label runtime
 
   // Contenido = site_config del tenant, con defaults sensatos si viene vacío.
   const site = tenant.siteConfig ?? {};
@@ -77,7 +70,11 @@ export default async function Microsite({ params }: Params) {
   ].filter((x): x is { label: string; href: string } => x !== null);
 
   return (
-    <div className="rt-root" style={{ ...brandVars, minHeight: "100vh" }}>
+    <div
+      className="rt-root"
+      data-theme={tenant.brandConfig.theme ?? "dwell"}
+      style={{ minHeight: "100vh" }}
+    >
       {/* topbar */}
       <header className="rt-topbar">
         <div className="rt-wrap rt-topbar__inner">

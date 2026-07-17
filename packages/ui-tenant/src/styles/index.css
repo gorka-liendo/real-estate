@@ -1,5 +1,14 @@
-/* Punto de entrada de estilos del design system white-label.
-   El host (tenant-site) importa: import "@rep/ui-tenant/styles.css"; */
+/* Entrada de estilos del design system white-label del micrositio.
+   El host importa: import "@rep/ui-tenant/styles.css";
+
+   Arquitectura: MOTOR (base.css, componentes rt-*) + CONTRATO (tokens.css, :root)
+   + TEMAS intercambiables (themes/<id>.css, scoped por [data-theme]).
+   El micrositio activa un tema con data-theme=<id>. Añadir un diseño a medida =
+   copiar themes/_template.css y registrar el @import aquí. */
 @import "./fonts.css";
 @import "./tokens.css";
-@import "./dwell.css";
+@import "./base.css";
+
+/* --- temas (registrar aquí cada tema nuevo) --- */
+@import "./themes/dwell.css";
+@import "./themes/costa.css";

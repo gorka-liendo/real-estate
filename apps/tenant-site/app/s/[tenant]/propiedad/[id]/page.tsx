@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { brandConfigToCssVars, PillLink } from "@rep/ui-tenant";
+import { PillLink } from "@rep/ui-tenant";
 import { fetchProperty, fetchTenant, type PublicProperty } from "@/lib/tenant";
 
 const KIND_LABEL: Record<PublicProperty["kind"], string> = {
@@ -32,7 +32,6 @@ export default async function PropertyDetail({ params }: Params) {
   const [tenant, property] = await Promise.all([fetchTenant(slug), fetchProperty(slug, id)]);
   if (!tenant || !property) notFound();
 
-  const brandVars = brandConfigToCssVars(tenant.brandConfig);
   const facts: Array<{ k: string; v: string }> = [];
   if (property.areaM2) facts.push({ k: "Superficie", v: `${property.areaM2} m²` });
   if (property.bedrooms != null) facts.push({ k: "Habitaciones", v: String(property.bedrooms) });
@@ -40,7 +39,11 @@ export default async function PropertyDetail({ params }: Params) {
   facts.push({ k: "Tipo", v: KIND_LABEL[property.kind] });
 
   return (
-    <div className="rt-root" style={{ ...brandVars, minHeight: "100vh" }}>
+    <div
+      className="rt-root"
+      data-theme={tenant.brandConfig.theme ?? "dwell"}
+      style={{ minHeight: "100vh" }}
+    >
       <header className="rt-topbar">
         <div className="rt-wrap rt-topbar__inner">
           <a className="rt-topbar__brand" href="/" style={{ textDecoration: "none" }}>

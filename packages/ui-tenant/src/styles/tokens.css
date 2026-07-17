@@ -1,29 +1,30 @@
 /*
- * Design system white-label — Capa 1 (base "Dwell").
- * Estos son los DEFAULTS. brand_config del tenant sobreescribe las --tenant-*
- * en runtime (Capa 2) inyectando un style con esas mismas variables.
- * Referencia original: ~/Downloads/dwell-design-system.html
+ * CONTRATO del design system del micrositio.
+ * Estas variables --tenant-* son la interfaz que dibuja el motor (base.css).
+ * Cada TEMA (themes/<id>.css) las rellena bajo [data-theme="<id>"].
+ * :root son defaults NEUTROS de seguridad (fallback si el tenant no tiene tema
+ * o el tema no define alguna variable). El micrositio pone data-theme=<theme>.
  */
 :root {
-  /* --- color: sin acento, la fotografía aporta el color --- */
-  --tenant-bg: #fbfbfb; /* off-white */
-  --tenant-text: #000000; /* black */
-  --tenant-muted: #878787; /* gray */
-  --tenant-primary: #000000; /* botones, énfasis */
-  --tenant-secondary: #1a1a1a;
-  --tenant-accent: #000000;
-  --tenant-on-primary: #fbfbfb; /* texto sobre primary */
-  --tenant-border: rgba(0, 0, 0, 0.08);
+  /* --- color --- */
+  --tenant-bg: #ffffff;
+  --tenant-text: #111111;
+  --tenant-muted: #6b7280;
+  --tenant-primary: #111111;
+  --tenant-secondary: #333333;
+  --tenant-accent: #111111;
+  --tenant-on-primary: #ffffff;
+  --tenant-border: rgba(0, 0, 0, 0.1);
 
-  /* --- tipografía --- */
-  --tenant-font-display: var(--font-display), "Archivo Variable", sans-serif; /* stand-in de Acid Grotesk, cargado con next/font */
-  --tenant-font-body: var(--font-body), "Hanken Grotesk Variable", sans-serif; /* stand-in de Neue Montreal */
+  /* --- tipografía (familias cargadas por la app con next/font) --- */
+  --tenant-font-display: var(--font-display), "Archivo Variable", sans-serif;
+  --tenant-font-body: var(--font-body), "Hanken Grotesk Variable", sans-serif;
 
-  /* --- radios: fotos/tarjetas rectas; solo el botón es píldora --- */
-  --tenant-radius: 0px;
-  --tenant-radius-pill: 999px;
+  /* --- radios --- */
+  --tenant-radius: 8px; /* tarjetas, imágenes */
+  --tenant-radius-pill: 8px; /* botones */
 
-  /* --- espaciado (escala Dwell) --- */
+  /* --- espaciado --- */
   --tenant-sp-1: 4px;
   --tenant-sp-2: 8px;
   --tenant-sp-3: 16px;

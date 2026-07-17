@@ -1,6 +1,7 @@
 /*
- * Clases de los componentes signature (Capa 1 "Dwell").
- * Todas referencian las --tenant-* → se personalizan solas con brand_config.
+ * MOTOR del micrositio: clases de componentes (rt-*). Theme-agnóstico.
+ * Dibujan usando SOLO variables --tenant-* (nunca colores/valores literales),
+ * así que el tema activo ([data-theme]) las controla por completo.
  * Prefijo `rt-` (real-estate tenant) para no colisionar con Tailwind del host.
  */
 
