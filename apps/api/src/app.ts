@@ -13,6 +13,7 @@ import {
 } from "./middlewares/auth.middleware.js";
 import { requireModule } from "./middlewares/module.middleware.js";
 import { tenantMiddleware, type TenantEnv } from "./middlewares/tenant.middleware.js";
+import { admin } from "./modules/admin/admin.routes.js";
 
 // app sin listen() — importable en tests (mismo patrón que app.ts/server.ts en Express)
 export const app = new Hono();
@@ -44,6 +45,9 @@ me.get("/", async (c) => {
   });
 });
 app.route("/me", me);
+
+// --- panel de superadmin (gestión de tenants y módulos) ---
+app.route("/admin", admin);
 
 // --- rutas tenant-scoped públicas (micrositio) ---
 const tenant = new Hono<TenantEnv>();

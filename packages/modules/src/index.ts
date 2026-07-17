@@ -54,7 +54,45 @@ export async function hasModule(tenantId: string, code: ModuleCode): Promise<boo
   return (await getActiveModules(tenantId)).includes(code);
 }
 
-/** Invalidar tras cambios de subscripción (webhooks de Stripe en Fase C). */
+/** Invalidar tras cambiar los módulos de un tenant (toggle desde /admin). */
 export async function invalidateModules(tenantId: string) {
   await cache.delete(tenantId);
+}
+
+export class ModuleNotFoundError extends Error {
+  constructor(code: string) {
+    super(`Módulo '${code}' no existe en el catálogo`);
+    this.name = "ModuleNotFoundError";
+  }
+}
+
+/**
+ * Activa/desactiva un módulo para un tenant (acción de superadmin — el cobro es
+ * por factura, offline). `subscriptions` es la fuente de verdad; invalida la caché.
+ */
+export async function setTenantModule(
+  tenantId: string,
+  code: ModuleCode,
+  active: boolean,
+): Promise<void> {
+  const [mod] = await db.select().from(modules).where(eq(modules.code, code));
+  if (!mod) throw new ModuleNotFoundError(code);
+
+  await forTenant(tenantId)
+    .insert(subscriptions, {
+      moduleId: mod.id,
+      active,
+      activatedAt: active ? new Date() : null,
+    })
+    .onConflictDoUpdate({
+      target: [subscriptions.tenantId, subscriptions.moduleId],
+      set: { active, activatedAt: active ? new Date() : null },
+    });
+
+  await invalidateModules(tenantId);
+}
+
+/** Catálogo completo de módulos vendibles. */
+export async function listCatalog() {
+  return db.select().from(modules).orderBy(modules.code);
 }

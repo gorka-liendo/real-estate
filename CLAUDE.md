@@ -59,11 +59,14 @@ packages/
 - El test de aislamiento (tenant A no puede leer datos de B) es innegociable y debe
   seguir pasando siempre.
 
-### Módulos como plugins (feature flags + billing)
+### Módulos como plugins (feature flags)
 - Catálogo en tabla `modules`; activación por tenant en `subscriptions`.
-- **Stripe es la fuente de verdad** de las subscripciones; la tabla es una réplica
-  que actualizan los webhooks (Fase C). Backend: `requireModule(code)`.
-  Frontend: `useModule(code)`.
+- **Sin Stripe/billing**: los módulos se activan/desactivan desde un **dashboard de
+  superadmin** y el cobro es **por factura** (offline). La tabla `subscriptions`
+  es la **fuente de verdad directa**. Backend: `requireModule(code)`.
+  Frontend: `useModule(code)`. Tras togglear un módulo → `invalidateModules(tenantId)`.
+- Superadmins de plataforma en tabla `platform_admins` (distinto de las memberships
+  de tenant). Rutas `/admin/*` protegidas por `requirePlatformAdmin`.
 - Cada módulo vive aislado (componentes + rutas + jobs + migraciones propias).
   El core solo expone auth, tenant context, DB y colas.
 
@@ -136,15 +139,20 @@ packages/
       `/me`, `/tenant/team` (privada). Seed de owners vía `auth.api.signUpEmail`
       (password en `SEED_OWNER_PASSWORD`, idempotente). 20 tests en verde.
 
-### Fase C — Feature flags y billing
+### Fase C — Feature flags y gestión de módulos
 - [x] **Paso 6** — `@rep/modules`: `hasModule`/`getActiveModules`/`invalidateModules`
       con caché en memoria (TTL 60s, `MODULE_CACHE_TTL_MS`) detrás de la interfaz
       `FlagCache` → swap a Redis en Fase E vía `setFlagCache()`. API:
       `requireModule(code)` (403 `module_not_active`), `GET /tenant/modules`,
-      demo gateada `GET /tenant/microsite`. Los webhooks de Stripe (paso 7)
-      deben llamar a `invalidateModules(tenantId)`. 28 tests en verde.
+      demo gateada `GET /tenant/microsite`. 28 tests en verde.
       (`useModule` del dashboard llega cuando el dashboard se conecte a la API.)
-- [ ] **Paso 7** — Stripe Billing: producto por módulo, webhooks → `subscriptions`.
+- [x] **Paso 7** — Gestión de módulos por superadmin (SIN Stripe, cobro por factura).
+      Tabla `platform_admins` + `requirePlatformAdmin`. `@rep/modules`:
+      `setTenantModule(tenantId, code, active)` (upsert en `subscriptions` +
+      `invalidateModules`), `listCatalog`. Rutas `/admin/*`: `GET /admin/catalog`,
+      `GET /admin/tenants` (con `activeModules`), `PUT /admin/tenants/:slug/modules/:code`
+      `{active}`. Seed añade superadmin (`SEED_ADMIN_EMAIL`). E2E verificado:
+      admin activa módulo → ruta gateada del tenant pasa de 403 a 200. 37 tests en verde.
 
 ### Fase D — White-label y micrositio
 - [ ] **Paso 8** — `@rep/ui-tenant`: tokens Dwell + 8 componentes signature.

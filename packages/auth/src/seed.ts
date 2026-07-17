@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { closeDb, db, memberships, tenants, user } from "@rep/db";
+import { closeDb, db, memberships, platformAdmins, tenants, user } from "@rep/db";
 import { auth } from "./index.js";
 
 // Seed idempotente de usuarios owner (uno por tenant del seed de @rep/db).
@@ -37,6 +37,21 @@ async function main() {
 
     console.log(`✅ owner listo: ${email} (tenant ${tenant.slug})`);
   }
+
+  // --- superadmin de plataforma ---
+  const adminEmail = process.env.SEED_ADMIN_EMAIL ?? "admin@platform.example.com";
+  let [adminUser] = await db.select().from(user).where(eq(user.email, adminEmail));
+  if (!adminUser) {
+    await auth.api.signUpEmail({
+      body: { email: adminEmail, password: password!, name: "Platform Admin" },
+    });
+    [adminUser] = await db.select().from(user).where(eq(user.email, adminEmail));
+  }
+  await db
+    .insert(platformAdmins)
+    .values({ userId: adminUser!.id })
+    .onConflictDoNothing();
+  console.log(`✅ superadmin listo: ${adminEmail}`);
 }
 
 main()

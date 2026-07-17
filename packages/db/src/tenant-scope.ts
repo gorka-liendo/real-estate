@@ -1,10 +1,4 @@
-import {
-  and,
-  eq,
-  type InferInsertModel,
-  type InferSelectModel,
-  type SQL,
-} from "drizzle-orm";
+import { and, eq, type InferSelectModel, type SQL } from "drizzle-orm";
 import type { AnyPgColumn, PgTable, PgUpdateSetSource } from "drizzle-orm/pg-core";
 import { db } from "./client.js";
 import { requireTenantId } from "./tenant-context.js";
@@ -35,10 +29,13 @@ export function forTenant(tenantId: string) {
 
     insert<T extends TenantScopedTable>(
       table: T,
-      values: Omit<InferInsertModel<T>, "tenantId">,
+      values: Omit<T["$inferInsert"], "tenantId">,
     ) {
-      // el tenantId lo pone el scope — el caller no puede insertar en otro tenant
-      return db.insert(table).values({ ...values, tenantId } as InferInsertModel<T>);
+      // el tenantId lo pone el scope — el caller no puede insertar en otro tenant.
+      // cast interno: los genéricos condicionales de drizzle no resuelven sobre T abstracto
+      return db
+        .insert(table as PgTable)
+        .values({ ...values, tenantId } as PgTable["$inferInsert"]);
     },
 
     update<T extends TenantScopedTable>(table: T, set: PgUpdateSetSource<T>, where?: SQL) {
