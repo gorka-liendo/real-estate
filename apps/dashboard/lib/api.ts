@@ -55,6 +55,39 @@ export type ClientInput = {
   notes?: string;
 };
 
+export type PropertyOperation = "sale" | "rent";
+export type PropertyKind = "flat" | "house" | "commercial" | "land" | "garage";
+export type PropertyStatus = "draft" | "published" | "archived";
+export type Property = {
+  id: string;
+  title: string;
+  description: string | null;
+  operation: PropertyOperation;
+  kind: PropertyKind;
+  status: PropertyStatus;
+  price: number | null;
+  bedrooms: number | null;
+  bathrooms: number | null;
+  areaM2: number | null;
+  city: string | null;
+  address: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+export type PropertyInput = {
+  title: string;
+  operation?: PropertyOperation;
+  kind?: PropertyKind;
+  status?: PropertyStatus;
+  price?: number;
+  city?: string;
+  areaM2?: number;
+  bedrooms?: number;
+  bathrooms?: number;
+  description?: string;
+  address?: string;
+};
+
 export type CatalogModule = {
   id: string;
   code: string;
@@ -113,6 +146,34 @@ export const api = {
 
     remove: (slug: string, id: string) =>
       request<void>(`/tenant/clients/${id}`, {
+        method: "DELETE",
+        headers: { "x-tenant-slug": slug },
+      }),
+  },
+
+  // --- módulo Propiedades ---
+  properties: {
+    list: (slug: string) =>
+      request<{ properties: Property[] }>("/tenant/properties", {
+        headers: { "x-tenant-slug": slug },
+      }),
+
+    create: (slug: string, data: PropertyInput) =>
+      request<{ property: Property }>("/tenant/properties", {
+        method: "POST",
+        headers: { "x-tenant-slug": slug },
+        body: JSON.stringify(data),
+      }),
+
+    update: (slug: string, id: string, data: Partial<PropertyInput>) =>
+      request<{ property: Property }>(`/tenant/properties/${id}`, {
+        method: "PATCH",
+        headers: { "x-tenant-slug": slug },
+        body: JSON.stringify(data),
+      }),
+
+    remove: (slug: string, id: string) =>
+      request<void>(`/tenant/properties/${id}`, {
         method: "DELETE",
         headers: { "x-tenant-slug": slug },
       }),

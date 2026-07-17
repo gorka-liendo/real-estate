@@ -69,7 +69,7 @@ async function main() {
   // --- martinez con Clientes + Micrositio activos; lopez sin módulos ---
   // Seed AUTORITATIVO: deja el estado exacto (activa los previstos, desactiva el resto).
   const martinez = seededTenants.find((t) => t!.slug === "martinez")!;
-  const activeForMartinez = ["clients", "microsite"];
+  const activeForMartinez = ["clients", "properties", "microsite"];
   for (const mod of seededModules) {
     const shouldBeActive = activeForMartinez.includes(mod!.code);
     await db
@@ -87,7 +87,7 @@ async function main() {
   }
 
   console.log(
-    `✅ Seed: ${seededModules.length} módulos, ${seededTenants.length} tenants (martinez con Clientes + Micrositio)`,
+    `✅ Seed: ${seededModules.length} módulos, ${seededTenants.length} tenants (martinez: ${activeForMartinez.join(" + ")})`,
   );
 }
 

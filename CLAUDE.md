@@ -295,5 +295,15 @@ packages/
       tenant→auth→membership→`requireModule('clients')`. CRUD completo. Front:
       `/clientes` con tabla + alta (form) + borrado usando `@rep/ui`.
       43 tests API (CRUD + aislamiento A/B + gating). Verificado en navegador.
+- [x] **Módulo Propiedades** — mismo patrón que Clientes. Modelo `properties`
+      tenant-scoped (title/description/operation sale|rent/kind flat|house|
+      commercial|land|garage/status draft|published|archived/price/bedrooms/
+      bathrooms/areaM2/city/address), migración `0003`. API
+      `apps/api/src/modules/properties/` bajo `/tenant/properties` con las mismas
+      guardas + `requireModule('properties')`. Front `/propiedades` (tabla + alta +
+      borrado, precio formateado es-ES). Seed activa properties en martinez.
+      49 tests API. Verificado en navegador.
+- [ ] **Conectar propiedades al micrositio** (tenant-site) — mostrar las
+      `published` como landing por inmueble con datos reales (SIGUIENTE natural).
 - [ ] **Pendiente retomar**: theming/fuentes por inmobiliaria (ver gotcha de
       next/font arriba) y edición de marca en Ajustes.
