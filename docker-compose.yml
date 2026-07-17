@@ -1,0 +1,23 @@
+services:
+  db:
+    image: postgres:18-alpine
+    container_name: rep-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-rep}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-rep}
+      POSTGRES_DB: ${POSTGRES_DB:-rep}
+    ports:
+      # 5433 en el host para convivir con el Postgres del repo real-estate (5432)
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      # Postgres 18+: el mount va en /var/lib/postgresql (no en .../data)
+      - rep_pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-rep} -d ${POSTGRES_DB:-rep}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  rep_pgdata:

@@ -1,2 +1,2 @@
-// Fase B: schema Drizzle + migraciones + helper db.forTenant()
-export {};
+export { db } from "./client";
+export * from "./schema";
