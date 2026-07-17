@@ -20,13 +20,12 @@ export const app = new Hono();
 
 app.use("*", logger());
 
+// CORS con credenciales para el dashboard y tenant-site (cookies httpOnly cross-origin).
+app.use("*", cors({ origin: authEnv.TRUSTED_ORIGINS, credentials: true }));
+
 app.get("/health", (c) => c.json({ status: "ok" }));
 
 // --- auth: Better-Auth gestiona /api/auth/* (sign-up, sign-in, sign-out, session…) ---
-app.use(
-  "/api/auth/*",
-  cors({ origin: authEnv.TRUSTED_ORIGINS, credentials: true }),
-);
 app.on(["GET", "POST"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 
 // --- /me: usuario de la sesión + sus tenants y roles ---

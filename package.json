@@ -7,6 +7,9 @@
   },
   "scripts": {
     "dev": "turbo dev",
+    "dev:up": "docker compose up -d && turbo dev",
+    "infra:up": "docker compose up -d",
+    "infra:down": "docker compose down",
     "build": "turbo build",
     "lint": "turbo lint",
     "test": "turbo test",

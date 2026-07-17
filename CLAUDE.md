@@ -6,7 +6,7 @@ Micrositios públicos white-label + dashboard interno + módulos vendibles con b
 
 Stack: **Turborepo + pnpm** · **Next.js (dashboard, tenant-site) en Vercel** ·
 **Hono + Node 24 (api) y BullMQ (workers) en Railway** · **PostgreSQL 18 + Drizzle** ·
-**Better-Auth · Stripe Billing · Cloudflare R2 · Resend · Sentry**.
+**Better-Auth · Cloudflare R2 · Resend · Sentry** (sin Stripe — cobro por factura).
 
 El repo hermano `../real-estate` (Express + Prisma) es el laboratorio original:
 de ahí se portan **conceptos**, nunca código.
@@ -17,7 +17,10 @@ de ahí se portan **conceptos**, nunca código.
 
 ```bash
 # Raíz del monorepo
-pnpm dev              # turbo dev — todas las apps en paralelo
+pnpm dev:up           # docker compose up -d (db+redis) + turbo dev — entorno completo
+pnpm dev              # turbo dev — todas las apps en paralelo (infra ya levantada)
+pnpm infra:up         # solo docker compose up -d (db + redis)
+pnpm infra:down       # docker compose down
 pnpm build            # turbo build
 pnpm lint             # turbo lint
 pnpm test             # turbo test
@@ -202,6 +205,18 @@ packages/
       enqueue→worker verificado con Redis real. Falta cablear: endpoint de upload
       en la API y el servido HTTP de `/uploads` (cuando se necesite media).
 - [ ] **Paso 11** — Deploy Vercel + Railway, GitHub Actions, Sentry.
+
+### Frontend — Dashboard (app interna de gestión)
+- [x] **Dashboard: login + auth** — `AuthContext` (sesión por cookie httpOnly de
+      Better-Auth, sin token en JS/localStorage), cliente `lib/api.ts` con
+      `credentials:'include'`, `RequireAuth` (guard → /login), página de login,
+      home protegido con selector de inmobiliaria + `useModule` (lee
+      `GET /tenant/modules`). CORS global con credenciales en la API para
+      `TRUSTED_ORIGINS`. Verificado en navegador (Playwright): guard → login →
+      home (owner de martinez, módulo `microsite`) → logout → sesión cerrada.
+      Rutas en `lib/routes.ts`, API URL en `NEXT_PUBLIC_API_URL`.
+- [ ] **Dashboard: layout definitivo** (sidebar + tabs gateadas por módulo).
+- [ ] **Dashboard: panel superadmin** (UI de `/admin/*` — gestión de módulos por tenant).
 
 > Solo se empieza un módulo funcional cuando los pasos 1-7 están completos.
 > Primer módulo previsto: **micrositio + landing por inmueble**.

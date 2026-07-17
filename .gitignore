@@ -23,3 +23,7 @@ packages/ui-tenant/preview.html
 # uploads del storage local (dev)
 .uploads/
 **/.uploads/
+
+# artefactos de Playwright
+.playwright-mcp/
+*-home.png
