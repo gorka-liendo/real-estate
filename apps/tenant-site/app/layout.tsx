@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-// Design system white-label (tokens Dwell + fuentes self-hosted Archivo + Hanken).
+// Design system white-label (tokens Dwell). Fuentes vía next/font (fonts.ts).
 import "@rep/ui-tenant/styles.css";
+import { fontBody, fontDisplay } from "./fonts";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -12,7 +13,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="es">
+    <html lang="es" className={`${fontDisplay.variable} ${fontBody.variable}`}>
       <body>{children}</body>
     </html>
   );

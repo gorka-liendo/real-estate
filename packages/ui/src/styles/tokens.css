@@ -30,9 +30,9 @@
   --ui-warning: #8a5a00;
   --ui-warning-bg: #fdf3e2;
 
-  /* --- tipografía (self-hosted, misma familia que los micrositios) --- */
-  --ui-font-display: "Archivo Variable", "Archivo", sans-serif;
-  --ui-font-body: "Hanken Grotesk Variable", "Hanken Grotesk", sans-serif;
+  /* --- tipografía (cargada por la app con next/font → var(--font-*)) --- */
+  --ui-font-display: var(--font-display), "Archivo Variable", sans-serif;
+  --ui-font-body: var(--font-body), "Hanken Grotesk Variable", sans-serif;
 
   /* --- radios (herramienta: radios suaves; el pill se reserva a micrositios) --- */
   --ui-radius-sm: 6px;

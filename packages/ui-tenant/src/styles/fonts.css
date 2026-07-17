@@ -1,9 +1,7 @@
 /*
- * Fuentes self-hosted (bundled desde node_modules vía @fontsource — sin CDN).
- * Archivo = stand-in de Acid Grotesk (comercial, Milieu Grotesque).
- * Hanken Grotesk = stand-in self-hostable de Neue Montreal (comercial, Fontshare).
- * Para usar las fuentes licenciadas: sustituir estos @import por sus @font-face
- * y actualizar --tenant-font-display / --tenant-font-body en tokens.css.
+ * Las fuentes ya NO se cargan aquí con @fontsource/@import (frágil).
+ * Cada app las carga con next/font/local (app/fonts.ts) y expone
+ * --font-display / --font-body, que tokens.css consume.
+ * Archivo = stand-in de Acid Grotesk · Hanken = stand-in de Neue Montreal.
+ * Este archivo se mantiene vacío a propósito.
  */
-@import "@fontsource-variable/archivo";
-@import "@fontsource-variable/hanken-grotesk";

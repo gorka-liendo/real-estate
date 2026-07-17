@@ -1,3 +1,7 @@
-/* Fuentes self-hosted (bundled desde node_modules, sin CDN) — igual que el micrositio. */
-@import "@fontsource-variable/archivo";
-@import "@fontsource-variable/hanken-grotesk";
+/*
+ * Las fuentes ya NO se cargan aquí con @fontsource/@import (era frágil: generaba
+ * format("woff2-variations") que algunos navegadores rechazan).
+ * Ahora las carga cada app con next/font/local (app/fonts.ts) y expone las
+ * variables --font-display / --font-body, que tokens.css consume.
+ * Este archivo se mantiene vacío a propósito.
+ */

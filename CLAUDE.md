@@ -50,6 +50,15 @@ código pero no en el navegador). Ante cualquier duda de "no se aplica mi cambio
 CSS/tokens", usar **`pnpm dev:fresh`** (limpia puertos + borra `apps/*/.next` +
 levanta). Verificar cambios de estilo SIEMPRE con la CSS fresca, no fiarse del HMR.
 
+**Carga de fuentes (IMPORTANTE)**: las fuentes se cargan con **`next/font/local`**
+en cada app (`apps/*/app/fonts.ts`, ficheros en `apps/*/app/fonts/*.woff2`), NO con
+`@fontsource` + `@import` (era frágil: generaba `format("woff2-variations")`, un
+string no estándar que Chrome/Safari rechazan → fallback a Arial). next/font expone
+`--font-display` / `--font-body`, que los tokens de `@rep/ui` (`--ui-font-*`) y
+`@rep/ui-tenant` (`--tenant-font-*`) consumen. Al añadir/cambiar la fuente base:
+sustituir el `.woff2` en `apps/*/app/fonts/` y ajustar `fonts.ts`. Los `fonts.css`
+de los packages están vacíos a propósito.
+
 ---
 
 ## Arquitectura

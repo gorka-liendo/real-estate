@@ -16,8 +16,8 @@
   --tenant-border: rgba(0, 0, 0, 0.08);
 
   /* --- tipografía --- */
-  --tenant-font-display: "Archivo Variable", "Archivo", sans-serif; /* stand-in de Acid Grotesk */
-  --tenant-font-body: "Hanken Grotesk Variable", "Hanken Grotesk", sans-serif; /* stand-in de Neue Montreal */
+  --tenant-font-display: var(--font-display), "Archivo Variable", sans-serif; /* stand-in de Acid Grotesk, cargado con next/font */
+  --tenant-font-body: var(--font-body), "Hanken Grotesk Variable", sans-serif; /* stand-in de Neue Montreal */
 
   /* --- radios: fotos/tarjetas rectas; solo el botón es píldora --- */
   --tenant-radius: 0px;
