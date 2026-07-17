@@ -29,10 +29,30 @@ admin.get("/tenants", async (c) => {
       name: t.name,
       status: t.status,
       customDomain: t.customDomain,
+      theme: t.brandConfig.theme ?? "dwell",
       activeModules: await getActiveModules(t.id),
     })),
   );
   return c.json({ tenants: withModules });
+});
+
+// Asignar el tema (design system) de una inmobiliaria. Lo hace la plataforma.
+const themeSchema = z.object({ theme: z.string().min(1).max(60) });
+
+admin.put("/tenants/:slug/theme", async (c) => {
+  const body = themeSchema.safeParse(await c.req.json().catch(() => null));
+  if (!body.success) {
+    return c.json({ error: "invalid_body", detail: "se espera { theme: string }" }, 400);
+  }
+  const [tenant] = await db.select().from(tenants).where(eq(tenants.slug, c.req.param("slug")));
+  if (!tenant) return c.json({ error: "tenant_not_found" }, 404);
+
+  const [row] = await db
+    .update(tenants)
+    .set({ brandConfig: { ...tenant.brandConfig, theme: body.data.theme } })
+    .where(eq(tenants.id, tenant.id))
+    .returning();
+  return c.json({ tenant: tenant.slug, theme: row!.brandConfig.theme });
 });
 
 const toggleSchema = z.object({ active: z.boolean() });

@@ -365,8 +365,13 @@ packages/
       `brandConfigToUiVars`). **Un solo campo `brand_config.theme` tiñe dashboard +
       micrositio** de forma consistente. Verificado: swap dwell→costa re-tiñe el
       dashboard (azul/redondeado) igual que el micrositio.
-- [ ] **Editor de temas/design system en el superadmin** — asignar/gestionar el
-      `theme` por inmobiliaria (de momento por seed/BBDD).
+- [x] **Editor de temas en el superadmin** — sección "Diseño" en `/admin`: selector
+      de tema por inmobiliaria. Registro `THEMES` en `@rep/ui` (dwell, costa; mantener
+      sync con los archivos themes/*.css). API `PUT /admin/tenants/:slug/theme`
+      (requirePlatformAdmin → `brand_config.theme`); `GET /admin/tenants` incluye
+      `theme`. Verificado: cambiar el tema desde el panel persiste y tiñe dashboard +
+      micrositio de esa inmobiliaria. Themes a medida (no en el registro) salen como
+      "&lt;id&gt; (a medida)" en el select.
 - [ ] **Pulido restante**: hero con imagen, menú móvil, plantillas
       editorial/minimal/bold.
 - [ ] **Pendiente retomar**: theming/fuentes por inmobiliaria (ver gotcha de

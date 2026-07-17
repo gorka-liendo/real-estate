@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { Badge, Card, Switch } from "@rep/ui";
+import { Badge, Card, Select, Switch, THEMES } from "@rep/ui";
 import { useWorkspace } from "@/contexts/workspace-context";
 import { api, type AdminTenant, type CatalogModule } from "@/lib/api";
 import { routes } from "@/lib/routes";
@@ -53,6 +53,18 @@ export default function AdminPage() {
     }
   }
 
+  async function setTheme(tenant: AdminTenant, theme: string) {
+    setError(null);
+    try {
+      const res = await api.adminSetTheme(tenant.slug, theme);
+      setTenants((prev) =>
+        (prev ?? []).map((t) => (t.slug === tenant.slug ? { ...t, theme: res.theme } : t)),
+      );
+    } catch {
+      setError(`No se pudo cambiar el diseño de ${tenant.name}.`);
+    }
+  }
+
   if (!isPlatformAdmin) return null;
 
   return (
@@ -60,11 +72,60 @@ export default function AdminPage() {
       <div>
         <h1 className="du-h1">Administración</h1>
         <p className="du-muted" style={{ marginTop: 4 }}>
-          Activa o desactiva módulos por inmobiliaria. El cobro se gestiona por factura.
+          Diseño y módulos por inmobiliaria. El cobro se gestiona por factura.
         </p>
       </div>
 
       {error ? <p className="du-alert">{error}</p> : null}
+
+      {/* diseño (design system) por inmobiliaria */}
+      <Card padded={false}>
+        <div style={{ padding: "var(--ui-sp-4) var(--ui-sp-4) 0" }}>
+          <h2 className="du-h3">Diseño</h2>
+          <p className="du-muted" style={{ fontSize: 12, marginTop: 2 }}>
+            El design system que entregamos a cada inmobiliaria (dashboard + micrositio).
+          </p>
+        </div>
+        <div style={{ overflowX: "auto", marginTop: "var(--ui-sp-3)" }}>
+          <table className="du-table">
+            <thead>
+              <tr>
+                <th>Inmobiliaria</th>
+                <th>Tema</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(tenants ?? []).map((t) => (
+                <tr key={t.id}>
+                  <td>
+                    <span style={{ fontWeight: 500 }}>{t.name}</span>{" "}
+                    <span className="du-muted" style={{ fontSize: 12 }}>
+                      {t.slug}
+                    </span>
+                  </td>
+                  <td>
+                    <Select
+                      value={t.theme}
+                      onChange={(e) => void setTheme(t, e.target.value)}
+                      style={{ maxWidth: 240 }}
+                      aria-label={`Tema de ${t.name}`}
+                    >
+                      {THEMES.map((th) => (
+                        <option key={th.id} value={th.id}>
+                          {th.label} — {th.description}
+                        </option>
+                      ))}
+                      {THEMES.every((th) => th.id !== t.theme) ? (
+                        <option value={t.theme}>{t.theme} (a medida)</option>
+                      ) : null}
+                    </Select>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
 
       <Card padded={false}>
         <div style={{ overflowX: "auto" }}>

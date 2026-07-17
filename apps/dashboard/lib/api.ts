@@ -113,6 +113,7 @@ export type AdminTenant = {
   name: string;
   status: string;
   customDomain: string | null;
+  theme: string;
   activeModules: string[];
 };
 
@@ -267,4 +268,10 @@ export const api = {
       `/admin/tenants/${slug}/modules/${code}`,
       { method: "PUT", body: JSON.stringify({ active }) },
     ),
+
+  adminSetTheme: (slug: string, theme: string) =>
+    request<{ tenant: string; theme: string }>(`/admin/tenants/${slug}/theme`, {
+      method: "PUT",
+      body: JSON.stringify({ theme }),
+    }),
 };
