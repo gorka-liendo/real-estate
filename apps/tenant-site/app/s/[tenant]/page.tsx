@@ -1,14 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import {
-  AboutColumns,
-  BigNumber,
   brandConfigToCssVars,
   Footer,
-  PillButton,
+  PillLink,
   PropertyGrid,
-  Steps,
-  WordmarkBleed,
   type Listing,
 } from "@rep/ui-tenant";
 import { fetchListings, fetchTenant, type PublicProperty } from "@/lib/tenant";
@@ -52,95 +48,74 @@ export default async function Microsite({ params }: Params) {
   if (!tenant) notFound();
 
   const listings = (await fetchListings(slug)).map(toListing);
-
-  // Capa 2 white-label: el brand_config sobreescribe los defaults Dwell en runtime.
-  const brandVars = brandConfigToCssVars(tenant.brandConfig);
+  const brandVars = brandConfigToCssVars(tenant.brandConfig); // white-label runtime
 
   return (
     <div className="rt-root" style={{ ...brandVars, minHeight: "100vh" }}>
-      <div
-        style={{
-          maxWidth: 1240,
-          margin: "0 auto",
-          padding: "var(--tenant-sp-6) var(--tenant-sp-5)",
-        }}
-      >
-        <WordmarkBleed text={tenant.name.toUpperCase()} />
-
-        <div style={{ padding: "var(--tenant-sp-6) 0" }}>
-          <AboutColumns
-            columns={[
-              {
-                title: "The Challenge",
-                body: "Una experiencia de listado premium y calma, plenamente funcional: fotografía verificada, precios claros y cero ruido.",
-              },
-              {
-                title: "Design Approach",
-                body: "Imágenes grandes, tipografía sobredimensionada y paleta neutra para que cada propiedad sea el foco visual.",
-              },
-            ]}
-          />
+      {/* topbar */}
+      <header className="rt-topbar">
+        <div className="rt-wrap rt-topbar__inner">
+          <span className="rt-topbar__brand">{tenant.name}</span>
+          <nav className="rt-topbar__nav">
+            <a href="#propiedades">Propiedades</a>
+            <a href="#contacto">Contacto</a>
+          </nav>
         </div>
+      </header>
 
-        <BigNumber number="01" quote="Listamos una casa cada vez. La verificamos bien.">
-          <p style={{ color: "var(--tenant-muted)", maxWidth: 480 }}>
-            Cada propiedad de {tenant.name} se visita en persona antes de publicarse.
+      {/* hero */}
+      <section className="rt-hero">
+        <div className="rt-wrap">
+          <div className="rt-eyebrow">Inmobiliaria de confianza</div>
+          <h1 className="rt-hero__title">Encuentra tu próximo hogar.</h1>
+          <p className="rt-hero__sub">
+            {tenant.name} verifica cada propiedad en persona antes de publicarla:
+            fotografía real, precios claros y cero ruido.
           </p>
-        </BigNumber>
-
-        {listings.length > 0 ? (
-          <section style={{ padding: "var(--tenant-sp-8) 0" }}>
-            <div className="rt-eyebrow">En venta y alquiler</div>
-            <h2 className="rt-section-title">Propiedades</h2>
-            <PropertyGrid items={listings} />
-          </section>
-        ) : null}
-
-        <div style={{ display: "flex", gap: "var(--tenant-sp-3)", margin: "var(--tenant-sp-7) 0", flexWrap: "wrap" }}>
-          <PillButton>Reservar visita</PillButton>
-          <PillButton variant="outline">Ver todas las propiedades</PillButton>
+          <PillLink href="#propiedades">Ver propiedades</PillLink>
         </div>
+      </section>
 
-        <Steps
-          steps={[
-            { title: "Site Visit", body: "Cada propiedad se visita en persona antes de aceptar el listado." },
-            { title: "Document Check", body: "Verificación legal y de titularidad, sin excepciones." },
-            { title: "Photography", body: "Fotografía profesional in situ — nunca imágenes de stock." },
-            { title: "Listing Review", body: "Revisión final antes de publicar." },
-          ]}
-        />
+      {/* propiedades */}
+      <section className="rt-section" id="propiedades">
+        <div className="rt-wrap">
+          <div className="rt-eyebrow">En venta y alquiler</div>
+          <h2 className="rt-section-title">Propiedades</h2>
+          {listings.length > 0 ? (
+            <PropertyGrid items={listings} />
+          ) : (
+            <p style={{ color: "var(--tenant-muted)", maxWidth: "48ch" }}>
+              Pronto publicaremos nuestra selección de inmuebles. Vuelve en unos días.
+            </p>
+          )}
+        </div>
+      </section>
 
-        <div style={{ marginTop: "var(--tenant-sp-7)" }}>
+      {/* footer */}
+      <footer className="rt-section" id="contacto">
+        <div className="rt-wrap">
           <Footer
-            brandHeading={`${tenant.name} · Real Estate`}
-            tagline="Listamos una casa cada vez. Cada propiedad se verifica en persona antes de llegar a la plataforma."
+            brandHeading={tenant.name}
+            tagline="Propiedades verificadas en persona, una a una."
             columns={[
               {
-                heading: "Navigate",
+                heading: "Explora",
                 links: [
-                  { label: "Home", href: "#" },
-                  { label: "About", href: "#" },
-                  { label: "Listings", href: "#" },
+                  { label: "Propiedades", href: "#propiedades" },
+                  { label: "Contacto", href: "#contacto" },
                 ],
               },
               {
-                heading: "Listings",
+                heading: "Contacto",
                 links: [
-                  { label: "Apartamentos", href: "#" },
-                  { label: "Casas", href: "#" },
-                ],
-              },
-              {
-                heading: "Contact",
-                links: [
+                  { label: "Escríbenos", href: "#" },
                   { label: "Instagram", href: "#" },
-                  { label: "Reservar visita", href: "#" },
                 ],
               },
             ]}
           />
         </div>
-      </div>
+      </footer>
     </div>
   );
 }

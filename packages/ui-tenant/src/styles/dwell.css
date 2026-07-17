@@ -93,6 +93,78 @@
   margin-top: var(--tenant-sp-2);
 }
 
+/* ===== contenedor centrado ===== */
+.rt-wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--tenant-sp-5);
+}
+
+/* ===== topbar ===== */
+.rt-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: color-mix(in srgb, var(--tenant-bg) 88%, transparent);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--tenant-border);
+}
+.rt-topbar__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--tenant-sp-4) 0;
+}
+.rt-topbar__brand {
+  font-family: var(--tenant-font-display);
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+}
+.rt-topbar__nav {
+  display: flex;
+  gap: var(--tenant-sp-5);
+}
+.rt-topbar__nav a {
+  color: var(--tenant-text);
+  text-decoration: none;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.55;
+}
+.rt-topbar__nav a:hover {
+  opacity: 1;
+}
+
+/* ===== hero ===== */
+.rt-hero {
+  padding: var(--tenant-sp-9) 0 var(--tenant-sp-8);
+}
+.rt-hero__title {
+  font-family: var(--tenant-font-display);
+  font-weight: 800;
+  font-size: clamp(44px, 8vw, 92px);
+  line-height: 0.98;
+  letter-spacing: -0.02em;
+  margin: var(--tenant-sp-3) 0 var(--tenant-sp-4);
+  max-width: 14ch;
+}
+.rt-hero__sub {
+  color: var(--tenant-muted);
+  font-size: 18px;
+  line-height: 1.6;
+  max-width: 48ch;
+  margin: 0 0 var(--tenant-sp-5);
+}
+
+/* ===== sección genérica ===== */
+.rt-section {
+  padding: var(--tenant-sp-8) 0;
+  border-top: 1px solid var(--tenant-border);
+}
+
 /* ===== cabecera de sección (eyebrow + título) — del HTML Dwell ===== */
 .rt-eyebrow {
   font-size: 12px;
