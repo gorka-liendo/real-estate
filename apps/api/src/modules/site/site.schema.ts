@@ -2,7 +2,12 @@ import { z } from "zod";
 
 const socialLink = z.object({
   label: z.string().min(1).max(40),
-  url: z.string().max(300),
+  // Solo http(s): la url se renderiza como href en el micrositio; bloquea
+  // esquemas ejecutables (javascript:, data:) para evitar self-XSS del tenant.
+  url: z
+    .string()
+    .max(300)
+    .refine((u) => /^https?:\/\//i.test(u), { message: "url_must_be_http" }),
 });
 
 // Contenido del micrositio (site_config). Todo opcional: el editor manda el objeto

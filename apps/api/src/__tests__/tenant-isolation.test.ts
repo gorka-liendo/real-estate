@@ -118,30 +118,30 @@ describe("aislamiento a nivel de @rep/db", () => {
 
 describe("aislamiento a nivel de API (middleware)", () => {
   it("resuelve el tenant por header x-tenant-slug y solo devuelve sus datos", async () => {
-    const res = await app.request("/tenant/subscriptions", {
+    const res = await app.request("/tenant", {
       headers: { "x-tenant-slug": "test-iso-a" },
     });
     expect(res.status).toBe(200);
-    const rows = (await res.json()) as Array<{ id: string }>;
-    expect(rows.map((r) => r.id)).toEqual([subAId]);
+    const body = (await res.json()) as { slug: string };
+    expect(body.slug).toBe("test-iso-a");
   });
 
   it("resuelve el tenant por subdominio del Host", async () => {
-    const res = await app.request("http://test-iso-b.localhost/tenant/subscriptions");
+    const res = await app.request("http://test-iso-b.localhost/tenant");
     expect(res.status).toBe(200);
-    const rows = (await res.json()) as Array<{ id: string }>;
-    expect(rows.map((r) => r.id)).toEqual([subBId]);
+    const body = (await res.json()) as { slug: string };
+    expect(body.slug).toBe("test-iso-b");
   });
 
   it("tenant desconocido → 404", async () => {
-    const res = await app.request("/tenant/subscriptions", {
+    const res = await app.request("/tenant", {
       headers: { "x-tenant-slug": "no-existe" },
     });
     expect(res.status).toBe(404);
   });
 
   it("sin tenant resoluble → 404", async () => {
-    const res = await app.request("http://localhost/tenant/subscriptions");
+    const res = await app.request("http://localhost/tenant");
     expect(res.status).toBe(404);
   });
 

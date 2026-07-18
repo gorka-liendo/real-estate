@@ -12,6 +12,8 @@
   --tenant-accent: #000000;
   --tenant-on-primary: #fbfbfb;
   --tenant-border: rgba(0, 0, 0, 0.08);
+  --tenant-placeholder: linear-gradient(160deg, #d8d5d0, #bdb9b2);
+  --tenant-danger: #b5241a;
 
   --tenant-font-display: var(--font-display), "Archivo Variable", sans-serif;
   --tenant-font-body: var(--font-body), "Hanken Grotesk Variable", sans-serif;

@@ -4,6 +4,7 @@ import {
   AboutColumns,
   BigNumber,
   Footer,
+  LeadForm,
   MobileMenu,
   PhotoPair,
   PillButton,
@@ -76,6 +77,15 @@ describe("componentes signature (Capa 1 Dwell)", () => {
     );
     expect(html).toContain("rt-mobilemenu");
     expect(html).toContain("Home");
+  });
+
+  it("LeadForm renderiza los campos y el honeypot", () => {
+    const html = renderToStaticMarkup(<LeadForm onSubmit={async () => {}} />);
+    expect(html).toContain("rt-form");
+    expect(html).toContain('id="lead-name"');
+    expect(html).toContain('id="lead-email"');
+    expect(html).toContain('rt-form__hp'); // honeypot presente
+    expect(html).toContain('aria-hidden="true"');
   });
 
   it("Footer con columnas", () => {

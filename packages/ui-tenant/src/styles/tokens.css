@@ -15,6 +15,10 @@
   --tenant-accent: #111111;
   --tenant-on-primary: #ffffff;
   --tenant-border: rgba(0, 0, 0, 0.1);
+  /* fondo de imágenes sin foto (placeholder). Cada tema lo ajusta a su paleta. */
+  --tenant-placeholder: linear-gradient(160deg, #e5e5e5, #cfcfcf);
+  /* color de error (validación de formularios). Cada tema puede afinarlo. */
+  --tenant-danger: #c0392b;
 
   /* --- tipografía (familias cargadas por la app con next/font) --- */
   --tenant-font-display: var(--font-display), "Archivo Variable", sans-serif;

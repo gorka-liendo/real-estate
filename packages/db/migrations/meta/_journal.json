@@ -50,6 +50,13 @@
       "when": 1784329552146,
       "tag": "0006_lucky_proemial_gods",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1784364855175,
+      "tag": "0007_awesome_gravity",
+      "breakpoints": true
     }
   ]
 }

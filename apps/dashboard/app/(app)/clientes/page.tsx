@@ -85,7 +85,16 @@ function ClientesInner({ slug }: { slug: string }) {
               <tbody>
                 {clients.map((c) => (
                   <tr key={c.id}>
-                    <td style={{ fontWeight: 500 }}>{c.name}</td>
+                    <td style={{ fontWeight: 500 }}>
+                      <span
+                        style={{ display: "inline-flex", alignItems: "center", gap: "var(--ui-sp-2)" }}
+                      >
+                        {c.name}
+                        {c.source === "microsite" ? (
+                          <Badge variant="default">Micrositio</Badge>
+                        ) : null}
+                      </span>
+                    </td>
                     <td className="du-muted">
                       {c.email || c.phone || "—"}
                     </td>

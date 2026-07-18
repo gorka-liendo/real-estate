@@ -14,7 +14,6 @@ export type SiteConfig = {
 };
 
 export type TenantData = {
-  id: string;
   slug: string;
   name: string;
   brandConfig: BrandConfig;
@@ -83,6 +82,28 @@ export async function fetchListings(slug: string): Promise<PublicProperty[]> {
   });
   if (!res.ok) return [];
   return ((await res.json()) as { properties: PublicProperty[] }).properties;
+}
+
+export type LeadPayload = {
+  name: string;
+  email?: string;
+  phone?: string;
+  message?: string;
+  propertyId?: string;
+  company?: string; // honeypot
+};
+
+/**
+ * Envía un lead de captación al API (endpoint público gateado por 'microsite').
+ * Lanza si la respuesta no es OK para que el formulario muestre el estado de error.
+ */
+export async function submitLead(slug: string, payload: LeadPayload): Promise<void> {
+  const res = await fetch(`${tenantSiteEnv.NEXT_PUBLIC_API_URL}/tenant/leads`, {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-tenant-slug": slug },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`lead_submit_failed_${res.status}`);
 }
 
 /** Ficha de una propiedad publicada por id. */

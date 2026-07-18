@@ -5,6 +5,10 @@ import { tenants } from "./tenants.js";
 export const clientStage = pgEnum("client_stage", ["lead", "active", "closed"]);
 export type ClientStage = (typeof clientStage.enumValues)[number];
 
+// Origen del cliente: alta manual en el dashboard o lead entrante del micrositio.
+export const clientSource = pgEnum("client_source", ["manual", "microsite"]);
+export type ClientSource = (typeof clientSource.enumValues)[number];
+
 // Clientes de una inmobiliaria. TENANT-SCOPED (lleva tenant_id) → todo acceso
 // pasa por forTenant()/tenantDb() del scoping de @rep/db.
 export const clients = pgTable("clients", {
@@ -17,6 +21,11 @@ export const clients = pgTable("clients", {
   phone: text("phone"),
   stage: clientStage("stage").notNull().default("lead"),
   notes: text("notes"),
+  // Captación: de dónde vino el cliente y, si es un lead del micrositio, qué
+  // inmueble miraba (nullable — no referenciamos properties para no acoplar el
+  // borrado del inmueble al del lead; guardamos el id como contexto).
+  source: clientSource("source").notNull().default("manual"),
+  interestPropertyId: uuid("interest_property_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()

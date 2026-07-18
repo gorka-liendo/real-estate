@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { fetchProperty, fetchTenant, type PublicProperty } from "@/lib/tenant";
 import { CONDITION_LABELS, featureLabel, KIND_LABELS } from "@/lib/property-meta";
+import { ContactForm } from "../../ContactForm";
 
 const OPERATION_LABEL = { sale: "En venta", rent: "En alquiler" } as const;
 
@@ -76,6 +77,8 @@ export default async function PropertyDetail({ params }: Params) {
                   className={`rt-gallery__img${i === 0 ? " rt-gallery__img--main" : ""}`}
                   src={url}
                   alt={property.title}
+                  loading={i === 0 ? "eager" : "lazy"}
+                  decoding="async"
                 />
               ))}
             </div>
@@ -96,7 +99,10 @@ export default async function PropertyDetail({ params }: Params) {
                 {OPERATION_LABEL[property.operation]}
                 {locParts.length ? ` · ${locParts.join(", ")}` : ""}
               </div>
-              <h1 className="rt-section-title" style={{ fontSize: 44, marginBottom: 0 }}>
+              <h1
+                className="rt-section-title"
+                style={{ fontSize: "clamp(28px, 6vw, 44px)", marginBottom: 0 }}
+              >
                 {property.title}
               </h1>
 
@@ -161,10 +167,13 @@ export default async function PropertyDetail({ params }: Params) {
                 <div className="rt-contactcard__op">{OPERATION_LABEL[property.operation]}</div>
                 <div className="rt-contactcard__price">{priceStr(property)}</div>
 
-                <Link className="rt-btn" href="/#contacto">
-                  Solicitar información
-                </Link>
+                <ContactForm
+                  slug={slug}
+                  propertyId={property.id}
+                  submitLabel="Solicitar información"
+                />
 
+                <hr className="rt-contactcard__sep" />
                 <p className="rt-contactcard__agency">{tenant.name}</p>
                 {site.contactPhone ? (
                   <a className="rt-contactcard__row" href={`tel:${site.contactPhone}`}>

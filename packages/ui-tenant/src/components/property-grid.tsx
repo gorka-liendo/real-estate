@@ -13,7 +13,13 @@ function Card({ item }: { item: Listing }) {
   const inner = (
     <>
       {item.imageUrl ? (
-        <img className="rt-listing__img" src={item.imageUrl} alt={item.title} />
+        <img
+          className="rt-listing__img"
+          src={item.imageUrl}
+          alt={item.title}
+          loading="lazy"
+          decoding="async"
+        />
       ) : (
         <div className="rt-listing__img" role="img" aria-label={item.title} />
       )}

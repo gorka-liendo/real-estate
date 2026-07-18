@@ -37,12 +37,14 @@ export type Me = {
 };
 
 export type ClientStage = "lead" | "active" | "closed";
+export type ClientSource = "manual" | "microsite";
 export type Client = {
   id: string;
   name: string;
   email: string | null;
   phone: string | null;
   stage: ClientStage;
+  source: ClientSource;
   notes: string | null;
   createdAt: string;
   updatedAt: string;

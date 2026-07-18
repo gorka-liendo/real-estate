@@ -14,6 +14,15 @@
   -webkit-font-smoothing: antialiased;
 }
 
+/* Foco de teclado visible en todos los interactivos del micrositio.
+   outline-offset lo saca del elemento → visible incluso sobre botones de
+   fondo pleno (píldora). Usa el acento del tema. */
+.rt-root a:focus-visible,
+.rt-root button:focus-visible {
+  outline: 2px solid var(--tenant-accent);
+  outline-offset: 2px;
+}
+
 /* ===== wordmark bleed — signature #1 ===== */
 .rt-wordmark {
   font-family: var(--tenant-font-display);
@@ -83,7 +92,7 @@
   aspect-ratio: 4 / 3;
   width: 100%;
   object-fit: cover;
-  background: linear-gradient(160deg, #d8d5d0, #bdb9b2);
+  background: var(--tenant-placeholder);
   border-radius: var(--tenant-radius);
   display: block;
 }
@@ -135,7 +144,7 @@
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  opacity: 0.55;
+  opacity: 0.7;
 }
 .rt-topbar__nav a:hover {
   opacity: 1;
@@ -205,7 +214,7 @@
 }
 .rt-gallery {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
   gap: var(--tenant-sp-3);
   margin-bottom: var(--tenant-sp-6);
 }
@@ -214,7 +223,7 @@
   aspect-ratio: 4 / 3;
   object-fit: cover;
   border-radius: var(--tenant-radius);
-  background: linear-gradient(160deg, #d8d5d0, #bdb9b2);
+  background: var(--tenant-placeholder);
   display: block;
 }
 .rt-gallery__img--main {
@@ -293,7 +302,7 @@
 /* rejilla de características con check */
 .rt-features {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr));
   gap: var(--tenant-sp-3) var(--tenant-sp-4);
   list-style: none;
   padding: 0;
@@ -394,7 +403,9 @@
 /* ===== grid de propiedades (listado del micrositio) — todo con tokens Dwell ===== */
 .rt-listings {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  /* min(100%, 300px): en pantallas < 300px la pista se encoge al ancho
+     disponible en vez de desbordar (scroll horizontal en móviles estrechos). */
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
   gap: var(--tenant-sp-6);
 }
 .rt-listing {
@@ -406,9 +417,23 @@
   aspect-ratio: 4 / 3;
   width: 100%;
   object-fit: cover;
-  background: linear-gradient(160deg, #d8d5d0, #bdb9b2);
+  background: var(--tenant-placeholder);
   border-radius: var(--tenant-radius);
   display: block;
+  transition: opacity 0.2s ease;
+}
+/* señal de que la tarjeta entera es clicable */
+.rt-listing:hover .rt-listing__img {
+  opacity: 0.88;
+}
+.rt-listing:hover .rt-listing__title {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .rt-listing__img {
+    transition: none;
+  }
 }
 .rt-listing__body {
   padding-top: var(--tenant-sp-3);
@@ -453,7 +478,77 @@
 .rt-btn--outline {
   background: transparent;
   color: var(--tenant-text);
-  border: 1px solid rgba(0, 0, 0, 0.25);
+  border: 1px solid color-mix(in srgb, var(--tenant-text) 25%, transparent);
+}
+
+/* ===== formulario de captación (lead) ===== */
+.rt-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tenant-sp-3);
+}
+.rt-form__title {
+  font-family: var(--tenant-font-display);
+  font-weight: 700;
+  font-size: 18px;
+  margin: 0;
+}
+.rt-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tenant-sp-1);
+}
+.rt-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--tenant-muted);
+}
+.rt-input,
+.rt-textarea {
+  width: 100%;
+  font-family: var(--tenant-font-body);
+  font-size: 15px;
+  color: var(--tenant-text);
+  background: var(--tenant-bg);
+  border: 1px solid var(--tenant-border);
+  border-radius: var(--tenant-radius);
+  padding: 12px 14px;
+}
+.rt-textarea {
+  resize: vertical;
+  min-height: 88px;
+}
+.rt-input:focus-visible,
+.rt-textarea:focus-visible {
+  outline: 2px solid var(--tenant-accent);
+  outline-offset: 1px;
+  border-color: transparent;
+}
+.rt-form__hint {
+  font-size: 12px;
+  color: var(--tenant-muted);
+  margin: 0;
+}
+.rt-form__status {
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+}
+.rt-form__status--ok {
+  color: var(--tenant-text);
+}
+.rt-form__status--err {
+  color: var(--tenant-danger);
+}
+/* honeypot: fuera de pantalla sin usar display:none (bots lo saltan) */
+.rt-form__hp {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* ===== pasos numerados — signature #6 ===== */
@@ -466,7 +561,7 @@
   font-family: var(--tenant-font-display);
   font-weight: 400;
   font-size: 40px;
-  color: rgba(0, 0, 0, 0.25);
+  color: color-mix(in srgb, var(--tenant-text) 25%, transparent);
 }
 .rt-step__t {
   font-family: var(--tenant-font-display);
@@ -563,5 +658,16 @@
   .rt-bignumber__body {
     padding-left: 0;
     padding-top: 100px;
+  }
+
+  /* menos aire muerto en móvil: hero y secciones no necesitan 96-140px */
+  .rt-wrap {
+    padding: 0 var(--tenant-sp-4);
+  }
+  .rt-hero {
+    padding: var(--tenant-sp-7) 0 var(--tenant-sp-6);
+  }
+  .rt-section {
+    padding: var(--tenant-sp-6) 0;
   }
 }

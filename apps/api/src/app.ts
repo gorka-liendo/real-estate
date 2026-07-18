@@ -4,7 +4,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { auth, authEnv } from "@rep/auth";
-import { db, memberships, platformAdmins, subscriptions, tenantDb, tenants } from "@rep/db";
+import { db, memberships, platformAdmins, tenantDb, tenants } from "@rep/db";
 import { getActiveModules } from "@rep/modules";
 import {
   authMiddleware,
@@ -17,6 +17,7 @@ import { tenantMiddleware, type TenantEnv } from "./middlewares/tenant.middlewar
 import { admin } from "./modules/admin/admin.routes.js";
 import { brand } from "./modules/brand/brand.routes.js";
 import { clients } from "./modules/clients/clients.routes.js";
+import { leads } from "./modules/leads/leads.routes.js";
 import { properties } from "./modules/properties/properties.routes.js";
 import {
   getPublishedProperty,
@@ -29,8 +30,32 @@ export const app = new Hono();
 
 app.use("*", logger());
 
-// CORS con credenciales para el dashboard y tenant-site (cookies httpOnly cross-origin).
-app.use("*", cors({ origin: authEnv.TRUSTED_ORIGINS, credentials: true }));
+// Endpoints públicos del micrositio, llamados desde el NAVEGADOR del tenant-site,
+// que en producción vive en dominios/subdominios de inmobiliaria dinámicos (no en
+// una lista fija). No usan credenciales → CORS abierto solo para ellos.
+function isPublicMicrositePath(path: string): boolean {
+  return (
+    path === "/tenant" ||
+    path === "/tenant/modules" ||
+    path === "/tenant/microsite" ||
+    path === "/tenant/leads" ||
+    path.startsWith("/tenant/listings")
+  );
+}
+
+// CORS: para las rutas públicas del micrositio reflejamos cualquier origen (sin
+// datos con credenciales); para el resto (dashboard/auth con cookies httpOnly)
+// solo orígenes de confianza. Un único middleware → la preflight se resuelve bien.
+app.use(
+  "*",
+  cors({
+    credentials: true,
+    origin: (origin, c) => {
+      if (isPublicMicrositePath(c.req.path)) return origin || "*";
+      return authEnv.TRUSTED_ORIGINS.includes(origin) ? origin : null;
+    },
+  }),
+);
 
 app.get("/health", (c) => c.json({ status: "ok" }));
 
@@ -73,18 +98,13 @@ tenant.use("*", tenantMiddleware);
 
 tenant.get("/", (c) => {
   const t = c.get("tenant");
+  // Público (micrositio): NO exponemos el id interno del tenant.
   return c.json({
-    id: t.id,
     slug: t.slug,
     name: t.name,
     brandConfig: t.brandConfig,
     siteConfig: t.siteConfig,
   });
-});
-
-tenant.get("/subscriptions", async (c) => {
-  const rows = await tenantDb().select(subscriptions);
-  return c.json(rows);
 });
 
 // códigos de módulos activos — lo consume el dashboard (useModule) y el tenant-site
@@ -109,6 +129,9 @@ tenant.get("/listings/:id", requireModule("microsite"), async (c) => {
   if (!property) return c.json({ error: "not_found" }, 404);
   return c.json({ property });
 });
+
+// PÚBLICO: captación de leads desde el micrositio → cliente stage 'lead'.
+tenant.route("/leads", leads);
 
 // --- rutas tenant-scoped privadas (dashboard): sesión + membership obligatorias ---
 const team = new Hono<MemberEnv>();
