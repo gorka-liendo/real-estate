@@ -407,11 +407,19 @@ packages/
       `rt-lightbox*` 100% tokens + nuevos `--tenant-scrim`/`--tenant-on-scrim`
       en contrato y temas. Ficha: facts con jerarquía display 22px. Verificado
       E2E a 1280/360 (navegación, scroll-lock, sin overflow).
-- [ ] **Deuda anotada (review 18-jul-2026)**: deduplicar KIND_LABEL (×5) y el
-      tipo Estimate (×4) en un módulo compartido; mover `isPublicMicrositePath`
+- [x] **Portada premium + menú móvil + dedup de labels** — hero split con
+      propiedad destacada (foto + chip título·precio enlazando a la ficha;
+      fallback solo-texto), badge de operación en las tarjetas del grid, y
+      menú hamburguesa en ≤640px (`MobileNav` cliente, overlay portaleado al
+      `.rt-root` — el backdrop-filter del topbar hace containing block de los
+      fixed, y fuera de `.rt-root` se pierden fuentes/tema). Dedup:
+      `PROPERTY_KIND_LABELS`/`OPERATION_LABELS` como fuente única en
+      `@rep/ui-tenant` (5→3 copias; API y dashboard mantienen la suya
+      server/app-side) y `ValuationEstimate` reusado en tenant-site.
+- [ ] **Deuda anotada (review 18-jul-2026)**: mover `isPublicMicrositePath`
       a un sub-app público con su propia política CORS; throttle a Redis
-      multi-instancia; helpers `tenantGet/tenantPost` en tenant-site.
-- [ ] **Pulido restante**: hero con imagen, menú móvil, plantillas
-      editorial/minimal/bold.
+      multi-instancia; helpers `tenantGet/tenantPost` en tenant-site;
+      KIND_LABEL residual en API/dashboard si algún día compensa un leaf package.
+- [ ] **Pulido restante**: plantillas editorial/minimal/bold.
 - [ ] **Pendiente retomar**: theming/fuentes por inmobiliaria (ver gotcha de
       next/font arriba) y edición de marca en Ajustes.

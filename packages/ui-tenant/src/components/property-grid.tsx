@@ -7,22 +7,26 @@ export type Listing = {
   price: string; // p.ej. "320.000 €"
   imageUrl?: string;
   href?: string;
+  badge?: string; // p.ej. "En venta" — chip sobre la foto
 };
 
 function Card({ item }: { item: Listing }) {
   const inner = (
     <>
-      {item.imageUrl ? (
-        <img
-          className="rt-listing__img"
-          src={item.imageUrl}
-          alt={item.title}
-          loading="lazy"
-          decoding="async"
-        />
-      ) : (
-        <div className="rt-listing__img" role="img" aria-label={item.title} />
-      )}
+      <span className="rt-listing__media">
+        {item.imageUrl ? (
+          <img
+            className="rt-listing__img"
+            src={item.imageUrl}
+            alt={item.title}
+            loading="lazy"
+            decoding="async"
+          />
+        ) : (
+          <span className="rt-listing__img" role="img" aria-label={item.title} />
+        )}
+        {item.badge ? <span className="rt-listing__badge">{item.badge}</span> : null}
+      </span>
       <div className="rt-listing__body">
         <h3 className="rt-listing__title">{item.title}</h3>
         <div className="rt-listing__meta">{item.meta}</div>

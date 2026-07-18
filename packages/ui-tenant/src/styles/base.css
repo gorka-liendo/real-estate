@@ -149,10 +149,82 @@
 .rt-topbar__nav a:hover {
   opacity: 1;
 }
+/* hamburguesa: oculta en desktop; en ≤640px sustituye al nav inline */
+.rt-burger {
+  display: none;
+  width: 40px;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: var(--tenant-text);
+  border: 1px solid var(--tenant-border);
+  border-radius: var(--tenant-radius-pill);
+  cursor: pointer;
+}
+@media (max-width: 640px) {
+  .rt-topbar__nav {
+    display: none;
+  }
+  .rt-burger {
+    display: flex;
+  }
+  .rt-topbar__brand {
+    font-size: 15px;
+  }
+}
 
 /* ===== hero ===== */
 .rt-hero {
   padding: var(--tenant-sp-9) 0 var(--tenant-sp-8);
+}
+/* hero con imagen destacada: texto + foto de una propiedad, en dos columnas */
+.rt-hero__grid {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: var(--tenant-sp-7);
+  align-items: center;
+}
+.rt-hero__media {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--tenant-radius);
+  background: var(--tenant-placeholder);
+}
+.rt-hero__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s ease;
+}
+.rt-hero__media:hover img {
+  transform: scale(1.03);
+}
+/* chip con el título/precio de la propiedad destacada, sobre la foto */
+.rt-hero__media-caption {
+  position: absolute;
+  left: var(--tenant-sp-3);
+  bottom: var(--tenant-sp-3);
+  max-width: calc(100% - 2 * var(--tenant-sp-3));
+  padding: 8px 14px;
+  background: var(--tenant-bg);
+  color: var(--tenant-text);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: var(--tenant-radius-pill);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@media (max-width: 860px) {
+  .rt-hero__grid {
+    grid-template-columns: 1fr;
+    gap: var(--tenant-sp-5);
+  }
 }
 .rt-hero__title {
   font-family: var(--tenant-font-display);
@@ -605,6 +677,23 @@
   .rt-listing__img {
     transition: none;
   }
+}
+.rt-listing__media {
+  position: relative;
+  display: block;
+}
+/* chip de operación (En venta / En alquiler) sobre la foto */
+.rt-listing__badge {
+  position: absolute;
+  top: var(--tenant-sp-2);
+  left: var(--tenant-sp-2);
+  padding: 6px 12px;
+  background: var(--tenant-bg);
+  color: var(--tenant-text);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-radius: var(--tenant-radius-pill);
 }
 .rt-listing__body {
   padding-top: var(--tenant-sp-3);

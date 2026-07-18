@@ -25,13 +25,8 @@ export const CONDITION_LABELS: Record<string, string> = {
   renew: "A reformar",
 };
 
-export const KIND_LABELS: Record<string, string> = {
-  flat: "Piso",
-  house: "Casa",
-  commercial: "Local",
-  land: "Terreno",
-  garage: "Garaje",
-};
+// Fuente única en el DS (@rep/ui-tenant); re-export para los consumidores locales.
+export { PROPERTY_KIND_LABELS as KIND_LABELS } from "@rep/ui-tenant";
 
 export function featureLabel(id: string): string {
   return FEATURE_LABELS[id] ?? id;

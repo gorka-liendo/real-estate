@@ -1,19 +1,19 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Footer, PillLink, PropertyGrid, type Listing } from "@rep/ui-tenant";
+import {
+  Footer,
+  MobileNav,
+  OPERATION_LABELS,
+  PillLink,
+  PROPERTY_KIND_LABELS,
+  PropertyGrid,
+  type Listing,
+} from "@rep/ui-tenant";
 import { fetchListings, fetchModules, fetchTenant, type PublicProperty } from "@/lib/tenant";
 import { ValuationWidget } from "./ValuationWidget";
 
-const KIND_LABEL: Record<PublicProperty["kind"], string> = {
-  flat: "Piso",
-  house: "Casa",
-  commercial: "Local",
-  land: "Terreno",
-  garage: "Garaje",
-};
-
 function toListing(p: PublicProperty): Listing {
-  const meta = [KIND_LABEL[p.kind], p.city, p.areaM2 ? `${p.areaM2} m²` : null]
+  const meta = [PROPERTY_KIND_LABELS[p.kind], p.city, p.areaM2 ? `${p.areaM2} m²` : null]
     .filter(Boolean)
     .join(" · ");
   const price =
@@ -27,6 +27,7 @@ function toListing(p: PublicProperty): Listing {
     price,
     imageUrl: p.photos[0],
     href: `/propiedad/${p.id}`,
+    badge: OPERATION_LABELS[p.operation],
   };
 }
 
@@ -55,6 +56,16 @@ export default async function Microsite({ params }: Params) {
   ]);
   const listings = rawListings.map(toListing);
   const hasValuation = activeModules.includes("valuation");
+
+  // Propiedad destacada del hero: la primera publicada CON foto (si no hay,
+  // el hero cae con elegancia al diseño solo-texto de siempre).
+  const featured = rawListings.find((p) => p.photos.length > 0);
+
+  const navItems = [
+    { label: "Propiedades", href: "#propiedades" },
+    ...(hasValuation ? [{ label: "Valora tu piso", href: "#valoracion" }] : []),
+    { label: "Contacto", href: "#contacto" },
+  ];
 
   // Contenido = site_config del tenant, con defaults sensatos si viene vacío.
   const site = tenant.siteConfig ?? {};
@@ -86,20 +97,42 @@ export default async function Microsite({ params }: Params) {
         <div className="rt-wrap rt-topbar__inner">
           <span className="rt-topbar__brand">{tenant.name}</span>
           <nav className="rt-topbar__nav">
-            <a href="#propiedades">Propiedades</a>
-            {hasValuation ? <a href="#valoracion">Valora tu piso</a> : null}
-            <a href="#contacto">Contacto</a>
+            {navItems.map((item) => (
+              <a key={item.href} href={item.href}>
+                {item.label}
+              </a>
+            ))}
           </nav>
+          <MobileNav items={navItems} />
         </div>
       </header>
 
-      {/* hero */}
+      {/* hero: texto + propiedad destacada (o solo texto si no hay fotos) */}
       <section className="rt-hero">
         <div className="rt-wrap">
-          <div className="rt-eyebrow">{heroEyebrow}</div>
-          <h1 className="rt-hero__title">{heroTitle}</h1>
-          <p className="rt-hero__sub">{heroSubtitle}</p>
-          <PillLink href="#propiedades">Ver propiedades</PillLink>
+          <div className={featured ? "rt-hero__grid" : undefined}>
+            <div>
+              <div className="rt-eyebrow">{heroEyebrow}</div>
+              <h1 className="rt-hero__title">{heroTitle}</h1>
+              <p className="rt-hero__sub">{heroSubtitle}</p>
+              <PillLink href="#propiedades">Ver propiedades</PillLink>
+            </div>
+            {featured ? (
+              <a
+                className="rt-hero__media"
+                href={`/propiedad/${featured.id}`}
+                aria-label={`Ver ${featured.title}`}
+              >
+                <img src={featured.photos[0]} alt={featured.title} decoding="async" />
+                <span className="rt-hero__media-caption">
+                  {featured.title}
+                  {featured.price != null
+                    ? ` · ${new Intl.NumberFormat("es-ES").format(featured.price)} €`
+                    : ""}
+                </span>
+              </a>
+            ) : null}
+          </div>
         </div>
       </section>
 

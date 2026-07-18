@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ChangeEvent, type FormEvent } from "react";
+import { PROPERTY_KIND_OPTIONS } from "../property-labels.js";
 
 // Widget "Valora tu piso gratis". Presentacional en cuanto a red: la app hace el
 // fetch en `onSubmit` y devuelve la estimación (o null si la agencia no tiene
@@ -33,14 +34,6 @@ const EMPTY: ValuationFormData = {
   bedrooms: "",
   company: "",
 };
-
-const KIND_OPTIONS = [
-  { value: "flat", label: "Piso" },
-  { value: "house", label: "Casa" },
-  { value: "commercial", label: "Local" },
-  { value: "land", label: "Terreno" },
-  { value: "garage", label: "Garaje" },
-];
 
 const fmt = (n: number) => n.toLocaleString("es-ES");
 
@@ -108,7 +101,7 @@ export function ValuationForm({
             Tipo
           </label>
           <select id="val-kind" className="rt-select" value={data.kind} onChange={set("kind")}>
-            {KIND_OPTIONS.map((o) => (
+            {PROPERTY_KIND_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
                 {o.label}
               </option>

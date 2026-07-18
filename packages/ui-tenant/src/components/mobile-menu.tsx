@@ -5,10 +5,13 @@ export function MobileMenu({
   items,
   label = "Menu",
   onClose,
+  onNavigate,
 }: {
   items: MenuItem[];
   label?: string;
   onClose?: () => void;
+  /** Se dispara al pulsar un enlace (p. ej. para cerrar el overlay). */
+  onNavigate?: () => void;
 }) {
   return (
     <nav className="rt-mobilemenu" aria-label={label}>
@@ -19,7 +22,7 @@ export function MobileMenu({
       ) : null}
       <div className="rt-mobilemenu__label">{label}</div>
       {items.map((item) => (
-        <a href={item.href} key={item.href}>
+        <a href={item.href} key={item.href} onClick={onNavigate}>
           {item.label}
         </a>
       ))}

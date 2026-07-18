@@ -1,5 +1,5 @@
 import { tenantSiteEnv } from "@rep/config/tenant-site";
-import type { BrandConfig } from "@rep/ui-tenant";
+import type { BrandConfig, ValuationEstimate } from "@rep/ui-tenant";
 
 export type SocialLink = { label: string; url: string };
 export type SiteConfig = {
@@ -134,12 +134,8 @@ export type ValuationPayload = {
   company?: string; // honeypot
 };
 
-export type ValuationEstimateResult = {
-  low: number;
-  high: number;
-  pricePerM2: number;
-  comparables: number;
-} | null;
+// Reusa la forma del DS (fuente única): el valor fluye directo al ValuationForm.
+export type ValuationEstimateResult = ValuationEstimate | null;
 
 /**
  * Envía una solicitud de valoración (widget "Valora tu piso gratis").
