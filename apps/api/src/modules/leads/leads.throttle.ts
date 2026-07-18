@@ -1,13 +1,18 @@
 // Throttle en memoria para el POST público de leads (defensa en profundidad,
-// además del honeypot). Ventana fija por clave (tenant:ip). En producción
-// migrar a Redis (@rep/queue ya trae IORedis) para que funcione multi-instancia.
+// además del honeypot). Ventana fija por clave. En producción migrar a Redis
+// (@rep/queue ya trae IORedis) para que funcione multi-instancia.
+//
+// Se combinan dos límites (ver leads.routes.ts):
+//   - por tenant:ip → freno fino por cliente (la ip puede venir de un header
+//     spoofeable, así que es best-effort).
+//   - por tenant    → tope global NO evadible: la clave la deriva el servidor
+//     del contexto, no del cliente, así que rotar x-forwarded-for no lo salta.
 const WINDOW_MS = 60_000;
-const MAX_PER_WINDOW = 5;
 const hits = new Map<string, number[]>();
 let lastSweep = Date.now();
 
 // Purga claves cuyos timestamps ya caducaron, para que el Map no crezca sin
-// límite (una entrada por tenant:ip). Barre como mucho una vez por ventana.
+// límite (una entrada por clave). Barre como mucho una vez por ventana.
 function sweep(now: number): void {
   if (now - lastSweep < WINDOW_MS) return;
   for (const [k, arr] of hits) {
@@ -18,11 +23,12 @@ function sweep(now: number): void {
   lastSweep = now;
 }
 
-export function allowLead(key: string): boolean {
+// Registra un intento en `key` y responde si sigue dentro de `max` por ventana.
+export function allowLead(key: string, max: number): boolean {
   const now = Date.now();
   sweep(now);
   const recent = (hits.get(key) ?? []).filter((t) => now - t < WINDOW_MS);
-  if (recent.length >= MAX_PER_WINDOW) {
+  if (recent.length >= max) {
     hits.set(key, recent);
     return false;
   }

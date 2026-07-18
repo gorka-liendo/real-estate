@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { eq, inArray } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import { clients, closeDb, db, modules, subscriptions, tenants } from "@rep/db";
+import { clients, closeDb, db, modules, properties, subscriptions, tenants } from "@rep/db";
 import type { Tenant } from "@rep/db";
 import { invalidateModules } from "@rep/modules";
 import { app } from "../app.js";
@@ -42,17 +42,26 @@ afterAll(async () => {
   await closeDb();
 });
 
-function post(slug: string, body: unknown) {
+function post(slug: string, body: unknown, headers: Record<string, string> = {}) {
   return app.request("/tenant/leads", {
     method: "POST",
-    headers: { "x-tenant-slug": slug, "content-type": "application/json" },
+    headers: { "x-tenant-slug": slug, "content-type": "application/json", ...headers },
     body: JSON.stringify(body),
   });
 }
 
+// Crea una propiedad publicada del tenant A y devuelve su id.
+async function seedPublishedProperty(): Promise<string> {
+  const [p] = await db
+    .insert(properties)
+    .values({ tenantId: tenantA.id, title: "Ático de prueba", status: "published" })
+    .returning();
+  return p!.id;
+}
+
 describe("Captación de leads", () => {
   it("crea un cliente stage 'lead' source 'microsite' con el inmueble de interés", async () => {
-    const propertyId = randomUUID();
+    const propertyId = await seedPublishedProperty();
     const res = await post(SLUGS[0]!, {
       name: "Marta Ruiz",
       email: "marta@x.com",
@@ -71,6 +80,18 @@ describe("Captación de leads", () => {
       interestPropertyId: propertyId,
       notes: "Me interesa este ático",
     });
+  });
+
+  it("descarta un propertyId que no es un inmueble publicado del tenant", async () => {
+    const res = await post(SLUGS[0]!, {
+      name: "Curioso",
+      email: "curioso@x.com",
+      propertyId: randomUUID(), // no existe / no es de este tenant
+    });
+    expect(res.status).toBe(201);
+    const rows = await db.select().from(clients).where(eq(clients.tenantId, tenantA.id));
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.interestPropertyId).toBeNull(); // no se guarda basura
   });
 
   it("honeypot relleno → 204 y NO inserta", async () => {
@@ -103,5 +124,23 @@ describe("Captación de leads", () => {
     const rowsB = await db.select().from(clients).where(eq(clients.tenantId, tenantB.id));
     expect(rowsA).toHaveLength(1);
     expect(rowsB).toHaveLength(0);
+  });
+
+  it("rotar x-forwarded-for NO evade el tope global por tenant", async () => {
+    // Cada request con una IP distinta esquiva el límite por-ip (5), pero el
+    // tope por tenant (30/min) sí debe frenar el flood → alguna cae en 429.
+    let sawRateLimit = false;
+    for (let i = 0; i < 40; i++) {
+      const res = await post(
+        SLUGS[0]!,
+        { name: `Bot ${i}`, email: `bot${i}@x.com` },
+        { "x-forwarded-for": `10.0.0.${i}` }, // ip falsa distinta cada vez
+      );
+      if (res.status === 429) {
+        sawRateLimit = true;
+        break;
+      }
+    }
+    expect(sawRateLimit).toBe(true);
   });
 });

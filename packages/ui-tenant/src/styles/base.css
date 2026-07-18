@@ -541,14 +541,20 @@
 .rt-form__status--err {
   color: var(--tenant-danger);
 }
-/* honeypot: fuera de pantalla sin usar display:none (bots lo saltan) */
+/* honeypot: oculto a humanos con el patrón sr-only (clip) — sin display:none
+   (los bots lo saltarían) y sin offset negativo grande (evita reintroducir
+   scroll horizontal). El input sigue en el DOM y rellenable por bots. */
 .rt-form__hp {
   position: absolute;
-  left: -9999px;
   width: 1px;
   height: 1px;
-  opacity: 0;
-  pointer-events: none;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* ===== pasos numerados — signature #6 ===== */
