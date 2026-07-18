@@ -29,13 +29,20 @@ export function proxy(req: NextRequest) {
     return NextResponse.next();
   }
 
+  // Precedencia: ?__tenant (dev) → subdominio → cookie (dev, para que la
+  // navegación interna sin el query param —p.ej. /propiedad/:id— siga
+  // resolviendo el tenant en pruebas con ?__tenant). En prod manda el subdominio.
   const override = url.searchParams.get("__tenant");
-  const slug = override || slugFromHost(req.headers.get("host") ?? "");
+  const cookieSlug = req.cookies.get("__tenant")?.value ?? null;
+  const slug = override || slugFromHost(req.headers.get("host") ?? "") || cookieSlug;
   if (!slug) return NextResponse.next(); // landing de plataforma en "/"
 
   const rewritten = url.clone();
   rewritten.pathname = `/s/${slug}${url.pathname === "/" ? "" : url.pathname}`;
-  return NextResponse.rewrite(rewritten);
+  const res = NextResponse.rewrite(rewritten);
+  // Recuerda el tenant elegido con ?__tenant para las siguientes navegaciones.
+  if (override) res.cookies.set("__tenant", override, { path: "/", sameSite: "lax" });
+  return res;
 }
 
 export const config = {

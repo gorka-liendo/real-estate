@@ -21,7 +21,10 @@ export type TenantData = {
   siteConfig: SiteConfig;
 };
 
-const REVALIDATE_SECONDS = 60; // ISR: la ficha se regenera cuando cambia el tenant
+// ISR: en producción la ficha se regenera como mucho cada 60 s. En desarrollo
+// usamos 0 (sin caché) para que los cambios de datos se vean al instante y no
+// parezca que "no hay hot reload".
+const REVALIDATE_SECONDS = process.env.NODE_ENV === "production" ? 60 : 0;
 
 /**
  * Carga los datos públicos de un tenant desde la API por su slug.

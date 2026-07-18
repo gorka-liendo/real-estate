@@ -73,7 +73,12 @@ function PropiedadesInner({ slug }: { slug: string }) {
     <div style={{ display: "grid", gap: "var(--ui-sp-5)" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <h1 className="du-h1">Propiedades</h1>
-        <Button onClick={() => setShowForm((v) => !v)}>
+        <Button
+          onClick={() => {
+            setSelectedId(null);
+            setShowForm((v) => !v);
+          }}
+        >
           <Plus size={16} />
           Nueva propiedad
         </Button>
@@ -82,9 +87,9 @@ function PropiedadesInner({ slug }: { slug: string }) {
       {error ? <p className="du-alert">{error}</p> : null}
 
       {showForm ? (
-        <NewPropertyForm
+        <PropertyForm
           slug={slug}
-          onCreated={(p) => {
+          onSaved={(p) => {
             setItems((prev) => [p, ...(prev ?? [])]);
             setShowForm(false);
             setSelectedId(p.id);
@@ -94,12 +99,22 @@ function PropiedadesInner({ slug }: { slug: string }) {
       ) : null}
 
       {selected ? (
-        <PhotoManager
-          slug={slug}
-          property={selected}
-          onChange={updateItem}
-          onClose={() => setSelectedId(null)}
-        />
+        <div style={{ display: "grid", gap: "var(--ui-sp-4)" }}>
+          <PropertyForm
+            key={selected.id}
+            slug={slug}
+            initial={selected}
+            onSaved={updateItem}
+            onCancel={() => setSelectedId(null)}
+          />
+          <PhotoManager
+            key={`media-${selected.id}`}
+            slug={slug}
+            property={selected}
+            onChange={updateItem}
+            onClose={() => setSelectedId(null)}
+          />
+        </div>
       ) : null}
 
       <Card padded={false}>
@@ -130,7 +145,10 @@ function PropiedadesInner({ slug }: { slug: string }) {
                   <tr
                     key={p.id}
                     data-active={p.id === selectedId}
-                    onClick={() => setSelectedId(p.id === selectedId ? null : p.id)}
+                    onClick={() => {
+                      setShowForm(false);
+                      setSelectedId(p.id === selectedId ? null : p.id);
+                    }}
                     style={{ cursor: "pointer" }}
                   >
                     <td>
@@ -437,32 +455,38 @@ function PhotoManager({
   );
 }
 
-function NewPropertyForm({
+function PropertyForm({
   slug,
-  onCreated,
+  initial,
+  onSaved,
   onCancel,
 }: {
   slug: string;
-  onCreated: (p: Property) => void;
+  initial?: Property;
+  onSaved: (p: Property) => void;
   onCancel: () => void;
 }) {
-  const [title, setTitle] = useState("");
-  const [kind, setKind] = useState<PropertyKind>("flat");
-  const [operation, setOperation] = useState<PropertyOperation>("sale");
-  const [status, setStatus] = useState<PropertyStatus>("draft");
-  const [price, setPrice] = useState("");
-  const [city, setCity] = useState("");
-  const [province, setProvince] = useState("");
-  const [areaM2, setAreaM2] = useState("");
-  const [bedrooms, setBedrooms] = useState("");
-  const [bathrooms, setBathrooms] = useState("");
-  const [subtype, setSubtype] = useState("");
-  const [condition, setCondition] = useState("");
-  const [floor, setFloor] = useState("");
-  const [yearBuilt, setYearBuilt] = useState("");
-  const [energyCert, setEnergyCert] = useState("");
-  const [description, setDescription] = useState("");
-  const [features, setFeatures] = useState<string[]>([]);
+  const isEdit = initial != null;
+  const d0 = initial?.details ?? {};
+  const [title, setTitle] = useState(initial?.title ?? "");
+  const [kind, setKind] = useState<PropertyKind>(initial?.kind ?? "flat");
+  const [operation, setOperation] = useState<PropertyOperation>(initial?.operation ?? "sale");
+  const [status, setStatus] = useState<PropertyStatus>(initial?.status ?? "draft");
+  const [price, setPrice] = useState(initial?.price != null ? String(initial.price) : "");
+  const [city, setCity] = useState(initial?.city ?? "");
+  const [province, setProvince] = useState(d0.province ?? "");
+  const [areaM2, setAreaM2] = useState(initial?.areaM2 != null ? String(initial.areaM2) : "");
+  const [bedrooms, setBedrooms] = useState(initial?.bedrooms != null ? String(initial.bedrooms) : "");
+  const [bathrooms, setBathrooms] = useState(
+    initial?.bathrooms != null ? String(initial.bathrooms) : "",
+  );
+  const [subtype, setSubtype] = useState(d0.subtype ?? "");
+  const [condition, setCondition] = useState<string>(d0.condition ?? "");
+  const [floor, setFloor] = useState(d0.floor ?? "");
+  const [yearBuilt, setYearBuilt] = useState(d0.yearBuilt != null ? String(d0.yearBuilt) : "");
+  const [energyCert, setEnergyCert] = useState(d0.energyCert ?? "");
+  const [description, setDescription] = useState(initial?.description ?? "");
+  const [features, setFeatures] = useState<string[]>(initial?.features ?? []);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -477,7 +501,10 @@ function NewPropertyForm({
     setSubmitting(true);
     setError(null);
     try {
+      // Conserva campos de details que no edita el formulario (referencia,
+      // barrio, coordenadas…) haciendo spread del original.
       const details: PropertyDetails = {
+        ...d0,
         subtype: subtype || undefined,
         condition: (condition || undefined) as PropertyDetails["condition"],
         floor: floor || undefined,
@@ -485,7 +512,7 @@ function NewPropertyForm({
         energyCert: energyCert || undefined,
         province: province || undefined,
       };
-      const { property } = await api.properties.create(slug, {
+      const payload = {
         title,
         kind,
         operation,
@@ -498,10 +525,17 @@ function NewPropertyForm({
         description: description || undefined,
         features,
         details,
-      });
-      onCreated(property);
+      };
+      const { property } = isEdit
+        ? await api.properties.update(slug, initial.id, payload)
+        : await api.properties.create(slug, payload);
+      onSaved(property);
     } catch {
-      setError("No se pudo crear la propiedad. Revisa los datos.");
+      setError(
+        isEdit
+          ? "No se pudieron guardar los cambios. Revisa los datos."
+          : "No se pudo crear la propiedad. Revisa los datos.",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -651,7 +685,7 @@ function NewPropertyForm({
 
         <div style={{ display: "flex", gap: "var(--ui-sp-3)" }}>
           <Button type="submit" disabled={submitting}>
-            {submitting ? "Guardando…" : "Guardar propiedad"}
+            {submitting ? "Guardando…" : isEdit ? "Guardar cambios" : "Guardar propiedad"}
           </Button>
           <Button type="button" variant="ghost" onClick={onCancel}>
             Cancelar
