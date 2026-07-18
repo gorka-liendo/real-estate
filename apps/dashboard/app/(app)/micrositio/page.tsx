@@ -152,6 +152,24 @@ function Editor({ slug, name }: { slug: string; name: string }) {
               onChange={(e) => set("contactPhone", e.target.value)}
             />
           </div>
+          <div>
+            <Label htmlFor="footer-address">Dirección (pie de página)</Label>
+            <Input
+              id="footer-address"
+              placeholder="Gran Vía 12, 48001 Bilbao"
+              value={config.footerAddress ?? ""}
+              onChange={(e) => set("footerAddress", e.target.value)}
+            />
+          </div>
+          <div>
+            <Label htmlFor="footer-schedule">Horario (pie de página)</Label>
+            <Input
+              id="footer-schedule"
+              placeholder="L–V 9:30–19:00 · S 10:00–13:30"
+              value={config.footerSchedule ?? ""}
+              onChange={(e) => set("footerSchedule", e.target.value)}
+            />
+          </div>
         </div>
 
         <div style={{ marginTop: "var(--ui-sp-5)" }}>

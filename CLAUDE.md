@@ -416,6 +416,13 @@ packages/
       `PROPERTY_KIND_LABELS`/`OPERATION_LABELS` como fuente única en
       `@rep/ui-tenant` (5→3 copias; API y dashboard mantienen la suya
       server/app-side) y `ValuationEstimate` reusado en tenant-site.
+- [x] **Footer personalizado por inmobiliaria (home + ficha)** — `SiteFooter`
+      compartido en tenant-site (la ficha no tenía footer): logo de Ajustes
+      (`brand_config.logoUrl`, fallback al wordmark), columna "Visítanos" con
+      dirección/horario nuevos en `site_config` (`footerAddress`/`footerSchedule`,
+      editables en el editor Micrositio) y barra de copyright con el año y el
+      nombre del tenant. `Footer` del DS admite ítems sin href (texto plano),
+      logo y bottomText. Seed pre-rellena martinez.
 - [ ] **Deuda anotada (review 18-jul-2026)**: mover `isPublicMicrositePath`
       a un sub-app público con su propia política CORS; throttle a Redis
       multi-instancia; helpers `tenantGet/tenantPost` en tenant-site;

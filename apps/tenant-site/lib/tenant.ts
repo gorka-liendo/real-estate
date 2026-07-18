@@ -11,6 +11,8 @@ export type SiteConfig = {
   contactEmail?: string;
   contactPhone?: string;
   social?: SocialLink[];
+  footerAddress?: string;
+  footerSchedule?: string;
 };
 
 export type TenantData = {

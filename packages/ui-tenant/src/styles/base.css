@@ -936,6 +936,22 @@
   line-height: 1.6;
   max-width: 280px;
 }
+/* logo de la inmobiliaria (si lo subió en Ajustes) en lugar del wordmark */
+.rt-footer__logo {
+  display: block;
+  max-height: 40px;
+  max-width: 180px;
+  object-fit: contain;
+  margin-bottom: var(--tenant-sp-3);
+}
+/* barra inferior de copyright */
+.rt-footer__bottom {
+  border-top: 1px solid var(--tenant-border);
+  padding-top: var(--tenant-sp-4);
+  color: var(--tenant-muted);
+  font-size: 12px;
+  letter-spacing: 0.03em;
+}
 
 @media (max-width: 860px) {
   .rt-about,

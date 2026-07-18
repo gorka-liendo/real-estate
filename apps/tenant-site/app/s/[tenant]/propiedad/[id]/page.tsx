@@ -5,6 +5,7 @@ import { Gallery, MobileNav, OPERATION_LABELS, type GalleryItem } from "@rep/ui-
 import { fetchProperty, fetchTenant, type PublicProperty } from "@/lib/tenant";
 import { CONDITION_LABELS, featureLabel, KIND_LABELS } from "@/lib/property-meta";
 import { ContactForm } from "../../ContactForm";
+import { SiteFooter } from "../../SiteFooter";
 
 export const revalidate = 60;
 
@@ -178,6 +179,9 @@ export default async function PropertyDetail({ params }: Params) {
           </div>
         </div>
       </section>
+
+      {/* footer personalizado de la inmobiliaria (antes la ficha no tenía) */}
+      <SiteFooter tenant={tenant} homePrefix="/" />
     </div>
   );
 }

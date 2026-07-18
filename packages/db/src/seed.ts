@@ -58,6 +58,8 @@ async function main() {
           "Somos una inmobiliaria de barrio con más de 20 años ayudando a familias a comprar, vender y alquilar en Bilbao.",
         contactEmail: "hola@martinez.example.com",
         contactPhone: "+34 944 00 00 00",
+        footerAddress: "Gran Vía 12, 48001 Bilbao",
+        footerSchedule: "L–V 9:30–19:00 · S 10:00–13:30",
         social: [
           { label: "Instagram", url: "https://instagram.com" },
           { label: "WhatsApp", url: "https://wa.me/34944000000" },

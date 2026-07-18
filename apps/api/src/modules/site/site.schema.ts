@@ -21,6 +21,9 @@ export const siteConfigSchema = z.object({
   contactEmail: z.string().max(200).optional(),
   contactPhone: z.string().max(40).optional(),
   social: z.array(socialLink).max(8).optional(),
+  // Footer: dirección física y horario de la oficina (texto plano).
+  footerAddress: z.string().max(200).optional(),
+  footerSchedule: z.string().max(120).optional(),
 });
 
 export type SiteConfigInput = z.infer<typeof siteConfigSchema>;
