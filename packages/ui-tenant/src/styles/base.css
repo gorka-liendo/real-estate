@@ -226,6 +226,52 @@
     gap: var(--tenant-sp-5);
   }
 }
+
+/* --- plantilla MINIMAL: hero centrado solo-texto, sobrio --- */
+.rt-hero--minimal .rt-wrap {
+  text-align: center;
+}
+.rt-hero--minimal .rt-hero__title,
+.rt-hero--minimal .rt-hero__sub {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* --- plantilla BOLD: hero full-bleed con foto de fondo y titular sobre scrim --- */
+.rt-hero--bold {
+  position: relative;
+  overflow: hidden;
+  padding: calc(var(--tenant-sp-9) + var(--tenant-sp-6)) 0 var(--tenant-sp-9);
+}
+.rt-hero--bold .rt-hero__bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* degradado de legibilidad: denso abajo, aire arriba */
+.rt-hero--bold .rt-hero__scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--tenant-scrim) 92%, transparent),
+    color-mix(in srgb, var(--tenant-scrim) 35%, transparent)
+  );
+}
+.rt-hero--bold .rt-wrap {
+  position: relative;
+}
+.rt-hero--bold .rt-eyebrow {
+  color: color-mix(in srgb, var(--tenant-on-scrim) 75%, transparent);
+}
+.rt-hero--bold .rt-hero__title {
+  color: var(--tenant-on-scrim);
+}
+.rt-hero--bold .rt-hero__sub {
+  color: color-mix(in srgb, var(--tenant-on-scrim) 82%, transparent);
+}
 .rt-hero__title {
   font-family: var(--tenant-font-display);
   font-weight: 800;

@@ -427,6 +427,12 @@ packages/
       a un sub-app público con su propia política CORS; throttle a Redis
       multi-instancia; helpers `tenantGet/tenantPost` en tenant-site;
       KIND_LABEL residual en API/dashboard si algún día compensa un leaf package.
-- [ ] **Pulido restante**: plantillas editorial/minimal/bold.
+- [x] **Plantillas de portada editorial/minimal/bold** — `site_config.template`
+      por fin se renderiza: editorial (split texto+foto destacada), minimal
+      (centrado solo-texto), bold (hero full-bleed con la foto de fondo y
+      titular sobre degradado de scrim, tratamiento `rt-hero--bold` con
+      tokens/color-mix). Selector "Plantilla de portada" en el editor
+      Micrositio (self-serve). Sin foto publicada, bold/editorial caen al
+      solo-texto. Verificadas las 3 en navegador.
 - [ ] **Pendiente retomar**: theming/fuentes por inmobiliaria (ver gotcha de
       next/font arriba) y edición de marca en Ajustes.

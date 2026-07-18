@@ -2,7 +2,7 @@
 
 import { ExternalLink, Plus, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { Button, ButtonLink, Card, Input, Label, Textarea } from "@rep/ui";
+import { Button, ButtonLink, Card, Input, Label, Select, Textarea } from "@rep/ui";
 import { useRequireModule, useWorkspace } from "@/contexts/workspace-context";
 import { api, type SiteConfig, type SocialLink } from "@/lib/api";
 import { TENANT_SITE_URL } from "@/lib/config";
@@ -81,6 +81,20 @@ function Editor({ slug, name }: { slug: string; name: string }) {
           Portada
         </h2>
         <div style={{ display: "grid", gap: "var(--ui-sp-4)" }}>
+          <div>
+            <Label htmlFor="template">Plantilla de portada</Label>
+            <Select
+              id="template"
+              value={config.template ?? "editorial"}
+              onChange={(e) =>
+                set("template", e.target.value as "editorial" | "minimal" | "bold")
+              }
+            >
+              <option value="editorial">Editorial — texto + foto destacada</option>
+              <option value="minimal">Minimal — centrado, solo texto</option>
+              <option value="bold">Bold — foto a pantalla completa</option>
+            </Select>
+          </div>
           <div>
             <Label htmlFor="eyebrow">Antetítulo</Label>
             <Input

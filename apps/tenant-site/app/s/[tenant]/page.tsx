@@ -69,6 +69,7 @@ export default async function Microsite({ params }: Params) {
 
   // Contenido = site_config del tenant, con defaults sensatos si viene vacío.
   const site = tenant.siteConfig ?? {};
+  const template = site.template ?? "editorial";
   const heroEyebrow = site.heroEyebrow || "Inmobiliaria de confianza";
   const heroTitle = site.heroTitle || "Encuentra tu próximo hogar.";
   const heroSubtitle =
@@ -96,34 +97,56 @@ export default async function Microsite({ params }: Params) {
         </div>
       </header>
 
-      {/* hero: texto + propiedad destacada (o solo texto si no hay fotos) */}
-      <section className="rt-hero">
-        <div className="rt-wrap">
-          <div className={featured ? "rt-hero__grid" : undefined}>
-            <div>
-              <div className="rt-eyebrow">{heroEyebrow}</div>
-              <h1 className="rt-hero__title">{heroTitle}</h1>
-              <p className="rt-hero__sub">{heroSubtitle}</p>
-              <PillLink href="#propiedades">Ver propiedades</PillLink>
-            </div>
-            {featured ? (
-              <a
-                className="rt-hero__media"
-                href={`/propiedad/${featured.id}`}
-                aria-label={`Ver ${featured.title}`}
-              >
-                <img src={featured.photos[0]} alt={featured.title} decoding="async" />
-                <span className="rt-hero__media-caption">
-                  {featured.title}
-                  {featured.price != null
-                    ? ` · ${new Intl.NumberFormat("es-ES").format(featured.price)} €`
-                    : ""}
-                </span>
-              </a>
-            ) : null}
+      {/* hero según plantilla (site_config.template):
+          editorial = texto + foto destacada · minimal = centrado solo-texto ·
+          bold = full-bleed con la foto de fondo. Sin foto, bold/editorial caen
+          al tratamiento solo-texto. */}
+      {template === "bold" && featured ? (
+        <section className="rt-hero rt-hero--bold">
+          <img
+            className="rt-hero__bg"
+            src={featured.photos[0]}
+            alt=""
+            aria-hidden="true"
+            decoding="async"
+          />
+          <div className="rt-hero__scrim" aria-hidden="true" />
+          <div className="rt-wrap">
+            <div className="rt-eyebrow">{heroEyebrow}</div>
+            <h1 className="rt-hero__title">{heroTitle}</h1>
+            <p className="rt-hero__sub">{heroSubtitle}</p>
+            <PillLink href="#propiedades">Ver propiedades</PillLink>
           </div>
-        </div>
-      </section>
+        </section>
+      ) : (
+        <section className={`rt-hero${template === "minimal" ? " rt-hero--minimal" : ""}`}>
+          <div className="rt-wrap">
+            <div className={template === "editorial" && featured ? "rt-hero__grid" : undefined}>
+              <div>
+                <div className="rt-eyebrow">{heroEyebrow}</div>
+                <h1 className="rt-hero__title">{heroTitle}</h1>
+                <p className="rt-hero__sub">{heroSubtitle}</p>
+                <PillLink href="#propiedades">Ver propiedades</PillLink>
+              </div>
+              {template === "editorial" && featured ? (
+                <a
+                  className="rt-hero__media"
+                  href={`/propiedad/${featured.id}`}
+                  aria-label={`Ver ${featured.title}`}
+                >
+                  <img src={featured.photos[0]} alt={featured.title} decoding="async" />
+                  <span className="rt-hero__media-caption">
+                    {featured.title}
+                    {featured.price != null
+                      ? ` · ${new Intl.NumberFormat("es-ES").format(featured.price)} €`
+                      : ""}
+                  </span>
+                </a>
+              ) : null}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* propiedades */}
       <section className="rt-section" id="propiedades">
