@@ -19,6 +19,7 @@ import { brand } from "./modules/brand/brand.routes.js";
 import { clients } from "./modules/clients/clients.routes.js";
 import { leads } from "./modules/leads/leads.routes.js";
 import { valuations } from "./modules/valuations/valuations.routes.js";
+import { visits } from "./modules/visits/visits.routes.js";
 import { properties } from "./modules/properties/properties.routes.js";
 import {
   getPublishedProperty,
@@ -41,6 +42,7 @@ function isPublicMicrositePath(path: string): boolean {
     path === "/tenant/microsite" ||
     path === "/tenant/leads" ||
     path === "/tenant/valuations" ||
+    path === "/tenant/visits/request" || // SOLO el POST público; el resto de /visits es privado
     path.startsWith("/tenant/listings")
   );
 }
@@ -137,6 +139,9 @@ tenant.route("/leads", leads);
 
 // PÚBLICO: widget "Valora tu piso gratis" → estimación + lead de propietario.
 tenant.route("/valuations", valuations);
+
+// Agenda de visitas: POST /request público (ficha) + gestión privada (dashboard).
+tenant.route("/visits", visits);
 
 // --- rutas tenant-scoped privadas (dashboard): sesión + membership obligatorias ---
 const team = new Hono<MemberEnv>();

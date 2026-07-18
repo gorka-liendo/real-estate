@@ -158,6 +158,30 @@ export async function submitValuation(
   return ((await res.json()) as { estimate: ValuationEstimateResult }).estimate;
 }
 
+export type VisitRequestPayload = {
+  propertyId: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  scheduledAt: string; // ISO
+  company?: string; // honeypot
+};
+
+/** Solicita una visita a un inmueble (público, gateado por el módulo 'visits'). */
+export async function submitVisitRequest(
+  slug: string,
+  payload: VisitRequestPayload,
+): Promise<void> {
+  const res = await fetch(`${tenantSiteEnv.NEXT_PUBLIC_API_URL}/tenant/visits/request`, {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-tenant-slug": slug },
+    body: JSON.stringify(payload),
+  });
+  if (res.status === 429) throw new Error("rate_limited"); // el form muestra copy específica
+  if (res.status === 204) return; // honeypot: fingimos éxito
+  if (!res.ok) throw new Error(`visit_request_failed_${res.status}`);
+}
+
 /** Ficha de una propiedad publicada por id. */
 export async function fetchProperty(
   slug: string,

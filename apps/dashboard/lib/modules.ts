@@ -1,6 +1,7 @@
 import {
   Building2,
   Calculator,
+  CalendarClock,
   Globe,
   MessageCircle,
   Users,
@@ -32,6 +33,13 @@ export const MODULE_SECTIONS: ModuleSection[] = [
     href: "/propiedades",
     icon: Building2,
     description: "Catálogo de inmuebles y publicaciones.",
+  },
+  {
+    code: "visits",
+    label: "Agenda",
+    href: "/agenda",
+    icon: CalendarClock,
+    description: "Visitas a inmuebles: solicitudes, confirmaciones y choques.",
   },
   {
     code: "accounting",

@@ -11,6 +11,7 @@ import {
   PillButton,
   Steps,
   ValuationForm,
+  VisitForm,
   WordmarkBleed,
 } from "../index.js";
 
@@ -122,6 +123,15 @@ describe("componentes signature (Capa 1 Dwell)", () => {
     const html = renderToStaticMarkup(<Gallery items={[]} title="Sin fotos" />);
     expect(html).toContain("rt-mosaic--empty");
     expect(html).toContain('role="img"');
+  });
+
+  it("VisitForm renderiza día, franjas y honeypot", () => {
+    const html = renderToStaticMarkup(<VisitForm onSubmit={async () => {}} />);
+    expect(html).toContain('id="visit-date"');
+    expect(html).toContain('id="visit-time"');
+    expect(html).toContain("10:00");
+    expect(html).toContain("19:30");
+    expect(html).toContain("rt-form__hp");
   });
 
   it("Footer con columnas", () => {

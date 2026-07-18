@@ -127,6 +127,26 @@ export type PropertyInput = {
   details?: PropertyDetails;
 };
 
+export type VisitStatus = "requested" | "confirmed" | "done" | "cancelled";
+export type Visit = {
+  id: string;
+  propertyId: string;
+  clientId: string | null;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  scheduledAt: string;
+  status: VisitStatus;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+export type VisitInput = {
+  status?: VisitStatus;
+  scheduledAt?: string;
+  notes?: string;
+};
+
 export type CatalogModule = {
   id: string;
   code: string;
@@ -228,6 +248,25 @@ export const api = {
 
     remove: (slug: string, id: string) =>
       request<void>(`/tenant/clients/${id}`, {
+        method: "DELETE",
+        headers: { "x-tenant-slug": slug },
+      }),
+  },
+
+  // --- módulo Agenda (visitas) ---
+  visits: {
+    list: (slug: string) =>
+      request<{ visits: Visit[] }>("/tenant/visits", { headers: { "x-tenant-slug": slug } }),
+
+    update: (slug: string, id: string, data: VisitInput) =>
+      request<{ visit: Visit }>(`/tenant/visits/${id}`, {
+        method: "PATCH",
+        headers: { "x-tenant-slug": slug },
+        body: JSON.stringify(data),
+      }),
+
+    remove: (slug: string, id: string) =>
+      request<void>(`/tenant/visits/${id}`, {
         method: "DELETE",
         headers: { "x-tenant-slug": slug },
       }),

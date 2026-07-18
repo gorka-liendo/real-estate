@@ -13,6 +13,8 @@ async function main() {
     // Producto 04 del catálogo (Captación): widget "Valora tu piso gratis".
     // La otra pata (whatsapp_bot) llegará con el alta en Meta.
     { code: "valuation", name: "Captación: valoración de pisos", priceMonthly: 2900 },
+    // Producto 05 del catálogo (Operativa): agenda de visitas.
+    { code: "visits", name: "Operativa: agenda de visitas", priceMonthly: 3900 },
   ];
 
   const seededModules = [];
@@ -93,7 +95,7 @@ async function main() {
   // --- martinez con Clientes + Micrositio activos; lopez sin módulos ---
   // Seed AUTORITATIVO: deja el estado exacto (activa los previstos, desactiva el resto).
   const martinez = seededTenants.find((t) => t!.slug === "martinez")!;
-  const activeForMartinez = ["clients", "properties", "microsite", "valuation"];
+  const activeForMartinez = ["clients", "properties", "microsite", "valuation", "visits"];
   for (const mod of seededModules) {
     const shouldBeActive = activeForMartinez.includes(mod!.code);
     await db

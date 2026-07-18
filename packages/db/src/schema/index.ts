@@ -5,3 +5,4 @@ export * from "./modules.js";
 export * from "./platform.js";
 export * from "./clients.js";
 export * from "./properties.js";
+export * from "./visits.js";

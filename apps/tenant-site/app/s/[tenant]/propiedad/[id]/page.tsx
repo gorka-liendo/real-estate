@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Gallery, MobileNav, OPERATION_LABELS, type GalleryItem } from "@rep/ui-tenant";
-import { fetchProperty, fetchTenant, type PublicProperty } from "@/lib/tenant";
+import { fetchModules, fetchProperty, fetchTenant, type PublicProperty } from "@/lib/tenant";
 import { CONDITION_LABELS, featureLabel, KIND_LABELS } from "@/lib/property-meta";
 import { ContactForm } from "../../ContactForm";
 import { SiteFooter } from "../../SiteFooter";
+import { VisitWidget } from "../../VisitWidget";
 
 export const revalidate = 60;
 
@@ -24,8 +25,13 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 
 export default async function PropertyDetail({ params }: Params) {
   const { tenant: slug, id } = await params;
-  const [tenant, property] = await Promise.all([fetchTenant(slug), fetchProperty(slug, id)]);
+  const [tenant, property, activeModules] = await Promise.all([
+    fetchTenant(slug),
+    fetchProperty(slug, id),
+    fetchModules(slug),
+  ]);
   if (!tenant || !property) notFound();
+  const hasVisits = activeModules.includes("visits");
 
   const d = property.details ?? {};
   const site = tenant.siteConfig ?? {};
@@ -175,6 +181,14 @@ export default async function PropertyDetail({ params }: Params) {
                   </>
                 ) : null}
               </div>
+
+              {/* Pedir visita — solo si el tenant tiene el módulo 'visits' */}
+              {hasVisits ? (
+                <div className="rt-contactcard" style={{ marginTop: "var(--tenant-sp-4)" }}>
+                  <p className="rt-contactcard__agency">Ver este inmueble</p>
+                  <VisitWidget slug={slug} propertyId={property.id} />
+                </div>
+              ) : null}
             </aside>
           </div>
         </div>

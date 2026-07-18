@@ -423,6 +423,17 @@ packages/
       editables en el editor Micrositio) y barra de copyright con el año y el
       nombre del tenant. `Footer` del DS admite ítems sin href (texto plano),
       logo y bottomText. Seed pre-rellena martinez.
+- [x] **Módulo Agenda de visitas (`visits`, producto 05)** — tabla `visits`
+      tenant-scoped (migración 0009: propiedad, solicitante snapshot,
+      scheduled_at, estado requested|confirmed|done|cancelled, client_id al
+      lead). API: `POST /tenant/visits/request` PÚBLICO (ficha; path propio
+      para que el CORS abierto no alcance al GET privado; intake guard
+      compartido; valida inmueble publicado del tenant y fecha futura; crea o
+      reusa el lead del CRM) + GET/PATCH/DELETE privados con **detección de
+      choques**: confirmar en una franja de 30 min ya confirmada → 409
+      slot_conflict. DS: `VisitForm` (día + franja + contacto). Ficha: widget
+      "Pedir visita" gateado. Dashboard: sección **Agenda** (/agenda) con
+      confirmar/cancelar/hecha y aviso de choque. 7 tests API (69 total).
 - [ ] **Deuda anotada (review 18-jul-2026)**: mover `isPublicMicrositePath`
       a un sub-app público con su propia política CORS; throttle a Redis
       multi-instancia; helpers `tenantGet/tenantPost` en tenant-site;

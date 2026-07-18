@@ -19,4 +19,5 @@ export {
 } from "./components/valuation-form.js";
 export { Gallery, type GalleryItem } from "./components/gallery.js";
 export { MobileNav } from "./components/mobile-nav.js";
+export { VisitForm, type VisitFormData } from "./components/visit-form.js";
 export * from "./property-labels.js";
