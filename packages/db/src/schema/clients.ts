@@ -5,8 +5,9 @@ import { tenants } from "./tenants.js";
 export const clientStage = pgEnum("client_stage", ["lead", "active", "closed"]);
 export type ClientStage = (typeof clientStage.enumValues)[number];
 
-// Origen del cliente: alta manual en el dashboard o lead entrante del micrositio.
-export const clientSource = pgEnum("client_source", ["manual", "microsite"]);
+// Origen del cliente: alta manual en el dashboard, lead entrante del micrositio
+// (form de contacto) o propietario captado por el widget de valoración.
+export const clientSource = pgEnum("client_source", ["manual", "microsite", "valuation"]);
 export type ClientSource = (typeof clientSource.enumValues)[number];
 
 // Clientes de una inmobiliaria. TENANT-SCOPED (lleva tenant_id) → todo acceso

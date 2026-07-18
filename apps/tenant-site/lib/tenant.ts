@@ -84,6 +84,22 @@ export async function fetchListings(slug: string): Promise<PublicProperty[]> {
   return ((await res.json()) as { properties: PublicProperty[] }).properties;
 }
 
+/**
+ * Códigos de módulos activos del tenant (para gatear secciones del micrositio).
+ * LANZA en error (no devuelve []): confundir "API caída" con "módulo no
+ * contratado" haría que ISR cacheara la página SIN la sección gateada para un
+ * tenant que la paga. Al lanzar, la revalidación falla y Next conserva la
+ * última página buena (mismo criterio que fetchTenant).
+ */
+export async function fetchModules(slug: string): Promise<string[]> {
+  const res = await fetch(`${tenantSiteEnv.NEXT_PUBLIC_API_URL}/tenant/modules`, {
+    headers: { "x-tenant-slug": slug },
+    next: { revalidate: REVALIDATE_SECONDS, tags: [`modules:${slug}`] },
+  });
+  if (!res.ok) throw new Error(`API ${res.status} al cargar módulos de '${slug}'`);
+  return ((await res.json()) as { modules: string[] }).modules;
+}
+
 export type LeadPayload = {
   name: string;
   email?: string;
@@ -103,7 +119,45 @@ export async function submitLead(slug: string, payload: LeadPayload): Promise<vo
     headers: { "content-type": "application/json", "x-tenant-slug": slug },
     body: JSON.stringify(payload),
   });
+  if (res.status === 429) throw new Error("rate_limited"); // el form muestra copy específica
   if (!res.ok) throw new Error(`lead_submit_failed_${res.status}`);
+}
+
+export type ValuationPayload = {
+  name: string;
+  email?: string;
+  phone?: string;
+  kind: string;
+  areaM2: number;
+  city?: string;
+  bedrooms?: number;
+  company?: string; // honeypot
+};
+
+export type ValuationEstimateResult = {
+  low: number;
+  high: number;
+  pricePerM2: number;
+  comparables: number;
+} | null;
+
+/**
+ * Envía una solicitud de valoración (widget "Valora tu piso gratis").
+ * Devuelve la estimación calculada por la API (o null si no hay comparables).
+ */
+export async function submitValuation(
+  slug: string,
+  payload: ValuationPayload,
+): Promise<ValuationEstimateResult> {
+  const res = await fetch(`${tenantSiteEnv.NEXT_PUBLIC_API_URL}/tenant/valuations`, {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-tenant-slug": slug },
+    body: JSON.stringify(payload),
+  });
+  if (res.status === 204) return null; // honeypot: fingimos éxito sin datos
+  if (res.status === 429) throw new Error("rate_limited"); // el form muestra copy específica
+  if (!res.ok) throw new Error(`valuation_submit_failed_${res.status}`);
+  return ((await res.json()) as { estimate: ValuationEstimateResult }).estimate;
 }
 
 /** Ficha de una propiedad publicada por id. */

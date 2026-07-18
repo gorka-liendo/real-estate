@@ -11,6 +11,7 @@ export type ModuleCode =
   | "microsite"
   | "ai_descriptions"
   | "whatsapp_bot"
+  | "valuation"
   | (string & {});
 
 const ttl = z.coerce

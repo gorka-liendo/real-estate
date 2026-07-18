@@ -9,6 +9,7 @@ import {
   PhotoPair,
   PillButton,
   Steps,
+  ValuationForm,
   WordmarkBleed,
 } from "../index.js";
 
@@ -86,6 +87,15 @@ describe("componentes signature (Capa 1 Dwell)", () => {
     expect(html).toContain('id="lead-email"');
     expect(html).toContain('rt-form__hp'); // honeypot presente
     expect(html).toContain('aria-hidden="true"');
+  });
+
+  it("ValuationForm renderiza campos, tipos y honeypot", () => {
+    const html = renderToStaticMarkup(<ValuationForm onSubmit={async () => null} />);
+    expect(html).toContain("rt-form");
+    expect(html).toContain('id="val-area"');
+    expect(html).toContain('id="val-kind"');
+    expect(html).toContain("Piso"); // opciones de tipo
+    expect(html).toContain("rt-form__hp"); // honeypot presente
   });
 
   it("Footer con columnas", () => {

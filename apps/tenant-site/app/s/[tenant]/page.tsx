@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Footer, PillLink, PropertyGrid, type Listing } from "@rep/ui-tenant";
-import { fetchListings, fetchTenant, type PublicProperty } from "@/lib/tenant";
+import { fetchListings, fetchModules, fetchTenant, type PublicProperty } from "@/lib/tenant";
+import { ValuationWidget } from "./ValuationWidget";
 
 const KIND_LABEL: Record<PublicProperty["kind"], string> = {
   flat: "Piso",
@@ -48,7 +49,12 @@ export default async function Microsite({ params }: Params) {
   const tenant = await fetchTenant(slug);
   if (!tenant) notFound();
 
-  const listings = (await fetchListings(slug)).map(toListing);
+  const [rawListings, activeModules] = await Promise.all([
+    fetchListings(slug),
+    fetchModules(slug),
+  ]);
+  const listings = rawListings.map(toListing);
+  const hasValuation = activeModules.includes("valuation");
 
   // Contenido = site_config del tenant, con defaults sensatos si viene vacío.
   const site = tenant.siteConfig ?? {};
@@ -81,6 +87,7 @@ export default async function Microsite({ params }: Params) {
           <span className="rt-topbar__brand">{tenant.name}</span>
           <nav className="rt-topbar__nav">
             <a href="#propiedades">Propiedades</a>
+            {hasValuation ? <a href="#valoracion">Valora tu piso</a> : null}
             <a href="#contacto">Contacto</a>
           </nav>
         </div>
@@ -110,6 +117,23 @@ export default async function Microsite({ params }: Params) {
           )}
         </div>
       </section>
+
+      {/* valoración de pisos — solo si el tenant tiene el módulo 'valuation' */}
+      {hasValuation ? (
+        <section className="rt-section" id="valoracion">
+          <div className="rt-wrap">
+            <div className="rt-eyebrow">¿Vendes tu piso?</div>
+            <h2 className="rt-section-title">Valora tu piso gratis.</h2>
+            <p style={{ color: "var(--tenant-muted)", maxWidth: "48ch", marginTop: 0 }}>
+              Cuéntanos cómo es tu inmueble y te damos una estimación orientativa al momento,
+              basada en operaciones reales de nuestra cartera.
+            </p>
+            <div style={{ maxWidth: 560 }}>
+              <ValuationWidget slug={slug} />
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       {/* footer */}
       <footer className="rt-section" id="contacto">

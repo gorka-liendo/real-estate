@@ -148,6 +148,13 @@ packages/
 
 ## Reglas obligatorias (no negociables)
 
+### Git
+- **Commits SIN coautoría de IA.** Nunca añadir `Co-Authored-By: Claude...` ni
+  "Generated with Claude Code" a los mensajes de commit — el autor es solo Gorka
+  y no debe aparecer ningún asistente como colaborador en GitHub.
+  (La historia se reescribió el 18-jul-2026 para eliminar los trailers antiguos;
+  `.claude/settings.json` fija `includeCoAuthoredBy: false` a nivel de harness.)
+
 ### Configuración y secretos
 - **Cero hardcode.** Todo valor configurable va en env vars, validadas con Zod en
   `@rep/config` (un slice por app — una app nunca ve secretos de otra). Fail-fast.
@@ -372,6 +379,30 @@ packages/
       `theme`. Verificado: cambiar el tema desde el panel persiste y tiñe dashboard +
       micrositio de esa inmobiliaria. Themes a medida (no en el registro) salen como
       "&lt;id&gt; (a medida)" en el select.
+- [x] **Captación: leads del micrositio → CRM** — formulario de contacto en la
+      ficha pública que crea un `client` (`stage=lead`, `source=microsite`,
+      `interest_property_id` validado contra published del tenant). Migraciones
+      `0007` (enum `client_source`) — API `POST /tenant/leads` (público, gateado
+      por `microsite`, honeypot + throttle en memoria con purga; claves de cuota
+      COMPARTIDAS entre formularios públicos vía `leads/public-intake.ts`).
+      DS: `LeadForm` + clases `rt-form*`. CORS: rutas públicas del micrositio
+      reflejan cualquier origen (dominios de tenant dinámicos), resto sigue
+      restringido a TRUSTED_ORIGINS. Badge "Micrositio" en /clientes.
+- [x] **Módulo `valuation` — widget "Valora tu piso gratis"** (producto 04 del
+      catálogo Hodex, pata no bloqueada; `whatsapp_bot` llegará con el alta en
+      Meta). Code `valuation` en el catálogo (activable por tenant en /admin),
+      migración `0008` (source `valuation`). API `POST /tenant/valuations`:
+      estimación €/m² desde los comparables PUBLICADOS en venta del propio tenant
+      (misma ciudad si hay; precio>0; horquilla ±10% redondeada; degenerada →
+      null, nunca "0–0 €") + lead de propietario con la horquilla en notes.
+      DS: `ValuationForm` (+`rt-select`, `rt-form__row`, `rt-valuation__*`).
+      Sección + enlace de nav en el micrositio solo si el tenant tiene el módulo
+      (`fetchModules` LANZA en error para no cachear la página sin la sección).
+      Badge "Valoración" en /clientes.
+- [ ] **Deuda anotada (review 18-jul-2026)**: deduplicar KIND_LABEL (×5) y el
+      tipo Estimate (×4) en un módulo compartido; mover `isPublicMicrositePath`
+      a un sub-app público con su propia política CORS; throttle a Redis
+      multi-instancia; helpers `tenantGet/tenantPost` en tenant-site.
 - [ ] **Pulido restante**: hero con imagen, menú móvil, plantillas
       editorial/minimal/bold.
 - [ ] **Pendiente retomar**: theming/fuentes por inmobiliaria (ver gotcha de

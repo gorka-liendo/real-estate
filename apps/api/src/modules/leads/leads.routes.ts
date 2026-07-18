@@ -4,17 +4,12 @@ import type { TenantEnv } from "../../middlewares/tenant.middleware.js";
 import { getPublishedProperty } from "../properties/properties.service.js";
 import { createLeadSchema } from "./leads.schema.js";
 import * as service from "./leads.service.js";
-import { allowLead } from "./leads.throttle.js";
-
-// Topes por ventana: fino por ip (best-effort, la ip puede venir spoofeada) y
-// global por tenant (clave derivada del servidor → no evadible rotando headers).
-const MAX_PER_IP = 5;
-const MAX_PER_TENANT = 30;
+import { allowPublicCapture, clientIp } from "./public-intake.js";
 
 // Captación pública desde el micrositio. Se monta bajo /tenant/leads: el tenant
 // ya está resuelto (tenantMiddleware en app.ts). Gateado por 'microsite' (la
 // superficie de captación); el lead se guarda aunque el tenant no tenga el CRM.
-// SIN auth: es un formulario público.
+// SIN auth: es un formulario público. Cuota compartida: ver public-intake.ts.
 export const leads = new Hono<TenantEnv>();
 
 leads.use("*", requireModule("microsite"));
@@ -28,12 +23,7 @@ leads.post("/", async (c) => {
   // Honeypot relleno → bot. Fingimos éxito (204) sin insertar.
   if (parsed.data.company) return c.body(null, 204);
 
-  const tenantId = c.get("tenant").id;
-  const ip = c.req.header("x-forwarded-for")?.split(",")[0]?.trim() || "local";
-  if (
-    !allowLead(`ip:${tenantId}:${ip}`, MAX_PER_IP) ||
-    !allowLead(`tenant:${tenantId}`, MAX_PER_TENANT)
-  ) {
+  if (!allowPublicCapture(c.get("tenant").id, clientIp(c))) {
     return c.json({ error: "rate_limited" }, 429);
   }
 

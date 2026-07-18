@@ -1,0 +1,1 @@
+ALTER TYPE "public"."client_source" ADD VALUE 'valuation';

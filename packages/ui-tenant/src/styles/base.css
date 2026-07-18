@@ -505,7 +505,8 @@
   color: var(--tenant-muted);
 }
 .rt-input,
-.rt-textarea {
+.rt-textarea,
+.rt-select {
   width: 100%;
   font-family: var(--tenant-font-body);
   font-size: 15px;
@@ -515,15 +516,44 @@
   border-radius: var(--tenant-radius);
   padding: 12px 14px;
 }
+.rt-select {
+  appearance: none;
+  cursor: pointer;
+}
+/* dos campos en línea (colapsa a columna en móvil) */
+.rt-form__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--tenant-sp-3);
+}
+@media (max-width: 480px) {
+  .rt-form__row {
+    grid-template-columns: 1fr;
+  }
+}
 .rt-textarea {
   resize: vertical;
   min-height: 88px;
 }
 .rt-input:focus-visible,
-.rt-textarea:focus-visible {
+.rt-textarea:focus-visible,
+.rt-select:focus-visible {
   outline: 2px solid var(--tenant-accent);
   outline-offset: 1px;
   border-color: transparent;
+}
+
+/* resultado del widget de valoración */
+.rt-valuation__result {
+  padding: var(--tenant-sp-4) 0;
+}
+.rt-valuation__range {
+  font-family: var(--tenant-font-display);
+  font-weight: 800;
+  font-size: clamp(28px, 5vw, 44px);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin: var(--tenant-sp-2) 0 var(--tenant-sp-3);
 }
 .rt-form__hint {
   font-size: 12px;

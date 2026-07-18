@@ -28,6 +28,7 @@ export function LeadForm({
 }) {
   const [data, setData] = useState<LeadFormData>(EMPTY);
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [rateLimited, setRateLimited] = useState(false);
 
   const set = (key: keyof LeadFormData) => (e: ChangeEvent<Field>) =>
     setData((d) => ({ ...d, [key]: e.target.value }));
@@ -39,7 +40,8 @@ export function LeadForm({
     try {
       await onSubmit(data);
       setStatus("sent");
-    } catch {
+    } catch (err) {
+      setRateLimited(err instanceof Error && err.message === "rate_limited");
       setStatus("error");
     }
   }
@@ -116,13 +118,16 @@ export function LeadForm({
         />
       </div>
 
-      {/* honeypot — fuera de pantalla, ignorado por humanos */}
+      {/* honeypot — oculto a humanos. El name del DOM es deliberadamente
+          no-semántico: un name tipo "company" invita al AUTOFILL del navegador
+          (que ignora autocomplete=off) y descartaría leads reales como bots.
+          Los bots que rellenan todo input siguen cayendo. */}
       <input
         className="rt-form__hp"
         tabIndex={-1}
         autoComplete="off"
         aria-hidden="true"
-        name="company"
+        name="extra_field"
         value={data.company}
         onChange={set("company")}
       />
@@ -135,7 +140,9 @@ export function LeadForm({
 
       {status === "error" ? (
         <p className="rt-form__status rt-form__status--err" role="alert">
-          No se pudo enviar. Revisa los datos e inténtalo de nuevo.
+          {rateLimited
+            ? "Has hecho varias solicitudes seguidas. Espera un minuto e inténtalo de nuevo."
+            : "No se pudo enviar. Revisa los datos e inténtalo de nuevo."}
         </p>
       ) : null}
     </form>

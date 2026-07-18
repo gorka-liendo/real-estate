@@ -4,7 +4,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Badge, Button, Card, Input, Label, Select } from "@rep/ui";
 import { useRequireModule, useWorkspace } from "@/contexts/workspace-context";
-import { api, type Client, type ClientStage } from "@/lib/api";
+import { api, type Client, type ClientSource, type ClientStage } from "@/lib/api";
 
 const STAGE_LABEL: Record<ClientStage, string> = {
   lead: "Contacto",
@@ -15,6 +15,13 @@ const STAGE_VARIANT: Record<ClientStage, "muted" | "success" | "default"> = {
   lead: "muted",
   active: "success",
   closed: "default",
+};
+
+// Etiqueta del origen del lead (Partial: 'manual' no lleva badge a propósito).
+// Tipado con el union → una clave con typo es error de compilación.
+const SOURCE_LABEL: Partial<Record<ClientSource, string>> = {
+  microsite: "Micrositio",
+  valuation: "Valoración",
 };
 
 function ClientesInner({ slug }: { slug: string }) {
@@ -90,8 +97,8 @@ function ClientesInner({ slug }: { slug: string }) {
                         style={{ display: "inline-flex", alignItems: "center", gap: "var(--ui-sp-2)" }}
                       >
                         {c.name}
-                        {c.source === "microsite" ? (
-                          <Badge variant="default">Micrositio</Badge>
+                        {SOURCE_LABEL[c.source] ? (
+                          <Badge variant="default">{SOURCE_LABEL[c.source]}</Badge>
                         ) : null}
                       </span>
                     </td>
