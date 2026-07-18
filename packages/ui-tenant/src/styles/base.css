@@ -212,23 +212,207 @@
 .rt-detail__back:hover {
   color: var(--tenant-text);
 }
-.rt-gallery {
+/* ===== galería mosaico (ficha) — 1 principal + hasta 4 tiles ===== */
+.rt-mosaic {
+  position: relative;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
-  gap: var(--tenant-sp-3);
+  grid-template-columns: 2fr 1fr 1fr;
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: var(--tenant-sp-2);
+  height: clamp(320px, 42vw, 520px);
   margin-bottom: var(--tenant-sp-6);
 }
-.rt-gallery__img {
-  width: 100%;
-  aspect-ratio: 4 / 3;
-  object-fit: cover;
-  border-radius: var(--tenant-radius);
+.rt-mosaic--few {
+  grid-template-columns: 2fr 1fr;
+}
+.rt-mosaic--single,
+.rt-mosaic--empty {
+  display: block;
+  height: auto;
+}
+.rt-mosaic__cell {
+  position: relative;
+  overflow: hidden;
+  padding: 0;
+  border: none;
   background: var(--tenant-placeholder);
+  border-radius: var(--tenant-radius);
+  cursor: zoom-in;
+  min-height: 0;
+}
+.rt-mosaic__cell--main {
+  grid-row: 1 / -1;
+  grid-column: 1;
+}
+.rt-mosaic--single .rt-mosaic__cell--main {
+  width: 100%;
+  aspect-ratio: 16 / 9;
   display: block;
 }
-.rt-gallery__img--main {
-  grid-column: 1 / -1;
+.rt-mosaic__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.25s ease;
+}
+.rt-mosaic__cell:hover .rt-mosaic__img {
+  transform: scale(1.03);
+}
+.rt-mosaic__img--placeholder {
   aspect-ratio: 16 / 9;
+  background: var(--tenant-placeholder);
+  border-radius: var(--tenant-radius);
+}
+/* overlay "+N fotos" del último tile */
+.rt-mosaic__more {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--tenant-scrim) 55%, transparent);
+  color: var(--tenant-on-scrim);
+  font-family: var(--tenant-font-display);
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.02em;
+}
+/* badge ▶ en tiles de vídeo */
+.rt-mosaic__play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--tenant-radius-pill);
+  background: color-mix(in srgb, var(--tenant-scrim) 70%, transparent);
+  color: var(--tenant-on-scrim);
+  pointer-events: none;
+}
+/* botón "Ver las N fotos" sobre la esquina del mosaico */
+.rt-mosaic__all {
+  position: absolute;
+  right: var(--tenant-sp-3);
+  bottom: var(--tenant-sp-3);
+  padding: 8px 16px;
+  font-family: var(--tenant-font-body);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: var(--tenant-bg);
+  color: var(--tenant-text);
+  border: 1px solid var(--tenant-border);
+  border-radius: var(--tenant-radius-pill);
+  cursor: pointer;
+}
+.rt-mosaic__all:hover {
+  background: var(--tenant-text);
+  color: var(--tenant-bg);
+}
+
+/* móvil: el mosaico colapsa a carrusel scroll-snap */
+@media (max-width: 860px) {
+  .rt-mosaic {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    height: 62vw;
+    -webkit-overflow-scrolling: touch;
+  }
+  .rt-mosaic--single,
+  .rt-mosaic--empty {
+    display: block;
+    height: auto;
+  }
+  .rt-mosaic__cell,
+  .rt-mosaic__cell--main {
+    flex: 0 0 86%;
+    scroll-snap-align: center;
+  }
+  .rt-mosaic__all {
+    display: none; /* tocar cualquier foto abre el visor */
+  }
+}
+
+/* ===== visor fullscreen (lightbox) ===== */
+.rt-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: var(--tenant-scrim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.rt-lightbox__bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--tenant-sp-4) var(--tenant-sp-5);
+}
+.rt-lightbox__count {
+  color: var(--tenant-on-scrim);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+}
+.rt-lightbox__btn {
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: var(--tenant-on-scrim);
+  border: 1px solid color-mix(in srgb, var(--tenant-on-scrim) 35%, transparent);
+  border-radius: var(--tenant-radius-pill);
+  font-size: 18px;
+  cursor: pointer;
+}
+.rt-lightbox__btn:hover {
+  background: color-mix(in srgb, var(--tenant-on-scrim) 14%, transparent);
+}
+.rt-lightbox__stage {
+  max-width: 92vw;
+  max-height: 82vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.rt-lightbox__media {
+  max-width: 92vw;
+  max-height: 82vh;
+  object-fit: contain;
+  border-radius: var(--tenant-radius);
+  display: block;
+}
+.rt-lightbox__nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 26px;
+}
+.rt-lightbox__nav--prev {
+  left: var(--tenant-sp-5);
+}
+.rt-lightbox__nav--next {
+  right: var(--tenant-sp-5);
+}
+@media (max-width: 860px) {
+  .rt-lightbox__nav--prev {
+    left: var(--tenant-sp-2);
+  }
+  .rt-lightbox__nav--next {
+    right: var(--tenant-sp-2);
+  }
 }
 .rt-detail__price {
   font-family: var(--tenant-font-display);
@@ -239,23 +423,24 @@
 .rt-detail__facts {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--tenant-sp-5);
-  padding: var(--tenant-sp-4) 0;
+  gap: var(--tenant-sp-4) var(--tenant-sp-6);
+  padding: var(--tenant-sp-5) 0;
   border-top: 1px solid var(--tenant-border);
   border-bottom: 1px solid var(--tenant-border);
-  margin: var(--tenant-sp-4) 0;
+  margin: var(--tenant-sp-5) 0;
 }
 .rt-detail__fact-k {
   font-size: 11px;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   color: var(--tenant-muted);
 }
 .rt-detail__fact-v {
   font-family: var(--tenant-font-display);
   font-weight: 700;
-  font-size: 20px;
-  margin-top: 2px;
+  font-size: 22px;
+  letter-spacing: -0.01em;
+  margin-top: 4px;
 }
 .rt-detail__desc {
   color: var(--tenant-text);
@@ -325,20 +510,6 @@
   border-radius: var(--tenant-radius-pill);
   background: color-mix(in srgb, var(--tenant-accent) 14%, transparent);
   color: var(--tenant-accent);
-}
-
-/* vídeos */
-.rt-videos {
-  display: grid;
-  gap: var(--tenant-sp-4);
-}
-.rt-video {
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  border-radius: var(--tenant-radius);
-  background: #000;
-  display: block;
-  object-fit: cover;
 }
 
 /* tarjeta de contacto pegajosa */

@@ -19,6 +19,9 @@
   --tenant-placeholder: linear-gradient(160deg, #e5e5e5, #cfcfcf);
   /* color de error (validación de formularios). Cada tema puede afinarlo. */
   --tenant-danger: #c0392b;
+  /* velo oscuro de la galería fullscreen + overlays sobre foto, y su tinta. */
+  --tenant-scrim: rgba(12, 12, 12, 0.94);
+  --tenant-on-scrim: #ffffff;
 
   /* --- tipografía (familias cargadas por la app con next/font) --- */
   --tenant-font-display: var(--font-display), "Archivo Variable", sans-serif;

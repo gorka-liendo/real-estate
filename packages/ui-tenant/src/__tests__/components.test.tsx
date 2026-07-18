@@ -4,6 +4,7 @@ import {
   AboutColumns,
   BigNumber,
   Footer,
+  Gallery,
   LeadForm,
   MobileMenu,
   PhotoPair,
@@ -96,6 +97,31 @@ describe("componentes signature (Capa 1 Dwell)", () => {
     expect(html).toContain('id="val-kind"');
     expect(html).toContain("Piso"); // opciones de tipo
     expect(html).toContain("rt-form__hp"); // honeypot presente
+  });
+
+  it("Gallery: mosaico con '+N fotos', badge de vídeo y botón ver-todas", () => {
+    const items = [
+      { type: "photo" as const, url: "/p1.jpg" },
+      { type: "photo" as const, url: "/p2.jpg" },
+      { type: "photo" as const, url: "/p3.jpg" },
+      { type: "photo" as const, url: "/p4.jpg" },
+      { type: "video" as const, url: "/v1.mp4" },
+      { type: "photo" as const, url: "/p5.jpg" },
+      { type: "photo" as const, url: "/p6.jpg" },
+    ];
+    const html = renderToStaticMarkup(<Gallery items={items} title="Ático test" />);
+    expect(html).toContain("rt-mosaic__cell--main");
+    expect((html.match(/rt-mosaic__cell/g) ?? []).length).toBeGreaterThanOrEqual(5);
+    expect(html).toContain("+2 fotos"); // 7 items − 1 principal − 4 tiles
+    expect(html).toContain("rt-mosaic__play"); // el vídeo lleva badge ▶
+    expect(html).toContain("Ver las 7 fotos");
+    expect(html).not.toContain("rt-lightbox"); // cerrado en SSR
+  });
+
+  it("Gallery vacía: placeholder accesible", () => {
+    const html = renderToStaticMarkup(<Gallery items={[]} title="Sin fotos" />);
+    expect(html).toContain("rt-mosaic--empty");
+    expect(html).toContain('role="img"');
   });
 
   it("Footer con columnas", () => {

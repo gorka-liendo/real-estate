@@ -17,3 +17,4 @@ export {
   type ValuationFormData,
   type ValuationEstimate,
 } from "./components/valuation-form.js";
+export { Gallery, type GalleryItem } from "./components/gallery.js";

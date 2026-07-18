@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Gallery, type GalleryItem } from "@rep/ui-tenant";
 import { fetchProperty, fetchTenant, type PublicProperty } from "@/lib/tenant";
 import { CONDITION_LABELS, featureLabel, KIND_LABELS } from "@/lib/property-meta";
 import { ContactForm } from "../../ContactForm";
@@ -68,29 +69,14 @@ export default async function PropertyDetail({ params }: Params) {
             ← Volver a propiedades
           </Link>
 
-          {/* Galería */}
-          {property.photos.length > 0 ? (
-            <div className="rt-gallery">
-              {property.photos.map((url, i) => (
-                <img
-                  key={url}
-                  className={`rt-gallery__img${i === 0 ? " rt-gallery__img--main" : ""}`}
-                  src={url}
-                  alt={property.title}
-                  loading={i === 0 ? "eager" : "lazy"}
-                  decoding="async"
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="rt-gallery">
-              <div
-                className="rt-gallery__img rt-gallery__img--main"
-                role="img"
-                aria-label={property.title}
-              />
-            </div>
-          )}
+          {/* Galería: mosaico + visor fullscreen; los vídeos son slides más */}
+          <Gallery
+            title={property.title}
+            items={[
+              ...property.photos.map((url): GalleryItem => ({ type: "photo", url })),
+              ...property.videos.map((url): GalleryItem => ({ type: "video", url })),
+            ]}
+          />
 
           <div className="rt-detail">
             {/* Columna principal */}
@@ -136,17 +122,6 @@ export default async function PropertyDetail({ params }: Params) {
                       </li>
                     ))}
                   </ul>
-                </div>
-              ) : null}
-
-              {property.videos.length > 0 ? (
-                <div className="rt-block">
-                  <h2 className="rt-block__title">Vídeos</h2>
-                  <div className="rt-videos">
-                    {property.videos.map((url) => (
-                      <video key={url} className="rt-video" src={url} controls preload="metadata" />
-                    ))}
-                  </div>
                 </div>
               ) : null}
 

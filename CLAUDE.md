@@ -399,6 +399,14 @@ packages/
       Sección + enlace de nav en el micrositio solo si el tenant tiene el módulo
       (`fetchModules` LANZA en error para no cachear la página sin la sección).
       Badge "Valoración" en /clientes.
+- [x] **Galería premium en la ficha (mosaico + lightbox)** — componente cliente
+      `Gallery` en `@rep/ui-tenant`: mosaico adaptativo (principal + hasta 4
+      tiles, overlay "+N fotos", botón "Ver las N"), visor fullscreen (flechas,
+      teclado, contador, scroll-lock) con los vídeos integrados como slides
+      (badge ▶); en móvil colapsa a carrusel scroll-snap. Clases `rt-mosaic*` /
+      `rt-lightbox*` 100% tokens + nuevos `--tenant-scrim`/`--tenant-on-scrim`
+      en contrato y temas. Ficha: facts con jerarquía display 22px. Verificado
+      E2E a 1280/360 (navegación, scroll-lock, sin overflow).
 - [ ] **Deuda anotada (review 18-jul-2026)**: deduplicar KIND_LABEL (×5) y el
       tipo Estimate (×4) en un módulo compartido; mover `isPublicMicrositePath`
       a un sub-app público con su propia política CORS; throttle a Redis
