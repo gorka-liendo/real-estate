@@ -23,6 +23,17 @@ portal.post("/clients/:id/token", authMiddleware, requireMembership, async (c) =
   return c.json({ token });
 });
 
+// Detalle de un inmueble del propietario (página con tabs). Más específico
+// que /:token, se registra antes.
+portal.get("/:token/properties/:propertyId", async (c) => {
+  const data = await service.getPortalPropertyDetail(
+    c.req.param("token"),
+    c.req.param("propertyId"),
+  );
+  if (!data) return c.json({ error: "not_found" }, 404);
+  return c.json(data);
+});
+
 portal.get("/:token", async (c) => {
   const data = await service.getPortalData(c.req.param("token"));
   if (!data) return c.json({ error: "not_found" }, 404);

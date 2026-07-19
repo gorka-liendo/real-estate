@@ -931,6 +931,64 @@
   border: 1.5px solid var(--tenant-accent);
 }
 
+/* tabs del detalle del portal */
+.rt-tabs {
+  display: flex;
+  gap: var(--tenant-sp-2);
+  border-bottom: 1px solid var(--tenant-border);
+  margin-bottom: var(--tenant-sp-5);
+  overflow-x: auto;
+}
+.rt-tab {
+  padding: 10px 14px;
+  font-family: var(--tenant-font-body);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: none;
+  border: none;
+  color: var(--tenant-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  white-space: nowrap;
+}
+.rt-tab:hover {
+  color: var(--tenant-text);
+}
+.rt-tab[aria-selected="true"] {
+  color: var(--tenant-text);
+  border-bottom-color: var(--tenant-accent);
+}
+
+/* tabla temada (registro de cobros, gastos…). Envolver SIEMPRE en
+   .rt-table-scroll: en móvil la tabla scrollea dentro de su contenedor,
+   nunca la página entera. */
+.rt-table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.rt-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.rt-table th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--tenant-muted);
+  padding: 10px 16px 10px 0;
+  border-bottom: 1px solid var(--tenant-border);
+}
+.rt-table td {
+  padding: 12px 16px 12px 0;
+  border-bottom: 1px solid var(--tenant-border);
+  vertical-align: baseline;
+}
+
 /* ===== botón píldora — signature #5, único elemento redondeado ===== */
 .rt-btn {
   display: inline-flex;

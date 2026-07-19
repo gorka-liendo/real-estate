@@ -484,6 +484,17 @@ packages/
       costa fallaban el floor de visión normal); tooltips nativos <title>,
       leyenda, tokens del tema. Pendiente anotado: desglose por categoría,
       informe imprimible, ofertas, rentabilidad % (necesita valor del inmueble).
+- [x] **Portal: detalle por inmueble con tabs + portada aligerada** — la
+      portada del portal muestra tarjetas COMPACTAS (foto, chips, 4 cifras
+      clave, "Ver detalle completo"); el resto vive en
+      `/portal/[token]/[propertyId]` con tabs Resumen (facts + gráfico) /
+      Cobros (**registro íntegro** mes a mes: importe, estado, fecha de pago)
+      / Gastos (desglose por categoría + tabla con facturas) / Visitas
+      (próximas + historial). API: GET /tenant/portal/:token/properties/:id
+      (404 si el inmueble no es del dueño del token). `PortalTabs` cliente
+      (contenido server-rendered), clases `rt-tabs`/`rt-table` con tokens y
+      `.rt-table-scroll` (las tablas scrollean en su contenedor en móvil,
+      overflow cazado y corregido en el E2E a 360). 85 tests API.
 - [ ] **Deuda anotada (review 18-jul-2026)**: mover `isPublicMicrositePath`
       a un sub-app público con su propia política CORS; throttle a Redis
       multi-instancia; helpers `tenantGet/tenantPost` en tenant-site;

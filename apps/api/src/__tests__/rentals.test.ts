@@ -206,6 +206,42 @@ describe("Cobros mensuales", () => {
     expect((await req(`/${id}/payments/2026-13`, { method: "PUT", body: JSON.stringify({ status: "paid" }) })).status).toBe(400);
   });
 
+  it("detalle por inmueble: registro COMPLETO de cobros y 404 si no es del dueño", async () => {
+    const id = await createRental();
+    const year = new Date().getFullYear();
+    for (const [m, st] of [["01", "paid"], ["02", "paid"], ["03", "pending"], ["04", "paid"]] as const) {
+      await req(`/${id}/payments/${year}-${m}`, { method: "PUT", body: JSON.stringify({ status: st }) });
+    }
+
+    const tokenRes = await app.request(`/tenant/portal/clients/${ownerId}/token`, {
+      method: "POST",
+      headers: { "x-tenant-slug": SLUGS[0]!, cookie },
+    });
+    const { token } = (await tokenRes.json()) as { token: string };
+
+    const res = await app.request(`/tenant/portal/${token}/properties/${propId}`, {
+      headers: { "x-tenant-slug": SLUGS[0]! },
+    });
+    expect(res.status).toBe(200);
+    const detail = (await res.json()) as {
+      rental: { payments: Array<{ period: string; status: string }> } | null;
+      monthly: Array<{ incomeCents: number }>;
+    };
+    expect(detail.rental!.payments).toHaveLength(4); // registro íntegro, no solo 6 últimos
+    expect(detail.rental!.payments[0]!.period).toBe(`${year}-04`); // desc
+    expect(detail.monthly).toHaveLength(12);
+
+    // inmueble del tenant que NO es del dueño del token → 404
+    const [otherProp] = await db
+      .insert(properties)
+      .values({ tenantId: tenantA.id, title: "De otro dueño", status: "published" })
+      .returning();
+    const cross = await app.request(`/tenant/portal/${token}/properties/${otherProp!.id}`, {
+      headers: { "x-tenant-slug": SLUGS[0]! },
+    });
+    expect(cross.status).toBe(404);
+  });
+
   it("el rendimiento llega al portal del propietario (sin identidad del inquilino)", async () => {
     const id = await createRental();
     const year = new Date().getFullYear();

@@ -228,3 +228,167 @@ export async function getPortalData(token: string): Promise<PortalData | null> {
 
   return { ...mapped, summary };
 }
+
+// ---------- detalle por inmueble (página con tabs del portal) ----------
+
+export type PortalPaymentRow = {
+  period: string; // "YYYY-MM"
+  amount: number; // euros
+  status: RentalPayment["status"];
+  paidAt: string | null;
+};
+
+export type PortalPropertyDetail = {
+  owner: { name: string };
+  property: {
+    id: string;
+    title: string;
+    status: Property["status"];
+    operation: Property["operation"];
+    price: number | null;
+    city: string | null;
+    photo: string | null;
+    interested: number;
+  };
+  rental: {
+    monthlyRent: number;
+    since: string;
+    status: Rental["status"];
+    collectedThisYearCents: number;
+    payments: PortalPaymentRow[]; // registro COMPLETO, desc
+  } | null;
+  expenses: PortalExpense[]; // todos, desc
+  expensesByCategory: Array<{ category: ExpenseCategory; totalCents: number }>;
+  visits: {
+    upcoming: Array<{ at: string; status: Visit["status"] }>;
+    past: Array<{ at: string; status: Visit["status"] }>;
+  };
+  monthly: PortalMonthly[];
+};
+
+/**
+ * Detalle de UN inmueble del propietario (por token + propertyId). null si el
+ * token no existe o el inmueble no pertenece a ese propietario (→ 404).
+ */
+export async function getPortalPropertyDetail(
+  token: string,
+  propertyId: string,
+): Promise<PortalPropertyDetail | null> {
+  const owners = (await tenantDb().select(clients, eq(clients.portalToken, token))) as Client[];
+  const owner = owners[0];
+  if (!owner) return null;
+
+  const props = (await tenantDb().select(
+    properties,
+    and(eq(properties.id, propertyId), eq(properties.ownerClientId, owner.id)),
+  )) as Property[];
+  const prop = props[0];
+  if (!prop) return null;
+
+  const [vs, interestedClients, propRentals, exps] = await Promise.all([
+    tenantDb().select(visits, eq(visits.propertyId, prop.id)) as Promise<Visit[]>,
+    tenantDb().select(clients, eq(clients.interestPropertyId, prop.id)) as Promise<Client[]>,
+    tenantDb().select(rentals, eq(rentals.propertyId, prop.id)) as Promise<Rental[]>,
+    tenantDb().select(
+      propertyExpenses,
+      eq(propertyExpenses.propertyId, prop.id),
+    ) as Promise<PropertyExpense[]>,
+  ]);
+
+  const rental =
+    propRentals.find((r) => r.status === "active") ??
+    propRentals.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0] ??
+    null;
+  const pays = rental
+    ? ((await tenantDb().select(
+        rentalPayments,
+        eq(rentalPayments.rentalId, rental.id),
+      )) as RentalPayment[])
+    : [];
+
+  const yearPrefix = `${new Date().getFullYear()}-`;
+  const now = Date.now();
+
+  const byCategory = new Map<ExpenseCategory, number>();
+  for (const e of exps) {
+    byCategory.set(e.category, (byCategory.get(e.category) ?? 0) + e.amountCents);
+  }
+
+  const monthly: PortalMonthly[] = Array.from({ length: 12 }, (_, i) => {
+    const mm = String(i + 1).padStart(2, "0");
+    return {
+      month: i + 1,
+      incomeCents:
+        pays
+          .filter(
+            (p) =>
+              p.status === "paid" && p.period.startsWith(yearPrefix) && p.period.slice(5, 7) === mm,
+          )
+          .reduce((a, p) => a + p.amount, 0) * 100,
+      expenseCents: exps
+        .filter((e) => e.expenseDate.startsWith(yearPrefix) && e.expenseDate.slice(5, 7) === mm)
+        .reduce((a, e) => a + e.amountCents, 0),
+    };
+  });
+
+  return {
+    owner: { name: owner.name },
+    property: {
+      id: prop.id,
+      title: prop.title,
+      status: prop.status,
+      operation: prop.operation,
+      price: prop.price,
+      city: prop.city,
+      photo: prop.photos[0] ?? null,
+      interested: interestedClients.length,
+    },
+    rental: rental
+      ? {
+          monthlyRent: rental.monthlyRent,
+          since: rental.startDate,
+          status: rental.status,
+          collectedThisYearCents:
+            pays
+              .filter((p) => p.status === "paid" && p.period.startsWith(yearPrefix))
+              .reduce((a, p) => a + p.amount, 0) * 100,
+          payments: pays
+            .sort((a, b) => b.period.localeCompare(a.period))
+            .map((p) => ({
+              period: p.period.slice(0, 7),
+              amount: p.amount,
+              status: p.status,
+              paidAt: p.paidAt ? p.paidAt.toISOString() : null,
+            })),
+        }
+      : null,
+    expenses: exps
+      .sort((a, b) => b.expenseDate.localeCompare(a.expenseDate))
+      .map((e) => ({
+        date: e.expenseDate,
+        category: e.category,
+        concept: e.concept,
+        amountCents: e.amountCents,
+        fileUrl: e.fileUrl,
+      })),
+    expensesByCategory: [...byCategory.entries()]
+      .map(([category, totalCents]) => ({ category, totalCents }))
+      .sort((a, b) => b.totalCents - a.totalCents),
+    visits: {
+      upcoming: vs
+        .filter(
+          (v) =>
+            v.scheduledAt.getTime() >= now &&
+            (v.status === "requested" || v.status === "confirmed"),
+        )
+        .sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime())
+        .map((v) => ({ at: v.scheduledAt.toISOString(), status: v.status })),
+      past: vs
+        .filter((v) => v.scheduledAt.getTime() < now || v.status === "done" || v.status === "cancelled")
+        .sort((a, b) => b.scheduledAt.getTime() - a.scheduledAt.getTime())
+        .slice(0, 24)
+        .map((v) => ({ at: v.scheduledAt.toISOString(), status: v.status })),
+    },
+    monthly,
+  };
+}

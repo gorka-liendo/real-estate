@@ -237,6 +237,54 @@ export async function fetchPortal(slug: string, token: string): Promise<PortalDa
   return (await res.json()) as PortalData;
 }
 
+export type PortalPaymentRow = {
+  period: string; // "YYYY-MM"
+  amount: number;
+  status: "pending" | "paid";
+  paidAt: string | null;
+};
+export type PortalPropertyDetail = {
+  owner: { name: string };
+  property: {
+    id: string;
+    title: string;
+    status: "draft" | "published" | "archived";
+    operation: "sale" | "rent";
+    price: number | null;
+    city: string | null;
+    photo: string | null;
+    interested: number;
+  };
+  rental: {
+    monthlyRent: number;
+    since: string;
+    status: "active" | "ended";
+    collectedThisYearCents: number;
+    payments: PortalPaymentRow[];
+  } | null;
+  expenses: PortalExpense[];
+  expensesByCategory: Array<{ category: string; totalCents: number }>;
+  visits: {
+    upcoming: Array<{ at: string; status: string }>;
+    past: Array<{ at: string; status: string }>;
+  };
+  monthly: PortalMonthly[];
+};
+
+/** Detalle de un inmueble del portal (página con tabs). */
+export async function fetchPortalProperty(
+  slug: string,
+  token: string,
+  propertyId: string,
+): Promise<PortalPropertyDetail | null> {
+  const res = await fetch(
+    `${tenantSiteEnv.NEXT_PUBLIC_API_URL}/tenant/portal/${token}/properties/${propertyId}`,
+    { headers: { "x-tenant-slug": slug }, cache: "no-store" },
+  );
+  if (!res.ok) return null;
+  return (await res.json()) as PortalPropertyDetail;
+}
+
 /** Ficha de una propiedad publicada por id. */
 export async function fetchProperty(
   slug: string,
