@@ -3,6 +3,7 @@ import {
   Calculator,
   CalendarClock,
   Globe,
+  KeyRound,
   MessageCircle,
   Users,
   type LucideIcon,
@@ -40,6 +41,13 @@ export const MODULE_SECTIONS: ModuleSection[] = [
     href: "/agenda",
     icon: CalendarClock,
     description: "Visitas a inmuebles: solicitudes, confirmaciones y choques.",
+  },
+  {
+    code: "rentals",
+    label: "Alquileres",
+    href: "/alquileres",
+    icon: KeyRound,
+    description: "Contratos, cobros mensuales y rendimiento.",
   },
   {
     code: "accounting",

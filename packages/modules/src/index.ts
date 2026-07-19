@@ -14,6 +14,7 @@ export type ModuleCode =
   | "valuation"
   | "visits"
   | "owner_portal"
+  | "rentals"
   | (string & {});
 
 const ttl = z.coerce

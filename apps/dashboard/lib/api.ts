@@ -149,6 +149,39 @@ export type VisitInput = {
   notes?: string;
 };
 
+export type RentalStatus = "active" | "ended";
+export type RentalPayment = {
+  id: string;
+  rentalId: string;
+  period: string; // yyyy-mm-dd (día 1 del mes)
+  amount: number;
+  status: "pending" | "paid";
+  paidAt: string | null;
+  notes: string | null;
+};
+export type Rental = {
+  id: string;
+  propertyId: string;
+  renterClientId: string | null;
+  renterName: string;
+  monthlyRent: number;
+  startDate: string;
+  endDate: string | null;
+  status: RentalStatus;
+  notes: string | null;
+  payments: RentalPayment[];
+  createdAt: string;
+  updatedAt: string;
+};
+export type RentalInput = {
+  propertyId: string;
+  renterClientId?: string;
+  renterName: string;
+  monthlyRent: number;
+  startDate: string;
+  notes?: string;
+};
+
 export type CatalogModule = {
   id: string;
   code: string;
@@ -262,6 +295,34 @@ export const api = {
       request<{ token: string }>(`/tenant/portal/clients/${clientId}/token`, {
         method: "POST",
         headers: { "x-tenant-slug": slug },
+      }),
+  },
+
+  // --- módulo Alquileres ---
+  rentals: {
+    list: (slug: string) =>
+      request<{ rentals: Rental[] }>("/tenant/rentals", { headers: { "x-tenant-slug": slug } }),
+
+    create: (slug: string, data: RentalInput) =>
+      request<{ rental: Rental }>("/tenant/rentals", {
+        method: "POST",
+        headers: { "x-tenant-slug": slug },
+        body: JSON.stringify(data),
+      }),
+
+    update: (slug: string, id: string, data: { status?: RentalStatus; monthlyRent?: number }) =>
+      request<{ rental: Rental }>(`/tenant/rentals/${id}`, {
+        method: "PATCH",
+        headers: { "x-tenant-slug": slug },
+        body: JSON.stringify(data),
+      }),
+
+    // period = "2026-07"
+    setPayment: (slug: string, id: string, period: string, status: "paid" | "pending") =>
+      request<{ payment: RentalPayment }>(`/tenant/rentals/${id}/payments/${period}`, {
+        method: "PUT",
+        headers: { "x-tenant-slug": slug },
+        body: JSON.stringify({ status }),
       }),
   },
 

@@ -17,6 +17,8 @@ async function main() {
     { code: "visits", name: "Operativa: agenda de visitas", priceMonthly: 3900 },
     // Producto 05 (Operativa): portal del propietario — su piso, en tiempo real.
     { code: "owner_portal", name: "Operativa: portal del propietario", priceMonthly: 2900 },
+    // Producto 06 (Inversores/Operativa): alquileres — contratos, cobros y rendimiento.
+    { code: "rentals", name: "Alquileres: gestión y rendimiento", priceMonthly: 3900 },
   ];
 
   const seededModules = [];
@@ -104,6 +106,7 @@ async function main() {
     "valuation",
     "visits",
     "owner_portal",
+    "rentals",
   ];
   for (const mod of seededModules) {
     const shouldBeActive = activeForMartinez.includes(mod!.code);

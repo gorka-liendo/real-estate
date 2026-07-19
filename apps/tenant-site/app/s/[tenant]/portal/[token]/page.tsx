@@ -18,6 +18,8 @@ const STATUS_LABEL: Record<PortalProperty["status"], string> = {
   archived: "Archivado",
 };
 
+const MONTH_SHORT = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+
 const fmtWhen = (iso: string) =>
   new Date(iso).toLocaleString("es-ES", {
     weekday: "long",
@@ -103,6 +105,50 @@ export default async function OwnerPortal({ params }: Params) {
                         <div className="rt-detail__fact-v">{p.interested}</div>
                       </div>
                     </div>
+
+                    {p.rental ? (
+                      <>
+                        <div className="rt-eyebrow" style={{ marginBottom: 0 }}>
+                          Rendimiento del alquiler
+                        </div>
+                        <div className="rt-detail__facts" style={{ marginBottom: "var(--tenant-sp-4)" }}>
+                          <div>
+                            <div className="rt-detail__fact-k">Renta</div>
+                            <div className="rt-detail__fact-v">
+                              {new Intl.NumberFormat("es-ES").format(p.rental.monthlyRent)} €/mes
+                            </div>
+                          </div>
+                          <div>
+                            <div className="rt-detail__fact-k">Cobrado este año</div>
+                            <div className="rt-detail__fact-v">
+                              {new Intl.NumberFormat("es-ES").format(p.rental.collectedThisYear)} €
+                            </div>
+                          </div>
+                          <div>
+                            <div className="rt-detail__fact-k">Alquilado desde</div>
+                            <div className="rt-detail__fact-v">
+                              {new Date(p.rental.since).toLocaleDateString("es-ES", {
+                                month: "short",
+                                year: "numeric",
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                        {p.rental.months.length > 0 ? (
+                          <div className="rt-portal__chips">
+                            {p.rental.months.map((m) => (
+                              <span
+                                key={m.period}
+                                className={`rt-portal__chip${m.status === "paid" ? " rt-portal__chip--live" : ""}`}
+                              >
+                                {MONTH_SHORT[Number(m.period.slice(5)) - 1]}{" "}
+                                {m.status === "paid" ? "cobrado" : "pendiente"}
+                              </span>
+                            ))}
+                          </div>
+                        ) : null}
+                      </>
+                    ) : null}
 
                     <div className="rt-eyebrow" style={{ marginBottom: 0 }}>
                       Próximas visitas

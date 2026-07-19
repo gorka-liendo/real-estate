@@ -182,6 +182,12 @@ export async function submitVisitRequest(
   if (!res.ok) throw new Error(`visit_request_failed_${res.status}`);
 }
 
+export type PortalRental = {
+  monthlyRent: number;
+  since: string;
+  collectedThisYear: number;
+  months: Array<{ period: string; status: "pending" | "paid"; amount: number }>;
+};
 export type PortalProperty = {
   id: string;
   title: string;
@@ -193,6 +199,7 @@ export type PortalProperty = {
   upcomingVisits: Array<{ at: string; status: string }>;
   visitsDone: number;
   interested: number;
+  rental: PortalRental | null;
 };
 export type PortalData = {
   owner: { name: string };

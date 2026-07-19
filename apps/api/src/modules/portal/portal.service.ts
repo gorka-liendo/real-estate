@@ -1,12 +1,16 @@
 import { randomUUID } from "node:crypto";
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import {
   clients,
   properties,
+  rentalPayments,
+  rentals,
   tenantDb,
   visits,
   type Client,
   type Property,
+  type Rental,
+  type RentalPayment,
   type Visit,
 } from "@rep/db";
 
@@ -27,6 +31,15 @@ export async function getOrCreatePortalToken(clientId: string): Promise<string |
 
 // Lo que el propietario ve de cada inmueble suyo. Las visitas van SIN datos
 // personales del visitante (solo fecha y estado) — no son asunto del dueño.
+// Rendimiento del alquiler (si el inmueble tiene contrato activo). Cifras y
+// meses, SIN identidad del inquilino (misma política que las visitas).
+export type PortalRental = {
+  monthlyRent: number;
+  since: string; // yyyy-mm-dd
+  collectedThisYear: number;
+  months: Array<{ period: string; status: RentalPayment["status"]; amount: number }>;
+};
+
 export type PortalProperty = {
   id: string;
   title: string;
@@ -38,6 +51,7 @@ export type PortalProperty = {
   upcomingVisits: Array<{ at: string; status: Visit["status"] }>;
   visitsDone: number;
   interested: number;
+  rental: PortalRental | null;
 };
 
 export type PortalData = {
@@ -57,10 +71,39 @@ export async function getPortalData(token: string): Promise<PortalData | null> {
   if (owned.length === 0) return { owner: { name: owner.name }, properties: [] };
 
   const ids = owned.map((p) => p.id);
-  const [allVisits, interestedClients] = await Promise.all([
+  const [allVisits, interestedClients, activeRentals] = await Promise.all([
     tenantDb().select(visits, inArray(visits.propertyId, ids)) as Promise<Visit[]>,
     tenantDb().select(clients, inArray(clients.interestPropertyId, ids)) as Promise<Client[]>,
+    tenantDb().select(
+      rentals,
+      and(inArray(rentals.propertyId, ids), eq(rentals.status, "active")),
+    ) as Promise<Rental[]>,
   ]);
+  const payments =
+    activeRentals.length > 0
+      ? ((await tenantDb().select(
+          rentalPayments,
+          inArray(rentalPayments.rentalId, activeRentals.map((r) => r.id)),
+        )) as RentalPayment[])
+      : [];
+
+  const yearPrefix = `${new Date().getFullYear()}-`;
+  const toPortalRental = (propertyId: string): PortalRental | null => {
+    const rental = activeRentals.find((r) => r.propertyId === propertyId);
+    if (!rental) return null;
+    const pays = payments.filter((p) => p.rentalId === rental.id);
+    return {
+      monthlyRent: rental.monthlyRent,
+      since: rental.startDate,
+      collectedThisYear: pays
+        .filter((p) => p.status === "paid" && p.period.startsWith(yearPrefix))
+        .reduce((acc, p) => acc + p.amount, 0),
+      months: pays
+        .sort((a, b) => b.period.localeCompare(a.period))
+        .slice(0, 6)
+        .map((p) => ({ period: p.period.slice(0, 7), status: p.status, amount: p.amount })),
+    };
+  };
 
   const now = Date.now();
   return {
@@ -85,6 +128,7 @@ export async function getPortalData(token: string): Promise<PortalData | null> {
           .map((v) => ({ at: v.scheduledAt.toISOString(), status: v.status })),
         visitsDone: vs.filter((v) => v.status === "done").length,
         interested: interestedClients.filter((cl) => cl.interestPropertyId === p.id).length,
+        rental: toPortalRental(p.id),
       };
     }),
   };

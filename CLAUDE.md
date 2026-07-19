@@ -449,6 +449,19 @@ packages/
       parciales reseteaban status/kind/operation (properties) y stage
       (clients); update schemas sobreescritos con enums opcionales sin default
       + 2 tests de regresión. 75 tests API.
+- [x] **Módulo Alquileres (`rentals`) — contratos, cobros y rendimiento** —
+      la inmobiliaria gestiona; el propietario ve el rendimiento en su portal.
+      Migración 0011: `rentals` (propiedad, inquilino snapshot + cliente
+      opcional set null, renta, inicio/fin, active|ended) y `rental_payments`
+      (unique rental+period, amount, pending|paid, paidAt). API privada
+      /tenant/rentals: crear (un solo contrato ACTIVO por inmueble → 409),
+      finalizar (endDate automática), y `PUT /:id/payments/:YYYY-MM` upsert
+      idempotente (amount default = renta). Portal service añade `rental`:
+      renta/mes, cobrado este año, últimos 6 meses — SIN identidad del
+      inquilino. Dashboard: sección **Alquileres** (alta con selects de
+      inmueble/cliente, chips de meses clicables ✓/!/·, finalizar, 409 con
+      copy claro). Portal: bloque "Rendimiento del alquiler" con facts y chips
+      de meses. Update schemas sin defaults (lección zod v4). 80 tests API.
 - [ ] **Deuda anotada (review 18-jul-2026)**: mover `isPublicMicrositePath`
       a un sub-app público con su propia política CORS; throttle a Redis
       multi-instancia; helpers `tenantGet/tenantPost` en tenant-site;
