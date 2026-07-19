@@ -90,7 +90,7 @@ export default async function OwnerPortal({ params }: Params) {
                         <div className="rt-detail__fact-k">Precio</div>
                         <div className="rt-detail__fact-v">
                           {p.price != null
-                            ? `${new Intl.NumberFormat("es-ES").format(p.price)} €`
+                            ? `${new Intl.NumberFormat("es-ES").format(p.price)} €${p.operation === "rent" ? "/mes" : ""}`
                             : "—"}
                         </div>
                       </div>
