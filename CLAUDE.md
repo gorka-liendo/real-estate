@@ -434,6 +434,21 @@ packages/
       slot_conflict. DS: `VisitForm` (día + franja + contacto). Ficha: widget
       "Pedir visita" gateado. Dashboard: sección **Agenda** (/agenda) con
       confirmar/cancelar/hecha y aviso de choque. 7 tests API (69 total).
+- [x] **Módulo Portal del propietario (`owner_portal`, producto 05)** — el dueño
+      (cliente del CRM) ve el rendimiento de sus inmuebles sin cuenta: enlace
+      con token capability. Migración 0010: `properties.owner_client_id` (FK
+      set null) + `clients.portal_token` (unique). API `modules/portal/`:
+      POST /tenant/portal/clients/:id/token (privado, idempotente) + GET
+      /tenant/portal/:token (público; lo consume el tenant-site server-side →
+      sin CORS; visitas SIN datos personales del visitante). Página
+      /portal/[token] temada, no-store + robots noindex. Dashboard: select
+      "Propietario" en la edición de propiedad (validado contra el tenant,
+      `invalid_owner`) y botón "Portal" en Clientes que copia el enlace
+      (NEXT_PUBLIC_TENANT_SITE_URL). **Bugfix de regresión encontrado por el
+      E2E**: en zod v4 `.partial()` re-aplica los `.default()` → los PATCH
+      parciales reseteaban status/kind/operation (properties) y stage
+      (clients); update schemas sobreescritos con enums opcionales sin default
+      + 2 tests de regresión. 75 tests API.
 - [ ] **Deuda anotada (review 18-jul-2026)**: mover `isPublicMicrositePath`
       a un sub-app público con su propia política CORS; throttle a Redis
       multi-instancia; helpers `tenantGet/tenantPost` en tenant-site;

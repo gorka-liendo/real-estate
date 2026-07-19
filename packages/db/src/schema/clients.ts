@@ -27,6 +27,9 @@ export const clients = pgTable("clients", {
   // borrado del inmueble al del lead; guardamos el id como contexto).
   source: clientSource("source").notNull().default("manual"),
   interestPropertyId: uuid("interest_property_id"),
+  // Portal del propietario: token capability del enlace /portal/<token> que la
+  // agencia genera y comparte. NULL = sin portal. Único por diseño.
+  portalToken: text("portal_token").unique(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()

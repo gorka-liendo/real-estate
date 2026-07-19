@@ -1,5 +1,7 @@
 import { randomUUID } from "node:crypto";
+import { eq } from "drizzle-orm";
 import { Hono } from "hono";
+import { clients, tenantDb } from "@rep/db";
 import { getStorage, tenantKey } from "@rep/storage";
 import {
   authMiddleware,
@@ -36,15 +38,27 @@ properties.get("/", async (c) => {
   return c.json({ properties: await service.listProperties() });
 });
 
+// El propietario debe ser un cliente DEL tenant (tenantDb → aislamiento).
+async function ownerExists(ownerClientId: string): Promise<boolean> {
+  const rows = await tenantDb().select(clients, eq(clients.id, ownerClientId));
+  return rows.length > 0;
+}
+
 properties.post("/", async (c) => {
   const body = createPropertySchema.safeParse(await c.req.json().catch(() => null));
   if (!body.success) return c.json({ error: "invalid_body", issues: body.error.issues }, 400);
+  if (body.data.ownerClientId && !(await ownerExists(body.data.ownerClientId))) {
+    return c.json({ error: "invalid_owner" }, 400);
+  }
   return c.json({ property: await service.createProperty(body.data) }, 201);
 });
 
 properties.patch("/:id", async (c) => {
   const body = updatePropertySchema.safeParse(await c.req.json().catch(() => null));
   if (!body.success) return c.json({ error: "invalid_body", issues: body.error.issues }, 400);
+  if (body.data.ownerClientId && !(await ownerExists(body.data.ownerClientId))) {
+    return c.json({ error: "invalid_owner" }, 400);
+  }
   const updated = await service.updateProperty(c.req.param("id"), body.data);
   if (!updated) return c.json({ error: "not_found" }, 404);
   return c.json({ property: updated });

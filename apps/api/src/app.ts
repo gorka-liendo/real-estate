@@ -18,6 +18,7 @@ import { admin } from "./modules/admin/admin.routes.js";
 import { brand } from "./modules/brand/brand.routes.js";
 import { clients } from "./modules/clients/clients.routes.js";
 import { leads } from "./modules/leads/leads.routes.js";
+import { portal } from "./modules/portal/portal.routes.js";
 import { valuations } from "./modules/valuations/valuations.routes.js";
 import { visits } from "./modules/visits/visits.routes.js";
 import { properties } from "./modules/properties/properties.routes.js";
@@ -142,6 +143,10 @@ tenant.route("/valuations", valuations);
 
 // Agenda de visitas: POST /request público (ficha) + gestión privada (dashboard).
 tenant.route("/visits", visits);
+
+// Portal del propietario: GET /:token público (lo consume el tenant-site
+// server-side, sin CORS) + generación de token privada (dashboard).
+tenant.route("/portal", portal);
 
 // --- rutas tenant-scoped privadas (dashboard): sesión + membership obligatorias ---
 const team = new Hono<MemberEnv>();

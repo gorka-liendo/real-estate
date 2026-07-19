@@ -71,6 +71,13 @@
       "when": 1784400856329,
       "tag": "0009_colossal_mother_askani",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1784401489306,
+      "tag": "0010_smooth_blazing_skull",
+      "breakpoints": true
     }
   ]
 }

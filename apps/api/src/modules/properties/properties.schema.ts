@@ -35,9 +35,20 @@ export const createPropertySchema = z.object({
   address: z.string().max(240).optional(),
   features: z.array(z.string().max(40)).max(40).optional(),
   details: detailsSchema,
+  // Propietario (cliente del CRM). null = desvincular. La ruta valida que el
+  // cliente exista EN el tenant antes de guardar.
+  ownerClientId: z.uuid().nullable().optional(),
 });
 
-export const updatePropertySchema = createPropertySchema.partial();
+// OJO: .partial() NO basta — en zod v4 los .default() se re-aplican cuando el
+// campo no viene, así que un PATCH parcial resetearía operation/kind/status a
+// sus defaults (p. ej. despublicar un inmueble al asignarle propietario).
+// Se sobreescriben como enums opcionales SIN default.
+export const updatePropertySchema = createPropertySchema.partial().extend({
+  operation: z.enum(["sale", "rent"]).optional(),
+  kind: z.enum(["flat", "house", "commercial", "land", "garage"]).optional(),
+  status: z.enum(["draft", "published", "archived"]).optional(),
+});
 
 export type CreatePropertyInput = z.infer<typeof createPropertySchema>;
 export type UpdatePropertyInput = z.infer<typeof updatePropertySchema>;

@@ -6,6 +6,7 @@ import { Badge, Button, Card, Input, Label, Select, Textarea } from "@rep/ui";
 import { useRequireModule, useWorkspace } from "@/contexts/workspace-context";
 import {
   api,
+  type Client,
   type Property,
   type PropertyDetails,
   type PropertyKind,
@@ -487,8 +488,17 @@ function PropertyForm({
   const [energyCert, setEnergyCert] = useState(d0.energyCert ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [features, setFeatures] = useState<string[]>(initial?.features ?? []);
+  const [ownerClientId, setOwnerClientId] = useState(initial?.ownerClientId ?? "");
+  const [ownerOptions, setOwnerOptions] = useState<Client[] | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { hasModule } = useWorkspace();
+
+  // Propietario = cliente del CRM (para el portal del propietario).
+  useEffect(() => {
+    if (!hasModule("clients")) return;
+    void api.clients.list(slug).then(({ clients }) => setOwnerOptions(clients)).catch(() => {});
+  }, [slug, hasModule]);
 
   function toggleFeature(id: string) {
     setFeatures((f) => (f.includes(id) ? f.filter((x) => x !== id) : [...f, id]));
@@ -525,6 +535,7 @@ function PropertyForm({
         description: description || undefined,
         features,
         details,
+        ownerClientId: ownerClientId || null,
       };
       const { property } = isEdit
         ? await api.properties.update(slug, initial.id, payload)
@@ -554,6 +565,25 @@ function PropertyForm({
           <Label htmlFor="p-title">Título</Label>
           <Input id="p-title" required value={title} onChange={(e) => setTitle(e.target.value)} />
         </div>
+
+        {ownerOptions !== null ? (
+          <div>
+            <Label htmlFor="p-owner">Propietario (cliente del CRM)</Label>
+            <Select
+              id="p-owner"
+              value={ownerClientId}
+              onChange={(e) => setOwnerClientId(e.target.value)}
+            >
+              <option value="">— Sin propietario —</option>
+              {ownerOptions.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                  {c.email ? ` · ${c.email}` : ""}
+                </option>
+              ))}
+            </Select>
+          </div>
+        ) : null}
 
         <div style={fieldGrid}>
           <div>

@@ -13,6 +13,7 @@ export type ModuleCode =
   | "whatsapp_bot"
   | "valuation"
   | "visits"
+  | "owner_portal"
   | (string & {});
 
 const ttl = z.coerce

@@ -182,6 +182,36 @@ export async function submitVisitRequest(
   if (!res.ok) throw new Error(`visit_request_failed_${res.status}`);
 }
 
+export type PortalProperty = {
+  id: string;
+  title: string;
+  status: "draft" | "published" | "archived";
+  operation: "sale" | "rent";
+  price: number | null;
+  city: string | null;
+  photo: string | null;
+  upcomingVisits: Array<{ at: string; status: string }>;
+  visitsDone: number;
+  interested: number;
+};
+export type PortalData = {
+  owner: { name: string };
+  properties: PortalProperty[];
+};
+
+/**
+ * Datos del portal del propietario por token. SIN caché (no-store): son datos
+ * privados y siempre frescos — nada de ISR aquí.
+ */
+export async function fetchPortal(slug: string, token: string): Promise<PortalData | null> {
+  const res = await fetch(`${tenantSiteEnv.NEXT_PUBLIC_API_URL}/tenant/portal/${token}`, {
+    headers: { "x-tenant-slug": slug },
+    cache: "no-store",
+  });
+  if (!res.ok) return null;
+  return (await res.json()) as PortalData;
+}
+
 /** Ficha de una propiedad publicada por id. */
 export async function fetchProperty(
   slug: string,

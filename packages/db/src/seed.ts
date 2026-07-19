@@ -15,6 +15,8 @@ async function main() {
     { code: "valuation", name: "Captación: valoración de pisos", priceMonthly: 2900 },
     // Producto 05 del catálogo (Operativa): agenda de visitas.
     { code: "visits", name: "Operativa: agenda de visitas", priceMonthly: 3900 },
+    // Producto 05 (Operativa): portal del propietario — su piso, en tiempo real.
+    { code: "owner_portal", name: "Operativa: portal del propietario", priceMonthly: 2900 },
   ];
 
   const seededModules = [];
@@ -95,7 +97,14 @@ async function main() {
   // --- martinez con Clientes + Micrositio activos; lopez sin módulos ---
   // Seed AUTORITATIVO: deja el estado exacto (activa los previstos, desactiva el resto).
   const martinez = seededTenants.find((t) => t!.slug === "martinez")!;
-  const activeForMartinez = ["clients", "properties", "microsite", "valuation", "visits"];
+  const activeForMartinez = [
+    "clients",
+    "properties",
+    "microsite",
+    "valuation",
+    "visits",
+    "owner_portal",
+  ];
   for (const mod of seededModules) {
     const shouldBeActive = activeForMartinez.includes(mod!.code);
     await db

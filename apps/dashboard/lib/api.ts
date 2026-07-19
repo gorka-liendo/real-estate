@@ -108,6 +108,7 @@ export type Property = {
   videos: string[];
   features: string[];
   details: PropertyDetails;
+  ownerClientId: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -125,6 +126,7 @@ export type PropertyInput = {
   address?: string;
   features?: string[];
   details?: PropertyDetails;
+  ownerClientId?: string | null;
 };
 
 export type VisitStatus = "requested" | "confirmed" | "done" | "cancelled";
@@ -249,6 +251,16 @@ export const api = {
     remove: (slug: string, id: string) =>
       request<void>(`/tenant/clients/${id}`, {
         method: "DELETE",
+        headers: { "x-tenant-slug": slug },
+      }),
+  },
+
+  // --- módulo Portal del propietario ---
+  portal: {
+    // Genera (o recupera) el token del enlace del portal para un cliente.
+    token: (slug: string, clientId: string) =>
+      request<{ token: string }>(`/tenant/portal/clients/${clientId}/token`, {
+        method: "POST",
         headers: { "x-tenant-slug": slug },
       }),
   },

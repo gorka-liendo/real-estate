@@ -1,10 +1,11 @@
 "use client";
 
-import { Plus, Trash2 } from "lucide-react";
+import { Link2, Plus, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Badge, Button, Card, Input, Label, Select } from "@rep/ui";
 import { useRequireModule, useWorkspace } from "@/contexts/workspace-context";
 import { api, type Client, type ClientSource, type ClientStage } from "@/lib/api";
+import { TENANT_SITE_URL } from "@/lib/config";
 
 const STAGE_LABEL: Record<ClientStage, string> = {
   lead: "Contacto",
@@ -25,9 +26,24 @@ const SOURCE_LABEL: Partial<Record<ClientSource, string>> = {
 };
 
 function ClientesInner({ slug }: { slug: string }) {
+  const { hasModule } = useWorkspace();
   const [clients, setClients] = useState<Client[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Portal del propietario: genera el token y copia el enlace para compartir.
+  async function copyPortalLink(c: Client) {
+    try {
+      const { token } = await api.portal.token(slug, c.id);
+      const url = `${TENANT_SITE_URL}/portal/${token}?__tenant=${slug}`;
+      await navigator.clipboard.writeText(url);
+      setCopiedId(c.id);
+      setTimeout(() => setCopiedId((prev) => (prev === c.id ? null : prev)), 2000);
+    } catch {
+      setError("No se pudo generar el enlace del portal.");
+    }
+  }
 
   const load = useCallback(async () => {
     try {
@@ -108,7 +124,18 @@ function ClientesInner({ slug }: { slug: string }) {
                     <td>
                       <Badge variant={STAGE_VARIANT[c.stage]}>{STAGE_LABEL[c.stage]}</Badge>
                     </td>
-                    <td style={{ textAlign: "right" }}>
+                    <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+                      {hasModule("owner_portal") ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => void copyPortalLink(c)}
+                          aria-label={`Copiar enlace del portal de ${c.name}`}
+                        >
+                          <Link2 size={15} />
+                          {copiedId === c.id ? "¡Copiado!" : "Portal"}
+                        </Button>
+                      ) : null}{" "}
                       <Button
                         variant="ghost"
                         size="sm"

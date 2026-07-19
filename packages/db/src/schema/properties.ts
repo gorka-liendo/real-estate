@@ -1,4 +1,5 @@
 import { integer, jsonb, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { clients } from "./clients.js";
 import { tenants } from "./tenants.js";
 
 export const propertyOperation = pgEnum("property_operation", ["sale", "rent"]);
@@ -58,6 +59,11 @@ export const properties = pgTable("properties", {
   videos: jsonb("videos").$type<string[]>().notNull().default([]), // URLs
   features: jsonb("features").$type<string[]>().notNull().default([]), // ids de PROPERTY_FEATURES
   details: jsonb("details").$type<PropertyDetails>().notNull().default({}),
+  // Propietario del inmueble (cliente del CRM). Borrar el cliente NO borra el
+  // inmueble: el vínculo se anula (set null) y el portal deja de mostrarlo.
+  ownerClientId: uuid("owner_client_id").references(() => clients.id, {
+    onDelete: "set null",
+  }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
