@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { OPERATION_LABELS } from "@rep/ui-tenant";
 import { fetchPortal, fetchTenant, type PortalProperty } from "@/lib/tenant";
 import { SiteFooter } from "../../SiteFooter";
+import { PortalChart } from "./PortalChart";
 
 // Portal del propietario: enlace privado por token que la agencia comparte con
 // el dueño. Server-rendered sin caché y SIN indexar (robots noindex).
@@ -74,6 +75,45 @@ export default async function OwnerPortal({ params }: Params) {
               ? "Así va tu inmueble."
               : "Así van tus inmuebles."}
           </h1>
+
+          {/* aviso de cobros pendientes */}
+          {portal.summary.pendingPayments > 0 ? (
+            <div className="rt-portal__alert" role="status">
+              <strong>
+                {portal.summary.pendingPayments === 1
+                  ? "Hay 1 mes pendiente de cobro."
+                  : `Hay ${portal.summary.pendingPayments} meses pendientes de cobro.`}
+              </strong>
+              <span>Tu inmobiliaria está al tanto.</span>
+            </div>
+          ) : null}
+
+          {/* resumen agregado del año (solo si hay actividad económica) */}
+          {portal.summary.collectedThisYearCents > 0 ||
+          portal.summary.expensesThisYearCents > 0 ? (
+            <div className="rt-portal__summary">
+              <div className="rt-detail__facts">
+                <div>
+                  <div className="rt-detail__fact-k">Cobrado este año</div>
+                  <div className="rt-detail__fact-v">
+                    {eurCents(portal.summary.collectedThisYearCents)}
+                  </div>
+                </div>
+                <div>
+                  <div className="rt-detail__fact-k">Gastos este año</div>
+                  <div className="rt-detail__fact-v">
+                    {eurCents(portal.summary.expensesThisYearCents)}
+                  </div>
+                </div>
+                <div>
+                  <div className="rt-detail__fact-k">Neto este año</div>
+                  <div className="rt-detail__fact-v">
+                    {eurCents(portal.summary.netThisYearCents)}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : null}
 
           {portal.properties.length === 0 ? (
             <p style={{ color: "var(--tenant-muted)", maxWidth: "48ch" }}>
@@ -164,6 +204,8 @@ export default async function OwnerPortal({ params }: Params) {
                         ) : null}
                       </>
                     ) : null}
+
+                    <PortalChart monthly={p.monthly} />
 
                     {p.expensesThisYearCents > 0 || p.latestExpenses.length > 0 ? (
                       <>

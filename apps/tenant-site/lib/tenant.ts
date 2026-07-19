@@ -209,9 +209,18 @@ export type PortalProperty = {
   rental: PortalRental | null;
   expensesThisYearCents: number;
   latestExpenses: PortalExpense[];
+  monthly: PortalMonthly[];
+};
+export type PortalMonthly = { month: number; incomeCents: number; expenseCents: number };
+export type PortalSummary = {
+  collectedThisYearCents: number;
+  expensesThisYearCents: number;
+  netThisYearCents: number;
+  pendingPayments: number;
 };
 export type PortalData = {
   owner: { name: string };
+  summary: PortalSummary;
   properties: PortalProperty[];
 };
 

@@ -473,6 +473,17 @@ packages/
       con enlace 📎, borrar). Portal: bloque "Gastos y facturas" — gastos del
       año, **Neto este año** (cobrado − gastos) si hay contrato, y lista con
       "Ver factura" descargable. 84 tests API.
+- [x] **Portal: gráfico mensual + resumen global + alerta de pendientes** —
+      la API del portal añade `summary` (cobrado/gastos/neto del año +
+      pendingPayments agregados) y `monthly` (12 meses ingresos vs gastos por
+      inmueble). Página: banda de resumen, alerta en `--tenant-danger` si hay
+      meses pendientes, y gráfico SVG server-rendered (sin JS): barras
+      pareadas por mes con identidad de serie por MODO DE RELLENO (sólida =
+      ingresos, hueca = gastos) porque los temas white-label no garantizan
+      separación por color (validado con el skill dataviz: Dwell monocromo y
+      costa fallaban el floor de visión normal); tooltips nativos <title>,
+      leyenda, tokens del tema. Pendiente anotado: desglose por categoría,
+      informe imprimible, ofertas, rentabilidad % (necesita valor del inmueble).
 - [ ] **Deuda anotada (review 18-jul-2026)**: mover `isPublicMicrositePath`
       a un sub-app público con su propia política CORS; throttle a Redis
       multi-instancia; helpers `tenantGet/tenantPost` en tenant-site;

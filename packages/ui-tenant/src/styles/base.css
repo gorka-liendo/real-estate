@@ -852,6 +852,85 @@
   }
 }
 
+/* resumen agregado del portal (banda de totales) */
+.rt-portal__summary {
+  border: 1px solid var(--tenant-border);
+  border-radius: var(--tenant-radius);
+  background: color-mix(in srgb, var(--tenant-text) 2%, var(--tenant-bg));
+  padding: var(--tenant-sp-4) var(--tenant-sp-5);
+  margin-bottom: var(--tenant-sp-5);
+}
+.rt-portal__summary .rt-detail__facts {
+  border: none;
+  margin: 0;
+  padding: 0;
+}
+/* aviso (p. ej. meses pendientes de cobro) */
+.rt-portal__alert {
+  display: flex;
+  align-items: baseline;
+  gap: var(--tenant-sp-2);
+  padding: var(--tenant-sp-3) var(--tenant-sp-4);
+  margin-bottom: var(--tenant-sp-5);
+  font-size: 14px;
+  color: var(--tenant-danger);
+  border: 1px solid color-mix(in srgb, var(--tenant-danger) 35%, transparent);
+  border-radius: var(--tenant-radius);
+  background: color-mix(in srgb, var(--tenant-danger) 6%, var(--tenant-bg));
+}
+
+/* gráfico mensual ingresos vs gastos.
+   Identidad de serie por MODO DE RELLENO (sólida vs hueca), no solo por color:
+   los temas son white-label (Dwell es monocromo) y el par accent/muted no
+   garantiza separación en cualquier paleta — el contorno sí. */
+.rt-chart {
+  margin: var(--tenant-sp-4) 0;
+}
+.rt-chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.rt-chart__bar--income {
+  fill: var(--tenant-accent);
+}
+.rt-chart__bar--expense {
+  fill: color-mix(in srgb, var(--tenant-accent) 10%, transparent);
+  stroke: var(--tenant-accent);
+  stroke-width: 1.5;
+}
+.rt-chart__axis {
+  stroke: var(--tenant-border);
+}
+.rt-chart__label {
+  font-family: var(--tenant-font-body);
+  font-size: 10px;
+  fill: var(--tenant-muted);
+}
+.rt-chart__legend {
+  display: flex;
+  gap: var(--tenant-sp-4);
+  align-items: center;
+  font-size: 12px;
+  color: var(--tenant-muted);
+  margin-bottom: var(--tenant-sp-2);
+}
+.rt-chart__legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.rt-chart__swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--tenant-accent);
+}
+.rt-chart__swatch--expense {
+  background: color-mix(in srgb, var(--tenant-accent) 10%, transparent);
+  border: 1.5px solid var(--tenant-accent);
+}
+
 /* ===== botón píldora — signature #5, único elemento redondeado ===== */
 .rt-btn {
   display: inline-flex;

@@ -66,10 +66,23 @@ export type PortalProperty = {
   rental: PortalRental | null;
   expensesThisYearCents: number;
   latestExpenses: PortalExpense[];
+  monthly: PortalMonthly[]; // 12 meses del año en curso
+};
+
+// Serie mensual del año en curso para el gráfico ingresos vs gastos.
+export type PortalMonthly = { month: number; incomeCents: number; expenseCents: number };
+
+// Resumen agregado de TODOS los inmuebles del propietario.
+export type PortalSummary = {
+  collectedThisYearCents: number;
+  expensesThisYearCents: number;
+  netThisYearCents: number;
+  pendingPayments: number; // meses pendientes de cobro (contratos activos)
 };
 
 export type PortalData = {
   owner: { name: string };
+  summary: PortalSummary;
   properties: PortalProperty[];
 };
 
@@ -82,7 +95,15 @@ export async function getPortalData(token: string): Promise<PortalData | null> {
     properties,
     eq(properties.ownerClientId, owner.id),
   )) as Property[];
-  if (owned.length === 0) return { owner: { name: owner.name }, properties: [] };
+  const emptySummary: PortalSummary = {
+    collectedThisYearCents: 0,
+    expensesThisYearCents: 0,
+    netThisYearCents: 0,
+    pendingPayments: 0,
+  };
+  if (owned.length === 0) {
+    return { owner: { name: owner.name }, summary: emptySummary, properties: [] };
+  }
 
   const ids = owned.map((p) => p.id);
   const [allVisits, interestedClients, activeRentals, allExpenses] = await Promise.all([
@@ -123,8 +144,32 @@ export async function getPortalData(token: string): Promise<PortalData | null> {
     };
   };
 
+  // Serie mensual (año en curso) de un inmueble: cobros pagados vs gastos.
+  const monthlyFor = (propertyId: string): PortalMonthly[] => {
+    const rental = activeRentals.find((r) => r.propertyId === propertyId);
+    const paid = rental
+      ? payments.filter(
+          (p) => p.rentalId === rental.id && p.status === "paid" && p.period.startsWith(yearPrefix),
+        )
+      : [];
+    const exps = allExpenses.filter(
+      (e) => e.propertyId === propertyId && e.expenseDate.startsWith(yearPrefix),
+    );
+    return Array.from({ length: 12 }, (_, i) => {
+      const mm = String(i + 1).padStart(2, "0");
+      return {
+        month: i + 1,
+        incomeCents:
+          paid.filter((p) => p.period.slice(5, 7) === mm).reduce((a, p) => a + p.amount, 0) * 100,
+        expenseCents: exps
+          .filter((e) => e.expenseDate.slice(5, 7) === mm)
+          .reduce((a, e) => a + e.amountCents, 0),
+      };
+    });
+  };
+
   const now = Date.now();
-  return {
+  const mapped = {
     owner: { name: owner.name },
     properties: owned.map((p) => {
       const vs = allVisits.filter((v) => v.propertyId === p.id);
@@ -161,7 +206,25 @@ export async function getPortalData(token: string): Promise<PortalData | null> {
             amountCents: e.amountCents,
             fileUrl: e.fileUrl,
           })),
+        monthly: monthlyFor(p.id),
       };
     }),
   };
+
+  // Resumen agregado del propietario (todas sus propiedades).
+  const summary: PortalSummary = mapped.properties.reduce(
+    (acc, p) => {
+      const collected = (p.rental?.collectedThisYear ?? 0) * 100;
+      acc.collectedThisYearCents += collected;
+      acc.expensesThisYearCents += p.expensesThisYearCents;
+      acc.netThisYearCents += collected - p.expensesThisYearCents;
+      acc.pendingPayments += p.rental
+        ? p.rental.months.filter((m) => m.status === "pending").length
+        : 0;
+      return acc;
+    },
+    { ...emptySummary },
+  );
+
+  return { ...mapped, summary };
 }
