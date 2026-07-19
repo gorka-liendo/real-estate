@@ -20,6 +20,21 @@ const STATUS_LABEL: Record<PortalProperty["status"], string> = {
 
 const MONTH_SHORT = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 
+const EXPENSE_LABELS: Record<string, string> = {
+  water: "Agua",
+  electricity: "Luz",
+  gas: "Gas",
+  community: "Comunidad",
+  taxes: "Impuestos",
+  derrama: "Derrama",
+  maintenance: "Mantenimiento",
+  insurance: "Seguro",
+  other: "Otros",
+};
+
+const eurCents = (c: number) =>
+  `${new Intl.NumberFormat("es-ES", { minimumFractionDigits: 2 }).format(c / 100)} €`;
+
 const fmtWhen = (iso: string) =>
   new Date(iso).toLocaleString("es-ES", {
     weekday: "long",
@@ -147,6 +162,51 @@ export default async function OwnerPortal({ params }: Params) {
                             ))}
                           </div>
                         ) : null}
+                      </>
+                    ) : null}
+
+                    {p.expensesThisYearCents > 0 || p.latestExpenses.length > 0 ? (
+                      <>
+                        <div className="rt-eyebrow" style={{ marginBottom: 0 }}>
+                          Gastos y facturas
+                        </div>
+                        <div className="rt-detail__facts" style={{ marginBottom: "var(--tenant-sp-3)" }}>
+                          <div>
+                            <div className="rt-detail__fact-k">Gastos este año</div>
+                            <div className="rt-detail__fact-v">{eurCents(p.expensesThisYearCents)}</div>
+                          </div>
+                          {p.rental ? (
+                            <div>
+                              <div className="rt-detail__fact-k">Neto este año</div>
+                              <div className="rt-detail__fact-v">
+                                {eurCents(p.rental.collectedThisYear * 100 - p.expensesThisYearCents)}
+                              </div>
+                            </div>
+                          ) : null}
+                        </div>
+                        <div>
+                          {p.latestExpenses.map((e) => (
+                            <div key={`${e.date}-${e.category}-${e.amountCents}`} className="rt-portal__visit">
+                              <span>
+                                {new Date(e.date).toLocaleDateString("es-ES", { day: "numeric", month: "short" })}
+                                {" · "}
+                                {EXPENSE_LABELS[e.category] ?? e.category}
+                                {e.concept ? ` · ${e.concept}` : ""}
+                              </span>
+                              <span style={{ whiteSpace: "nowrap" }}>
+                                {eurCents(e.amountCents)}
+                                {e.fileUrl ? (
+                                  <>
+                                    {" · "}
+                                    <a href={e.fileUrl} target="_blank" rel="noreferrer">
+                                      Ver factura
+                                    </a>
+                                  </>
+                                ) : null}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
                       </>
                     ) : null}
 

@@ -462,6 +462,17 @@ packages/
       inmueble/cliente, chips de meses clicables ✓/!/·, finalizar, 409 con
       copy claro). Portal: bloque "Rendimiento del alquiler" con facts y chips
       de meses. Update schemas sin defaults (lección zod v4). 80 tests API.
+- [x] **Gastos y facturas por inmueble (dentro de `rentals`)** — la agencia
+      sube la factura (PDF/imagen, multipart a `@rep/storage`, máx. 10 MB)
+      categorizada (agua, luz, gas, comunidad, impuestos, derrama,
+      mantenimiento, seguro, otros). Migración 0012: `property_expenses` con
+      `amount_cents` (céntimos: las facturas llevan decimales). API
+      /tenant/expenses (GET ?propertyId / POST multipart / DELETE) validando
+      inmueble del tenant y tipo de archivo. Dashboard: card "Gastos y
+      facturas" en Alquileres (selector de inmueble, alta con adjunto, lista
+      con enlace 📎, borrar). Portal: bloque "Gastos y facturas" — gastos del
+      año, **Neto este año** (cobrado − gastos) si hay contrato, y lista con
+      "Ver factura" descargable. 84 tests API.
 - [ ] **Deuda anotada (review 18-jul-2026)**: mover `isPublicMicrositePath`
       a un sub-app público con su propia política CORS; throttle a Redis
       multi-instancia; helpers `tenantGet/tenantPost` en tenant-site;

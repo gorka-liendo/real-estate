@@ -3,12 +3,15 @@ import { and, eq, inArray } from "drizzle-orm";
 import {
   clients,
   properties,
+  propertyExpenses,
   rentalPayments,
   rentals,
   tenantDb,
   visits,
   type Client,
+  type ExpenseCategory,
   type Property,
+  type PropertyExpense,
   type Rental,
   type RentalPayment,
   type Visit,
@@ -40,6 +43,15 @@ export type PortalRental = {
   months: Array<{ period: string; status: RentalPayment["status"]; amount: number }>;
 };
 
+// Gasto visible para el propietario, con su factura descargable si la hay.
+export type PortalExpense = {
+  date: string;
+  category: ExpenseCategory;
+  concept: string | null;
+  amountCents: number;
+  fileUrl: string | null;
+};
+
 export type PortalProperty = {
   id: string;
   title: string;
@@ -52,6 +64,8 @@ export type PortalProperty = {
   visitsDone: number;
   interested: number;
   rental: PortalRental | null;
+  expensesThisYearCents: number;
+  latestExpenses: PortalExpense[];
 };
 
 export type PortalData = {
@@ -71,13 +85,17 @@ export async function getPortalData(token: string): Promise<PortalData | null> {
   if (owned.length === 0) return { owner: { name: owner.name }, properties: [] };
 
   const ids = owned.map((p) => p.id);
-  const [allVisits, interestedClients, activeRentals] = await Promise.all([
+  const [allVisits, interestedClients, activeRentals, allExpenses] = await Promise.all([
     tenantDb().select(visits, inArray(visits.propertyId, ids)) as Promise<Visit[]>,
     tenantDb().select(clients, inArray(clients.interestPropertyId, ids)) as Promise<Client[]>,
     tenantDb().select(
       rentals,
       and(inArray(rentals.propertyId, ids), eq(rentals.status, "active")),
     ) as Promise<Rental[]>,
+    tenantDb().select(
+      propertyExpenses,
+      inArray(propertyExpenses.propertyId, ids),
+    ) as Promise<PropertyExpense[]>,
   ]);
   const payments =
     activeRentals.length > 0
@@ -129,6 +147,20 @@ export async function getPortalData(token: string): Promise<PortalData | null> {
         visitsDone: vs.filter((v) => v.status === "done").length,
         interested: interestedClients.filter((cl) => cl.interestPropertyId === p.id).length,
         rental: toPortalRental(p.id),
+        expensesThisYearCents: allExpenses
+          .filter((e) => e.propertyId === p.id && e.expenseDate.startsWith(yearPrefix))
+          .reduce((acc, e) => acc + e.amountCents, 0),
+        latestExpenses: allExpenses
+          .filter((e) => e.propertyId === p.id)
+          .sort((a, b) => b.expenseDate.localeCompare(a.expenseDate))
+          .slice(0, 6)
+          .map((e) => ({
+            date: e.expenseDate,
+            category: e.category,
+            concept: e.concept,
+            amountCents: e.amountCents,
+            fileUrl: e.fileUrl,
+          })),
       };
     }),
   };

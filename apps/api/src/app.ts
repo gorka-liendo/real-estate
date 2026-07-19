@@ -18,6 +18,7 @@ import { admin } from "./modules/admin/admin.routes.js";
 import { brand } from "./modules/brand/brand.routes.js";
 import { clients } from "./modules/clients/clients.routes.js";
 import { leads } from "./modules/leads/leads.routes.js";
+import { expenses } from "./modules/expenses/expenses.routes.js";
 import { portal } from "./modules/portal/portal.routes.js";
 import { rentals } from "./modules/rentals/rentals.routes.js";
 import { valuations } from "./modules/valuations/valuations.routes.js";
@@ -169,5 +170,6 @@ tenant.route("/site", site);
 tenant.route("/clients", clients);
 tenant.route("/properties", properties);
 tenant.route("/rentals", rentals);
+tenant.route("/expenses", expenses);
 
 app.route("/tenant", tenant);

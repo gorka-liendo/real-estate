@@ -188,6 +188,13 @@ export type PortalRental = {
   collectedThisYear: number;
   months: Array<{ period: string; status: "pending" | "paid"; amount: number }>;
 };
+export type PortalExpense = {
+  date: string;
+  category: string;
+  concept: string | null;
+  amountCents: number;
+  fileUrl: string | null;
+};
 export type PortalProperty = {
   id: string;
   title: string;
@@ -200,6 +207,8 @@ export type PortalProperty = {
   visitsDone: number;
   interested: number;
   rental: PortalRental | null;
+  expensesThisYearCents: number;
+  latestExpenses: PortalExpense[];
 };
 export type PortalData = {
   owner: { name: string };

@@ -182,6 +182,37 @@ export type RentalInput = {
   notes?: string;
 };
 
+export type ExpenseCategory =
+  | "water"
+  | "electricity"
+  | "gas"
+  | "community"
+  | "taxes"
+  | "derrama"
+  | "maintenance"
+  | "insurance"
+  | "other";
+export type Expense = {
+  id: string;
+  propertyId: string;
+  category: ExpenseCategory;
+  concept: string | null;
+  amountCents: number;
+  expenseDate: string;
+  fileUrl: string | null;
+  fileName: string | null;
+  notes: string | null;
+  createdAt: string;
+};
+export type ExpenseInput = {
+  propertyId: string;
+  category: ExpenseCategory;
+  amount: string; // euros con decimales, p. ej. "43.27"
+  expenseDate: string;
+  concept?: string;
+  file?: File | null;
+};
+
 export type CatalogModule = {
   id: string;
   code: string;
@@ -323,6 +354,43 @@ export const api = {
         method: "PUT",
         headers: { "x-tenant-slug": slug },
         body: JSON.stringify({ status }),
+      }),
+  },
+
+  // --- gastos y facturas por inmueble (módulo Alquileres) ---
+  expenses: {
+    list: (slug: string, propertyId?: string) =>
+      request<{ expenses: Expense[] }>(
+        `/tenant/expenses${propertyId ? `?propertyId=${propertyId}` : ""}`,
+        { headers: { "x-tenant-slug": slug } },
+      ),
+
+    // multipart: campos + factura opcional (el navegador pone el boundary)
+    create: async (slug: string, data: ExpenseInput) => {
+      const fd = new FormData();
+      fd.append("propertyId", data.propertyId);
+      fd.append("category", data.category);
+      fd.append("amount", data.amount);
+      fd.append("expenseDate", data.expenseDate);
+      if (data.concept) fd.append("concept", data.concept);
+      if (data.file) fd.append("file", data.file);
+      const res = await fetch(`${API_URL}/tenant/expenses`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "x-tenant-slug": slug },
+        body: fd,
+      });
+      if (!res.ok) {
+        const b = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new ApiError(res.status, b.error ?? `HTTP ${res.status}`);
+      }
+      return (await res.json()) as { expense: Expense };
+    },
+
+    remove: (slug: string, id: string) =>
+      request<void>(`/tenant/expenses/${id}`, {
+        method: "DELETE",
+        headers: { "x-tenant-slug": slug },
       }),
   },
 
