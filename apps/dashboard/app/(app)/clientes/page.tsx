@@ -1,10 +1,12 @@
 "use client";
 
 import { Link2, Plus, Trash2 } from "lucide-react";
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { Badge, Button, Card, Input, Label, Select } from "@rep/ui";
 import { useRequireModule, useWorkspace } from "@/contexts/workspace-context";
-import { api, type Client, type ClientSource, type ClientStage } from "@/lib/api";
+import { api, ApiError, type Client, type ClientSource, type ClientStage } from "@/lib/api";
+import { KIND_LABELS } from "@/lib/client-labels";
 import { TENANT_SITE_URL } from "@/lib/config";
 
 const STAGE_LABEL: Record<ClientStage, string> = {
@@ -40,8 +42,12 @@ function ClientesInner({ slug }: { slug: string }) {
       await navigator.clipboard.writeText(url);
       setCopiedId(c.id);
       setTimeout(() => setCopiedId((prev) => (prev === c.id ? null : prev)), 2000);
-    } catch {
-      setError("No se pudo generar el enlace del portal.");
+    } catch (err) {
+      setError(
+        err instanceof ApiError && err.message === "no_properties"
+          ? `${c.name} no tiene inmuebles asignados: el portal es solo para propietarios.`
+          : "No se pudo generar el enlace del portal.",
+      );
     }
   }
 
@@ -100,6 +106,7 @@ function ClientesInner({ slug }: { slug: string }) {
               <thead>
                 <tr>
                   <th>Nombre</th>
+                  <th>Tipo</th>
                   <th>Contacto</th>
                   <th>Estado</th>
                   <th />
@@ -112,11 +119,20 @@ function ClientesInner({ slug }: { slug: string }) {
                       <span
                         style={{ display: "inline-flex", alignItems: "center", gap: "var(--ui-sp-2)" }}
                       >
-                        {c.name}
+                        <Link href={`/clientes/${c.id}`} style={{ color: "inherit" }}>
+                          {c.name}
+                        </Link>
                         {SOURCE_LABEL[c.source] ? (
                           <Badge variant="default">{SOURCE_LABEL[c.source]}</Badge>
                         ) : null}
                       </span>
+                    </td>
+                    <td>
+                      {c.kind !== "other" ? (
+                        <Badge variant="muted">{KIND_LABELS[c.kind]}</Badge>
+                      ) : (
+                        <span className="du-muted">—</span>
+                      )}
                     </td>
                     <td className="du-muted">
                       {c.email || c.phone || "—"}

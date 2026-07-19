@@ -84,6 +84,7 @@ export async function createValuationLead(
       email: input.email ?? null,
       phone: input.phone ?? null,
       stage: "lead",
+      kind: "owner", // pide valorar SU piso → propietario (potencial vendedor)
       source: "valuation",
       interestPropertyId: null,
       notes: parts.join(" · "),

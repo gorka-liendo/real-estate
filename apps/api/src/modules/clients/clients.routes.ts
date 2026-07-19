@@ -5,7 +5,7 @@ import {
   type MemberEnv,
 } from "../../middlewares/auth.middleware.js";
 import { requireModule } from "../../middlewares/module.middleware.js";
-import { createClientSchema, updateClientSchema } from "./clients.schema.js";
+import { createClientSchema, createNoteSchema, updateClientSchema } from "./clients.schema.js";
 import * as service from "./clients.service.js";
 
 // Rutas del módulo Clientes. Se montan bajo /tenant/clients, así que el tenant
@@ -27,6 +27,21 @@ clients.post("/", async (c) => {
     return c.json({ error: "invalid_body", issues: body.error.issues }, 400);
   }
   return c.json({ client: await service.createClient(body.data) }, 201);
+});
+
+// Perfil completo: cliente + roles derivados + timeline + notas.
+clients.get("/:id/profile", async (c) => {
+  const profile = await service.getClientProfile(c.req.param("id"));
+  if (!profile) return c.json({ error: "not_found" }, 404);
+  return c.json(profile);
+});
+
+clients.post("/:id/notes", async (c) => {
+  const body = createNoteSchema.safeParse(await c.req.json().catch(() => null));
+  if (!body.success) return c.json({ error: "invalid_body", issues: body.error.issues }, 400);
+  const note = await service.addClientNote(c.req.param("id"), body.data.body);
+  if (!note) return c.json({ error: "not_found" }, 404);
+  return c.json({ note }, 201);
 });
 
 clients.patch("/:id", async (c) => {

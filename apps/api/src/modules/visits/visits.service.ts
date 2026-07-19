@@ -37,6 +37,7 @@ export async function requestVisit(
         email: input.email ?? null,
         phone: input.phone ?? null,
         stage: "lead",
+        kind: "buyer", // pidió visitar un inmueble → busca vivienda
         source: "microsite",
         interestPropertyId: property.id,
         notes: `Solicitó visita a "${property.title}"`,

@@ -76,6 +76,7 @@ describe("Captación de leads", () => {
       name: "Marta Ruiz",
       email: "marta@x.com",
       stage: "lead",
+      kind: "buyer", // auto-clasificado: pidió info de un inmueble
       source: "microsite",
       interestPropertyId: propertyId,
       notes: "Me interesa este ático",

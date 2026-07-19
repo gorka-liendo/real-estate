@@ -21,15 +21,23 @@ import {
 // agencia genera y comparte. Todo va por tenantDb → un token solo funciona
 // bajo el dominio/slug de SU inmobiliaria.
 
-export async function getOrCreatePortalToken(clientId: string): Promise<string | null> {
+export type PortalTokenResult =
+  | { ok: true; token: string }
+  | { ok: false; error: "not_found" | "no_properties" };
+
+/** El portal es SOLO para clientes con inmuebles asignados (propietarios). */
+export async function getOrCreatePortalToken(clientId: string): Promise<PortalTokenResult> {
   const rows = (await tenantDb().select(clients, eq(clients.id, clientId))) as Client[];
   const client = rows[0];
-  if (!client) return null;
-  if (client.portalToken) return client.portalToken;
+  if (!client) return { ok: false, error: "not_found" };
 
+  const owned = await tenantDb().select(properties, eq(properties.ownerClientId, clientId));
+  if (owned.length === 0) return { ok: false, error: "no_properties" };
+
+  if (client.portalToken) return { ok: true, token: client.portalToken };
   const token = randomUUID();
   await tenantDb().update(clients, { portalToken: token }, eq(clients.id, clientId));
-  return token;
+  return { ok: true, token };
 }
 
 // Lo que el propietario ve de cada inmueble suyo. Las visitas van SIN datos

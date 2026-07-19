@@ -10,6 +10,7 @@ export async function createLead(input: Omit<CreateLeadInput, "company">): Promi
       email: input.email ?? null,
       phone: input.phone ?? null,
       stage: "lead",
+      kind: "buyer", // pidió info de un inmueble → busca vivienda
       source: "microsite",
       interestPropertyId: input.propertyId ?? null,
       notes: input.message?.trim() || null,

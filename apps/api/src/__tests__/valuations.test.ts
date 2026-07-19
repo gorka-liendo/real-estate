@@ -97,7 +97,7 @@ describe("Valoración de pisos", () => {
 
     const rows = await db.select().from(clients).where(eq(clients.tenantId, tenantA.id));
     expect(rows).toHaveLength(1);
-    expect(rows[0]).toMatchObject({ stage: "lead", source: "valuation" });
+    expect(rows[0]).toMatchObject({ stage: "lead", kind: "owner", source: "valuation" });
     expect(rows[0]!.notes).toContain("100 m²");
   });
 

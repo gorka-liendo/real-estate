@@ -495,6 +495,19 @@ packages/
       (contenido server-rendered), clases `rt-tabs`/`rt-table` con tokens y
       `.rt-table-scroll` (las tablas scrollean en su contenedor en móvil,
       overflow cazado y corregido en el E2E a 360). 85 tests API.
+- [x] **Perfil de cliente (CRM de verdad)** — migración 0013: enum
+      `client_kind` (owner/renter/buyer/seeker/other), `monthly_fee_cents`
+      (cuota acordada) y tabla `client_notes` (historial manual).
+      **Auto-clasificación** en la captación: lead de valoración → owner;
+      lead de ficha/visita → buyer (testeado). **Portal solo para
+      propietarios**: generar el enlace exige inmuebles asignados (400
+      no_properties, validado servidor + mensaje claro en UI). API:
+      GET /tenant/clients/:id/profile (cliente + inmuebles en propiedad +
+      contratos como inquilino + interés + **timeline** derivado de
+      alta/visitas/contratos/cobros + notas) y POST /:id/notes. Dashboard:
+      página `/clientes/[id]` (tipo/estado/cuota editables inline, vínculos,
+      notas, actividad) + columna Tipo y nombre clicable en la lista.
+      88 tests API.
 - [ ] **Deuda anotada (review 18-jul-2026)**: mover `isPublicMicrositePath`
       a un sub-app público con su propia política CORS; throttle a Redis
       multi-instancia; helpers `tenantGet/tenantPost` en tenant-site;

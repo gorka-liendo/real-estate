@@ -18,9 +18,11 @@ export const portal = new Hono<MemberEnv>();
 portal.use("*", requireModule("owner_portal"));
 
 portal.post("/clients/:id/token", authMiddleware, requireMembership, async (c) => {
-  const token = await service.getOrCreatePortalToken(c.req.param("id"));
-  if (!token) return c.json({ error: "not_found" }, 404);
-  return c.json({ token });
+  const result = await service.getOrCreatePortalToken(c.req.param("id"));
+  if (!result.ok) {
+    return c.json({ error: result.error }, result.error === "not_found" ? 404 : 400);
+  }
+  return c.json({ token: result.token });
 });
 
 // Detalle de un inmueble del propietario (página con tabs). Más específico

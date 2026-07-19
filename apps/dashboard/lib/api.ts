@@ -38,6 +38,7 @@ export type Me = {
 
 export type ClientStage = "lead" | "active" | "closed";
 export type ClientSource = "manual" | "microsite" | "valuation";
+export type ClientKind = "owner" | "renter" | "buyer" | "seeker" | "other";
 export type Client = {
   id: string;
   name: string;
@@ -45,6 +46,8 @@ export type Client = {
   phone: string | null;
   stage: ClientStage;
   source: ClientSource;
+  kind: ClientKind;
+  monthlyFeeCents: number | null;
   notes: string | null;
   createdAt: string;
   updatedAt: string;
@@ -54,7 +57,25 @@ export type ClientInput = {
   email?: string;
   phone?: string;
   stage?: ClientStage;
+  kind?: ClientKind;
+  monthlyFeeCents?: number | null;
   notes?: string;
+};
+export type ClientNote = { id: string; body: string; createdAt: string };
+export type TimelineEvent = { at: string; type: string; label: string };
+export type ClientProfile = {
+  client: Client;
+  ownedProperties: Array<{ id: string; title: string; status: string }>;
+  rentingContracts: Array<{
+    rentalId: string;
+    propertyTitle: string;
+    monthlyRent: number;
+    status: "active" | "ended";
+    since: string;
+  }>;
+  interestProperty: { id: string; title: string } | null;
+  timeline: TimelineEvent[];
+  notes: ClientNote[];
 };
 
 export type SocialLink = { label: string; url: string };
@@ -316,6 +337,18 @@ export const api = {
       request<void>(`/tenant/clients/${id}`, {
         method: "DELETE",
         headers: { "x-tenant-slug": slug },
+      }),
+
+    profile: (slug: string, id: string) =>
+      request<ClientProfile>(`/tenant/clients/${id}/profile`, {
+        headers: { "x-tenant-slug": slug },
+      }),
+
+    addNote: (slug: string, id: string, body: string) =>
+      request<{ note: ClientNote }>(`/tenant/clients/${id}/notes`, {
+        method: "POST",
+        headers: { "x-tenant-slug": slug },
+        body: JSON.stringify({ body }),
       }),
   },
 
