@@ -17,7 +17,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Badge, Button, ButtonLink, Card, Input, Label, Select, Switch, THEMES } from "@rep/ui";
 import { useWorkspace } from "@/contexts/workspace-context";
 import { api, ApiError, type AdminTenant, type CatalogModule } from "@/lib/api";
-import { DOMAIN_CNAME_TARGET, TENANT_SITE_URL } from "@/lib/config";
+import { DOMAIN_A_RECORD, DOMAIN_CNAME_TARGET, TENANT_SITE_URL } from "@/lib/config";
 import { routes } from "@/lib/routes";
 
 // Panel de plataforma: una tarjeta por inmobiliaria con sus stats, su diseño,
@@ -415,11 +415,22 @@ function DomainManager({
         ) : null}
       </div>
       {current ? (
-        <p className="du-muted" style={{ fontSize: 12, marginTop: "var(--ui-sp-2)", lineHeight: 1.6 }}>
-          Activo en <strong>{current}</strong>. El cliente debe crear en su proveedor de dominio un
-          registro <code>CNAME</code> de <code>{current}</code> a <code>{DOMAIN_CNAME_TARGET}</code>.
-          El certificado HTTPS se emite automáticamente al verificarse el DNS.
-        </p>
+        <div className="du-muted" style={{ fontSize: 12, marginTop: "var(--ui-sp-2)", lineHeight: 1.6 }}>
+          Activo en <strong>{current}</strong>. En el proveedor de dominio del cliente, configura el
+          DNS según sea subdominio o dominio raíz:
+          <ul style={{ margin: "var(--ui-sp-2) 0 0", paddingLeft: "1.2em" }}>
+            <li>
+              Subdominio (p. ej. <code>www.tudominio.es</code>): registro <code>CNAME</code> →{" "}
+              <code>{DOMAIN_CNAME_TARGET}</code>
+            </li>
+            <li>
+              Dominio raíz (<code>tudominio.es</code>, el apex no admite CNAME): registro{" "}
+              <code>A</code> → <code>{DOMAIN_A_RECORD}</code>
+            </li>
+          </ul>
+          El certificado HTTPS se emite automáticamente al verificarse el DNS. Los valores
+          definitivos los confirma la plataforma de hosting al activar el dominio.
+        </div>
       ) : (
         <p className="du-muted" style={{ fontSize: 12, marginTop: "var(--ui-sp-2)" }}>
           Sin dominio propio: la web usa el subdominio de la plataforma.

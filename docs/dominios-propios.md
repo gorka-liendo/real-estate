@@ -111,7 +111,8 @@ las **instrucciones DNS** que el superadmin relaya al cliente.
 | Variable | App | Default | Para qué |
 |----------|-----|---------|----------|
 | `NEXT_PUBLIC_ROOT_DOMAIN` | tenant-site | `plataforma.app` | Raíz para resolver subdominios (`slug.<root>`). `localhost` se acepta **siempre** en dev. En prod, fijar al dominio real. |
-| `NEXT_PUBLIC_DOMAIN_CNAME_TARGET` | dashboard | `cname.plataforma.app` | Destino del `CNAME` que se muestra al cliente en las instrucciones DNS. Lo emite la plataforma de hosting; se fija en el deploy. Solo informativo. |
+| `NEXT_PUBLIC_DOMAIN_CNAME_TARGET` | dashboard | `cname.vercel-dns.com` | Destino del `CNAME` para un **subdominio** (p. ej. `www.x.com`). Default = valor de Vercel. Solo informativo. |
+| `NEXT_PUBLIC_DOMAIN_A_RECORD` | dashboard | `76.76.21.21` | IP del registro `A` para el **dominio raíz/apex** (`x.com`), que no admite CNAME. Default = IP de Vercel. Solo informativo. |
 | `NEXT_PUBLIC_API_URL` | tenant-site / dashboard | — | Base de la API (ya existía). |
 
 Definidas en los slices de `@rep/config` (`packages/config/src/tenant-site.ts`) y
@@ -122,18 +123,46 @@ en `apps/dashboard/lib/config.ts`, validadas con Zod. **Cero hardcode.**
 ## 4. Cómo asignar un dominio (flujo operativo)
 
 1. **Superadmin** entra en `/admin`, busca la inmobiliaria y escribe el dominio
-   (p. ej. `www.inmobiliaria-martinez.es`) en "Dominio propio" → **Guardar**.
-2. El panel muestra las **instrucciones DNS**. El superadmin se las pasa al
-   cliente:
-   > Crea en tu proveedor de dominio un registro **CNAME** de
-   > `www.inmobiliaria-martinez.es` a `cname.plataforma.app`.
-3. El **cliente** configura ese CNAME en su registrador (GoDaddy, IONOS, etc.).
+   en "Dominio propio" → **Guardar**.
+2. El panel muestra las **instrucciones DNS**, que dependen de si es subdominio o
+   dominio raíz (ver la nota de abajo). El superadmin se las pasa al cliente.
+3. El **cliente** configura el registro en su registrador (Infomaniak, GoDaddy,
+   IONOS…).
 4. *(Block 3, pendiente)* La plataforma verifica el DNS y **emite el certificado
    HTTPS automáticamente**. Hasta que Block 3 exista, el dominio **resuelve** al
-   micrositio correcto pero el HTTPS del dominio ajeno no está aprovisionado.
+   micrositio correcto pero el HTTPS del dominio ajeno no está aprovisionado (hay
+   que darlo de alta a mano en el panel de Vercel — ver §5).
+
+### Subdominio vs dominio raíz (apex) — el gotcha del CNAME
+
+No es lo mismo `www.mipagina.com` que `mipagina.com`:
+
+| Lo que apunta el cliente | Registro DNS | Valor (default = Vercel) |
+|--------------------------|--------------|--------------------------|
+| Subdominio (`www.mipagina.com`) | **CNAME** | `cname.vercel-dns.com` |
+| Dominio raíz / apex (`mipagina.com`) | **A** | `76.76.21.21` |
+
+El **apex NO admite CNAME** (regla del DNS: choca con los registros SOA/NS de la
+zona), por eso el dominio raíz va por registro `A` a la IP de Vercel. Lo habitual
+y más limpio: apuntar `www` con CNAME + el apex con `A`, y dejar que Vercel
+redirija uno a otro (se elige el canónico). Los valores **exactos** los da Vercel
+al añadir el dominio; los del panel son los defaults documentados de Vercel.
 
 Para **quitar** un dominio: botón "Quitar" (o guardar vacío) → `custom_domain`
 pasa a `null` y el micrositio vuelve a servirse solo por el subdominio.
+
+### Cómo hacerlo HOY, manualmente (sin Block 3), con Infomaniak como ejemplo
+
+Requisito: el tenant-site desplegado en Vercel (Paso 11).
+
+1. En **Vercel** (proyecto tenant-site → Settings → Domains) añades el dominio;
+   Vercel te muestra los registros exactos a crear.
+2. En **Infomaniak** (Manager → tu dominio → Zona DNS) añades esos registros
+   (CNAME para `www`, A para el apex). No hace falta contratar hosting de
+   Infomaniak, solo editar su zona DNS.
+3. En **nuestro `/admin`** guardas el dominio para que el micrositio resuelva el
+   Host al tenant.
+4. Vercel verifica y emite el certificado solo. Block 3 automatiza el paso 1.
 
 ---
 
@@ -233,6 +262,6 @@ sirve el micrositio correcto; Host desconocido → landing de plataforma.
 | `apps/tenant-site/proxy.ts` | Resolución por Host + caché TTL. |
 | `packages/config/src/tenant-site.ts` | `NEXT_PUBLIC_ROOT_DOMAIN`. |
 | `apps/dashboard/app/(app)/admin/page.tsx` | `DomainManager` (UI). |
-| `apps/dashboard/lib/config.ts` | `DOMAIN_CNAME_TARGET`. |
+| `apps/dashboard/lib/config.ts` | `DOMAIN_CNAME_TARGET` + `DOMAIN_A_RECORD`. |
 | `apps/dashboard/lib/api.ts` | `adminSetDomain`. |
 | *(Block 3)* `packages/domains/` + slice de Vercel | Aprovisionamiento + TLS. |
