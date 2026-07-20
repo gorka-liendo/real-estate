@@ -5,6 +5,13 @@
   display: grid;
   grid-template-columns: 240px 1fr;
   min-height: 100vh;
+  /* data-theme/data-mode viven en este nodo, no en <body> (que se pinta con
+     @rep/ui/base.css .du-app usando el :root claro). Sin este background/color
+     propios, el área de contenido (dash-main/dash-content, sin fondo propio)
+     dejaba ver el fondo claro del body por debajo del texto oscuro → contraste
+     roto en modo oscuro. */
+  background: var(--ui-bg);
+  color: var(--ui-text);
 }
 .dash-sidebar {
   display: flex;
