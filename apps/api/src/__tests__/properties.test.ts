@@ -4,6 +4,7 @@ import { properties, closeDb, db, memberships, modules, subscriptions, tenants, 
 import type { Tenant } from "@rep/db";
 import { invalidateModules } from "@rep/modules";
 import { app } from "../app.js";
+import { ensureModule } from "./helpers.js";
 
 // Módulo Propiedades: CRUD + aislamiento entre tenants + gating por módulo.
 
@@ -33,11 +34,7 @@ let cookie: string;
 
 beforeEach(async () => {
   await cleanup();
-  const [mod] = await db
-    .insert(modules)
-    .values({ code: "properties", name: "Propiedades", priceMonthly: 0 })
-    .onConflictDoUpdate({ target: modules.code, set: { name: "Propiedades" } })
-    .returning();
+  const mod = await ensureModule("properties");
   propertiesModuleId = mod!.id;
 
   [tenantA] = (await db.insert(tenants).values({ slug: SLUGS[0]!, name: "A" }).returning()) as [Tenant];

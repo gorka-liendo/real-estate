@@ -4,6 +4,7 @@ import { clients, closeDb, db, modules, properties, subscriptions, tenants } fro
 import type { Tenant } from "@rep/db";
 import { invalidateModules } from "@rep/modules";
 import { app } from "../app.js";
+import { ensureModule } from "./helpers.js";
 import { resetLeadThrottle } from "../modules/leads/leads.throttle.js";
 
 // Widget de valoración: estimación desde comparables del tenant + lead
@@ -20,11 +21,7 @@ async function cleanup() {
 beforeEach(async () => {
   await cleanup();
   resetLeadThrottle();
-  const [mod] = await db
-    .insert(modules)
-    .values({ code: "valuation", name: "Valoración", priceMonthly: 0 })
-    .onConflictDoUpdate({ target: modules.code, set: { name: "Valoración" } })
-    .returning();
+  const mod = await ensureModule("valuation");
 
   [tenantA] = (await db.insert(tenants).values({ slug: SLUGS[0]!, name: "A" }).returning()) as [Tenant];
   [tenantB] = (await db.insert(tenants).values({ slug: SLUGS[1]!, name: "B" }).returning()) as [Tenant];

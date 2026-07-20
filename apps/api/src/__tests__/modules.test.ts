@@ -3,6 +3,7 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { closeDb, db, modules, subscriptions, tenants, type Tenant } from "@rep/db";
 import { getActiveModules, hasModule, invalidateModules } from "@rep/modules";
 import { app } from "../app.js";
+import { ensureModule } from "./helpers.js";
 
 // Feature flags por tenant: hasModule + caché + requireModule en la API.
 
@@ -28,13 +29,10 @@ beforeEach(async () => {
     .returning();
   testModuleId = testMod!.id;
 
-  // el módulo 'microsite' (gatea /tenant/microsite) se garantiza por upsert
-  const [micrositeMod] = await db
-    .insert(modules)
-    .values({ code: "microsite", name: "Micrositio white-label", priceMonthly: 4900 })
-    .onConflictDoUpdate({ target: modules.code, set: { name: "Micrositio white-label" } })
-    .returning();
-  micrositeModuleId = micrositeMod!.id;
+  // el módulo 'microsite' (gatea /tenant/microsite) se garantiza sin machacar
+  // el nombre del catálogo (ver helpers.ensureModule)
+  const micrositeMod = await ensureModule("microsite");
+  micrositeModuleId = micrositeMod.id;
 
   [tenantA] = (await db
     .insert(tenants)

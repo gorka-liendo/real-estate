@@ -7,15 +7,17 @@ import { app } from "../app.js";
 
 const ADMIN_EMAIL = "test-admin@example.com";
 const PLAIN_EMAIL = "test-plain@example.com";
+const NEW_OWNER_EMAIL = "test-new-owner@example.com";
 const PASSWORD = "super-secreta-123";
 const SLUG = "test-admin-tenant";
+const NEW_SLUG = "test-alta-inmo";
 const TEST_CODE = "test_admin_module";
 
 let tenant: Tenant;
 
 async function cleanup() {
-  await db.delete(user).where(inArray(user.email, [ADMIN_EMAIL, PLAIN_EMAIL]));
-  await db.delete(tenants).where(eq(tenants.slug, SLUG));
+  await db.delete(user).where(inArray(user.email, [ADMIN_EMAIL, PLAIN_EMAIL, NEW_OWNER_EMAIL]));
+  await db.delete(tenants).where(inArray(tenants.slug, [SLUG, NEW_SLUG]));
   await db.delete(modules).where(eq(modules.code, TEST_CODE));
 }
 
@@ -63,9 +65,74 @@ describe("acceso al panel", () => {
     expect(res.status).toBe(403);
   });
 
-  it("superadmin → 200", async () => {
+  it("superadmin → 200 con stats por tenant", async () => {
     const res = await app.request("/admin/tenants", { headers: { cookie: adminCookie } });
     expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      tenants: Array<{ slug: string; stats: { properties: number; clients: number } }>;
+    };
+    const t = body.tenants.find((x) => x.slug === SLUG);
+    expect(t!.stats).toMatchObject({ properties: 0, clients: 0 });
+  });
+});
+
+describe("alta de inmobiliaria", () => {
+  const payload = {
+    slug: NEW_SLUG,
+    name: "Alta Inmo Test",
+    ownerEmail: NEW_OWNER_EMAIL,
+    ownerPassword: "clave-segura-123",
+  };
+
+  it("crea tenant + owner y el owner puede iniciar sesión con membership", async () => {
+    const res = await app.request("/admin/tenants", {
+      method: "POST",
+      headers: { cookie: adminCookie, "content-type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    expect(res.status).toBe(201);
+
+    // el owner recién creado puede entrar…
+    const login = await app.request("/api/auth/sign-in/email", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email: NEW_OWNER_EMAIL, password: payload.ownerPassword }),
+    });
+    expect(login.status).toBe(200);
+    const ownerCookie = login.headers.get("set-cookie")!.split(";")[0]!;
+
+    // …y /me muestra su membership de owner en el tenant nuevo
+    const me = await app.request("/me", { headers: { cookie: ownerCookie } });
+    const meBody = (await me.json()) as { memberships: Array<{ slug: string; role: string }> };
+    expect(meBody.memberships).toContainEqual({ slug: NEW_SLUG, name: "Alta Inmo Test", role: "owner" });
+  });
+
+  it("slug duplicado → 409; slug inválido → 400; no superadmin → 403", async () => {
+    await app.request("/admin/tenants", {
+      method: "POST",
+      headers: { cookie: adminCookie, "content-type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const dup = await app.request("/admin/tenants", {
+      method: "POST",
+      headers: { cookie: adminCookie, "content-type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    expect(dup.status).toBe(409);
+
+    const bad = await app.request("/admin/tenants", {
+      method: "POST",
+      headers: { cookie: adminCookie, "content-type": "application/json" },
+      body: JSON.stringify({ ...payload, slug: "Mal Slug!" }),
+    });
+    expect(bad.status).toBe(400);
+
+    const forbidden = await app.request("/admin/tenants", {
+      method: "POST",
+      headers: { cookie: plainCookie, "content-type": "application/json" },
+      body: JSON.stringify({ ...payload, slug: "otro-slug-x" }),
+    });
+    expect(forbidden.status).toBe(403);
   });
 });
 

@@ -16,6 +16,7 @@ import {
 import type { Tenant } from "@rep/db";
 import { invalidateModules } from "@rep/modules";
 import { app } from "../app.js";
+import { ensureModule } from "./helpers.js";
 import { resetLeadThrottle } from "../modules/leads/leads.throttle.js";
 
 // Agenda de visitas: solicitud pública (ficha) + gestión privada (dashboard)
@@ -47,11 +48,7 @@ async function signUpCookie(): Promise<string> {
 beforeEach(async () => {
   await cleanup();
   resetLeadThrottle();
-  const [mod] = await db
-    .insert(modules)
-    .values({ code: "visits", name: "Visitas", priceMonthly: 0 })
-    .onConflictDoUpdate({ target: modules.code, set: { name: "Visitas" } })
-    .returning();
+  const mod = await ensureModule("visits");
 
   [tenantA] = (await db.insert(tenants).values({ slug: SLUGS[0]!, name: "A" }).returning()) as [Tenant];
   [tenantB] = (await db.insert(tenants).values({ slug: SLUGS[1]!, name: "B" }).returning()) as [Tenant];

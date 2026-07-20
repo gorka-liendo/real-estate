@@ -248,6 +248,13 @@ export type AdminTenant = {
   customDomain: string | null;
   theme: string;
   activeModules: string[];
+  stats: { properties: number; clients: number; visits: number; activeRentals: number };
+};
+export type CreateTenantInput = {
+  slug: string;
+  name: string;
+  ownerEmail: string;
+  ownerPassword: string;
 };
 
 export const api = {
@@ -523,6 +530,12 @@ export const api = {
   adminCatalog: () => request<{ modules: CatalogModule[] }>("/admin/catalog"),
 
   adminTenants: () => request<{ tenants: AdminTenant[] }>("/admin/tenants"),
+
+  adminCreateTenant: (data: CreateTenantInput) =>
+    request<{ tenant: { id: string; slug: string; name: string }; ownerEmail: string }>(
+      "/admin/tenants",
+      { method: "POST", body: JSON.stringify(data) },
+    ),
 
   adminSetModule: (slug: string, code: string, active: boolean) =>
     request<{ tenant: string; module: string; active: boolean; activeModules: string[] }>(

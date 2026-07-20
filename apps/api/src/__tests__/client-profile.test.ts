@@ -17,6 +17,7 @@ import {
 import type { Tenant } from "@rep/db";
 import { invalidateModules } from "@rep/modules";
 import { app } from "../app.js";
+import { ensureModule } from "./helpers.js";
 
 // Perfil de cliente: tipos, cuota, roles derivados, timeline y notas.
 // Y el portal SOLO para clientes con inmuebles asignados.
@@ -39,12 +40,7 @@ beforeEach(async () => {
   await cleanup();
   const seeded = [];
   for (const code of ["clients", "properties", "owner_portal", "rentals", "visits"]) {
-    const [m] = await db
-      .insert(modules)
-      .values({ code, name: code, priceMonthly: 0 })
-      .onConflictDoUpdate({ target: modules.code, set: { name: code } })
-      .returning();
-    seeded.push(m!);
+    seeded.push(await ensureModule(code));
   }
   [tenantA] = (await db.insert(tenants).values({ slug: SLUGS[0]!, name: "A" }).returning()) as [Tenant];
   await db

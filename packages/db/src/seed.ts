@@ -9,6 +9,7 @@ async function main() {
     { code: "properties", name: "Propiedades", priceMonthly: 3900 },
     { code: "accounting", name: "Contabilidad", priceMonthly: 4900 },
     { code: "whatsapp_bot", name: "Chatbot WhatsApp", priceMonthly: 7900 },
+    { code: "ai_descriptions", name: "Descripciones IA multi-idioma", priceMonthly: 4900 },
     { code: "microsite", name: "Micrositio white-label", priceMonthly: 4900 },
     // Producto 04 del catálogo (Captación): widget "Valora tu piso gratis".
     // La otra pata (whatsapp_bot) llegará con el alta en Meta.

@@ -5,6 +5,7 @@ import { clients, closeDb, db, modules, properties, subscriptions, tenants } fro
 import type { Tenant } from "@rep/db";
 import { invalidateModules } from "@rep/modules";
 import { app } from "../app.js";
+import { ensureModule } from "./helpers.js";
 import { resetLeadThrottle } from "../modules/leads/leads.throttle.js";
 
 // Captación de leads: POST público del micrositio → cliente stage 'lead'.
@@ -21,11 +22,7 @@ async function cleanup() {
 beforeEach(async () => {
   await cleanup();
   resetLeadThrottle();
-  const [mod] = await db
-    .insert(modules)
-    .values({ code: "microsite", name: "Micrositio", priceMonthly: 0 })
-    .onConflictDoUpdate({ target: modules.code, set: { name: "Micrositio" } })
-    .returning();
+  const mod = await ensureModule("microsite");
 
   [tenantA] = (await db.insert(tenants).values({ slug: SLUGS[0]!, name: "A" }).returning()) as [Tenant];
   [tenantB] = (await db.insert(tenants).values({ slug: SLUGS[1]!, name: "B" }).returning()) as [Tenant];

@@ -14,6 +14,7 @@ import {
 import type { Tenant } from "@rep/db";
 import { invalidateModules } from "@rep/modules";
 import { app } from "../app.js";
+import { ensureModule } from "./helpers.js";
 
 // Gastos y facturas por inmueble: subida multipart, categorías, aislamiento
 // y visibilidad (con neto) en el portal del propietario.
@@ -37,12 +38,7 @@ beforeEach(async () => {
   await cleanup();
   const seeded = [];
   for (const code of ["rentals", "owner_portal", "properties", "clients"]) {
-    const [m] = await db
-      .insert(modules)
-      .values({ code, name: code, priceMonthly: 0 })
-      .onConflictDoUpdate({ target: modules.code, set: { name: code } })
-      .returning();
-    seeded.push(m!);
+    seeded.push(await ensureModule(code));
   }
   [tenantA] = (await db.insert(tenants).values({ slug: SLUGS[0]!, name: "A" }).returning()) as [Tenant];
   [tenantB] = (await db.insert(tenants).values({ slug: SLUGS[1]!, name: "B" }).returning()) as [Tenant];

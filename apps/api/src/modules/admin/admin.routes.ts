@@ -1,7 +1,8 @@
-import { eq } from "drizzle-orm";
+import { count, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
-import { db, tenants } from "@rep/db";
+import { auth } from "@rep/auth";
+import { clients, db, memberships, properties, rentals, tenants, user, visits } from "@rep/db";
 import {
   getActiveModules,
   listCatalog,
@@ -22,6 +23,21 @@ admin.get("/catalog", async (c) => c.json({ modules: await listCatalog() }));
 
 admin.get("/tenants", async (c) => {
   const all = await db.select().from(tenants).orderBy(tenants.slug);
+
+  // Stats por tenant en 4 group-by (no N+1). Superadmin: db directa es legítima.
+  const [propCounts, clientCounts, visitCounts, rentalCounts] = await Promise.all([
+    db.select({ tenantId: properties.tenantId, n: count() }).from(properties).groupBy(properties.tenantId),
+    db.select({ tenantId: clients.tenantId, n: count() }).from(clients).groupBy(clients.tenantId),
+    db.select({ tenantId: visits.tenantId, n: count() }).from(visits).groupBy(visits.tenantId),
+    db
+      .select({ tenantId: rentals.tenantId, n: count() })
+      .from(rentals)
+      .where(eq(rentals.status, "active"))
+      .groupBy(rentals.tenantId),
+  ]);
+  const lookup = (rows: Array<{ tenantId: string; n: number }>, id: string) =>
+    rows.find((r) => r.tenantId === id)?.n ?? 0;
+
   const withModules = await Promise.all(
     all.map(async (t) => ({
       id: t.id,
@@ -31,9 +47,61 @@ admin.get("/tenants", async (c) => {
       customDomain: t.customDomain,
       theme: t.brandConfig.theme ?? "dwell",
       activeModules: await getActiveModules(t.id),
+      stats: {
+        properties: lookup(propCounts, t.id),
+        clients: lookup(clientCounts, t.id),
+        visits: lookup(visitCounts, t.id),
+        activeRentals: lookup(rentalCounts, t.id),
+      },
     })),
   );
   return c.json({ tenants: withModules });
+});
+
+// Alta de inmobiliaria desde el panel: tenant + usuario owner + membership.
+// (Hasta ahora solo existía vía seed — el panel no podía operar de verdad.)
+const createTenantSchema = z.object({
+  slug: z
+    .string()
+    .regex(/^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$/, "slug: minúsculas, números y guiones (3-40)"),
+  name: z.string().min(1).max(120),
+  ownerEmail: z.email(),
+  ownerPassword: z.string().min(8, "mínimo 8 caracteres"),
+});
+
+admin.post("/tenants", async (c) => {
+  const body = createTenantSchema.safeParse(await c.req.json().catch(() => null));
+  if (!body.success) return c.json({ error: "invalid_body", issues: body.error.issues }, 400);
+
+  const [existing] = await db.select().from(tenants).where(eq(tenants.slug, body.data.slug));
+  if (existing) return c.json({ error: "slug_taken" }, 409);
+
+  const [tenant] = await db
+    .insert(tenants)
+    .values({ slug: body.data.slug, name: body.data.name })
+    .returning();
+
+  // Owner: crea el usuario vía Better-Auth (password scrypt) o reutiliza si ya existe.
+  let [ownerUser] = await db.select().from(user).where(eq(user.email, body.data.ownerEmail));
+  if (!ownerUser) {
+    await auth.api.signUpEmail({
+      body: {
+        email: body.data.ownerEmail,
+        password: body.data.ownerPassword,
+        name: `Owner ${body.data.name}`,
+      },
+    });
+    [ownerUser] = await db.select().from(user).where(eq(user.email, body.data.ownerEmail));
+  }
+  await db
+    .insert(memberships)
+    .values({ userId: ownerUser!.id, tenantId: tenant!.id, role: "owner" })
+    .onConflictDoNothing();
+
+  return c.json(
+    { tenant: { id: tenant!.id, slug: tenant!.slug, name: tenant!.name }, ownerEmail: body.data.ownerEmail },
+    201,
+  );
 });
 
 // Asignar el tema (design system) de una inmobiliaria. Lo hace la plataforma.
