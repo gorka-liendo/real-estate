@@ -590,5 +590,26 @@ packages/
       para que el navegador repinte del todo (gotcha de CSS/tokens ya
       conocido) — el estado real (`getComputedStyle`) es siempre correcto
       aunque una captura de pantalla puntual quede rezagada.
+- [x] **Micrositio: motor de secciones (Paso 1 de submódulos)** — el CUERPO del
+      micrositio (entre topbar y footer) dejó de ser una secuencia hardcodeada y
+      pasa a una lista ORDENADA y ACTIVABLE de secciones dirigida por
+      `site_config.sections[]` (dentro del jsonb → SIN migración SQL). Tipo
+      canónico `SiteSection` (unión discriminada por `type`: hero/properties/
+      valuation) en `@rep/db` `schema/tenants.ts`; validación zod espejo
+      (discriminatedUnion) en `apps/api/.../site/site.schema.ts`; mirror en
+      tenant-site `lib/tenant.ts`. Motor en `apps/tenant-site/app/s/[tenant]/
+      sections.tsx`: `SECTION_REGISTRY` (por tipo: `moduleGate?`/`anchor?`/
+      `navLabel?`/`Body`), `resolveSections` (deriva de campos planos si no hay
+      `sections` → RETROCOMPATIBLE, tenant de onboarding se ve idéntico sin migrar
+      datos), `visibleSections` (filtra por `enabled` + módulo), `sectionNavItems`
+      (nav auto-derivada). `page.tsx` ahora mapea el registro (bucle O(1) por
+      sección nueva = 1 entrada + 1 Body). Footer/contacto siguen siendo "chrome"
+      permanente (leen campos planos, fuera del motor). Dos puertas: contenido
+      (self-serve `enabled`) vs producto (`moduleGate`, p.ej. valuation).
+      Verificado: 104 tests API en verde, typecheck limpio, martinez idéntico
+      en el navegador (ruta de derivación). Pendiente: Paso 2 (editor del
+      dashboard = gestor de secciones), Paso 3 (secciones de contenido nuevas:
+      Equipo/Testimonios/Cifras/FAQ/Servicios/Mapa), Paso 4 (secciones-producto
+      de pago: Blog…).
 - [ ] **Pendiente retomar**: theming/fuentes por inmobiliaria (ver gotcha de
       next/font arriba) y edición de marca en Ajustes.

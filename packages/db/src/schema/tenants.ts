@@ -31,15 +31,61 @@ export type BrandConfig = {
  * (modelo híbrido). La plantilla lo lee; nunca se hardcodea contenido en la página.
  */
 export type SocialLink = { label: string; url: string };
+
+/**
+ * Secciones del micrositio (motor de secciones — Paso 1).
+ * El CUERPO del micrositio (entre topbar y footer) es una lista ORDENADA y
+ * ACTIVABLE de secciones. Cada sección es una unidad autocontenida: un `type`
+ * (discriminante) + su contenido propio. El orden del array = orden de render.
+ *
+ * Dos "puertas" de visibilidad (resueltas en el render del tenant-site):
+ *  - contenido: la activa/ordena el cliente self-serve (`enabled`).
+ *  - producto:  además requiere un módulo contratado (p.ej. `valuation`) —
+ *    aunque `enabled` sea true, no se pinta si el tenant no tiene el módulo.
+ *
+ * Retrocompatibilidad: un tenant SIN `sections` deriva una lista por defecto de
+ * los campos planos (heroTitle, template…). Por eso los campos planos de hero se
+ * conservan como fuente de la derivación. El footer/contacto NO son secciones
+ * (son "chrome" permanente) y siguen leyendo los campos planos.
+ */
+export type SiteSectionBase = {
+  id: string; // estable (React key, reordenado, edición); único dentro del array
+  enabled: boolean;
+};
+export type HeroSection = SiteSectionBase & {
+  type: "hero";
+  template?: "editorial" | "minimal" | "bold";
+  eyebrow?: string;
+  title?: string;
+  subtitle?: string;
+};
+export type PropertiesSection = SiteSectionBase & {
+  type: "properties";
+  eyebrow?: string;
+  title?: string;
+};
+export type ValuationSection = SiteSectionBase & {
+  type: "valuation";
+  eyebrow?: string;
+  title?: string;
+  intro?: string;
+};
+export type SiteSection = HeroSection | PropertiesSection | ValuationSection;
+export type SiteSectionType = SiteSection["type"];
+
 export type SiteConfig = {
+  // Campos planos de hero (legacy / fuente de la derivación retrocompatible).
   template?: "editorial" | "minimal" | "bold";
   heroEyebrow?: string;
   heroTitle?: string;
   heroSubtitle?: string;
+  // Footer / contacto — "chrome" permanente, no son secciones del cuerpo.
   about?: string;
   contactEmail?: string;
   contactPhone?: string;
   social?: SocialLink[];
+  // Motor de secciones (canónico cuando está presente; si falta, se deriva).
+  sections?: SiteSection[];
 };
 
 export type Tenant = typeof tenants.$inferSelect;

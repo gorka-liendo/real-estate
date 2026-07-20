@@ -2,6 +2,32 @@ import { tenantSiteEnv } from "@rep/config/tenant-site";
 import type { BrandConfig, ValuationEstimate } from "@rep/ui-tenant";
 
 export type SocialLink = { label: string; url: string };
+
+// Motor de secciones — espejo de `SiteSection` de @rep/db (el tenant-site no
+// importa @rep/db: consume la API, así que replica la forma como ya hace con
+// SiteConfig). Añadir un tipo aquí + su entrada en el registro de `sections.tsx`.
+export type SiteSectionBase = { id: string; enabled: boolean };
+export type HeroSection = SiteSectionBase & {
+  type: "hero";
+  template?: "editorial" | "minimal" | "bold";
+  eyebrow?: string;
+  title?: string;
+  subtitle?: string;
+};
+export type PropertiesSection = SiteSectionBase & {
+  type: "properties";
+  eyebrow?: string;
+  title?: string;
+};
+export type ValuationSection = SiteSectionBase & {
+  type: "valuation";
+  eyebrow?: string;
+  title?: string;
+  intro?: string;
+};
+export type SiteSection = HeroSection | PropertiesSection | ValuationSection;
+export type SiteSectionType = SiteSection["type"];
+
 export type SiteConfig = {
   template?: "editorial" | "minimal" | "bold";
   heroEyebrow?: string;
@@ -13,6 +39,7 @@ export type SiteConfig = {
   social?: SocialLink[];
   footerAddress?: string;
   footerSchedule?: string;
+  sections?: SiteSection[];
 };
 
 export type TenantData = {
