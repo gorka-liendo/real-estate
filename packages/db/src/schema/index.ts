@@ -7,4 +7,4 @@ export * from "./clients.js";
 export * from "./properties.js";
 export * from "./visits.js";
 export * from "./rentals.js";
-export * from "./expenses.js";
+export * from "./invoices.js";

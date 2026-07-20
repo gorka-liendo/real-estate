@@ -108,6 +108,7 @@ async function main() {
     "visits",
     "owner_portal",
     "rentals",
+    "accounting",
   ];
   for (const mod of seededModules) {
     const shouldBeActive = activeForMartinez.includes(mod!.code);

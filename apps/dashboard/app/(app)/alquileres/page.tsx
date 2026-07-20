@@ -8,27 +8,16 @@ import {
   api,
   ApiError,
   type Client,
-  type Expense,
-  type ExpenseCategory,
+  type Invoice,
+  type InvoiceCategory,
   type Property,
   type Rental,
 } from "@/lib/api";
+import { INVOICE_CATEGORY_LABELS } from "@/lib/invoice-labels";
 
 const eur = (n: number) => `${new Intl.NumberFormat("es-ES").format(n)} €`;
 const eurCents = (c: number) =>
   `${new Intl.NumberFormat("es-ES", { minimumFractionDigits: 2 }).format(c / 100)} €`;
-
-export const EXPENSE_CATEGORY_LABELS: Record<ExpenseCategory, string> = {
-  water: "Agua",
-  electricity: "Luz",
-  gas: "Gas",
-  community: "Comunidad",
-  taxes: "Impuestos",
-  derrama: "Derrama",
-  maintenance: "Mantenimiento",
-  insurance: "Seguro",
-  other: "Otros",
-};
 
 // Últimos N periodos "YYYY-MM" acabando en el mes actual.
 function lastPeriods(n: number): string[] {
@@ -196,7 +185,7 @@ function AlquileresInner({ slug }: { slug: string }) {
         )}
       </Card>
 
-      <ExpensesCard slug={slug} propsList={propsList} />
+      {hasModule("accounting") ? <ExpensesCard slug={slug} propsList={propsList} /> : null}
     </div>
   );
 }
@@ -205,10 +194,10 @@ function AlquileresInner({ slug }: { slug: string }) {
 // (agua, luz, comunidad, derramas…) y el propietario la ve en su portal.
 function ExpensesCard({ slug, propsList }: { slug: string; propsList: Property[] }) {
   const [propertyId, setPropertyId] = useState("");
-  const [items, setItems] = useState<Expense[] | null>(null);
-  const [category, setCategory] = useState<ExpenseCategory>("water");
+  const [items, setItems] = useState<Invoice[] | null>(null);
+  const [category, setCategory] = useState<InvoiceCategory>("water");
   const [amount, setAmount] = useState("");
-  const [expenseDate, setExpenseDate] = useState(new Date().toISOString().slice(0, 10));
+  const [issueDate, setIssueDate] = useState(new Date().toISOString().slice(0, 10));
   const [concept, setConcept] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -220,7 +209,7 @@ function ExpensesCard({ slug, propsList }: { slug: string; propsList: Property[]
       return;
     }
     try {
-      setItems((await api.expenses.list(slug, pid)).expenses);
+      setItems((await api.invoices.list(slug, { direction: "expense", propertyId: pid })).invoices);
     } catch {
       setError("No se pudieron cargar los gastos.");
     }
@@ -235,11 +224,11 @@ function ExpensesCard({ slug, propsList }: { slug: string; propsList: Property[]
     setSubmitting(true);
     setError(null);
     try {
-      await api.expenses.create(slug, {
+      await api.invoices.createExpense(slug, {
         propertyId,
         category,
         amount,
-        expenseDate,
+        issueDate,
         concept: concept || undefined,
         file,
       });
@@ -259,8 +248,16 @@ function ExpensesCard({ slug, propsList }: { slug: string; propsList: Property[]
   }
 
   async function remove(id: string) {
-    await api.expenses.remove(slug, id);
-    await load(propertyId);
+    try {
+      await api.invoices.remove(slug, id);
+      await load(propertyId);
+    } catch (err) {
+      setError(
+        err instanceof ApiError && err.status === 409
+          ? "No se puede borrar: ya tiene un pago registrado. Gestiónalo desde Contabilidad."
+          : "No se pudo borrar el gasto.",
+      );
+    }
   }
 
   return (
@@ -295,8 +292,8 @@ function ExpensesCard({ slug, propsList }: { slug: string; propsList: Property[]
           >
             <div>
               <Label htmlFor="e-cat">Categoría</Label>
-              <Select id="e-cat" value={category} onChange={(e) => setCategory(e.target.value as ExpenseCategory)}>
-                {Object.entries(EXPENSE_CATEGORY_LABELS).map(([v, l]) => (
+              <Select id="e-cat" value={category} onChange={(e) => setCategory(e.target.value as InvoiceCategory)}>
+                {Object.entries(INVOICE_CATEGORY_LABELS).map(([v, l]) => (
                   <option key={v} value={v}>
                     {l}
                   </option>
@@ -317,7 +314,7 @@ function ExpensesCard({ slug, propsList }: { slug: string; propsList: Property[]
             </div>
             <div>
               <Label htmlFor="e-date">Fecha</Label>
-              <Input id="e-date" type="date" required value={expenseDate} onChange={(e) => setExpenseDate(e.target.value)} />
+              <Input id="e-date" type="date" required value={issueDate} onChange={(e) => setIssueDate(e.target.value)} />
             </div>
             <div>
               <Label htmlFor="e-concept">Concepto</Label>
@@ -358,13 +355,13 @@ function ExpensesCard({ slug, propsList }: { slug: string; propsList: Property[]
                   {items.map((e) => (
                     <tr key={e.id}>
                       <td style={{ whiteSpace: "nowrap" }}>
-                        {new Date(e.expenseDate).toLocaleDateString("es-ES")}
+                        {new Date(e.issueDate).toLocaleDateString("es-ES")}
                       </td>
                       <td>
-                        <Badge variant="default">{EXPENSE_CATEGORY_LABELS[e.category]}</Badge>
+                        <Badge variant="default">{INVOICE_CATEGORY_LABELS[e.category]}</Badge>
                       </td>
                       <td>{e.concept ?? "—"}</td>
-                      <td style={{ whiteSpace: "nowrap", fontWeight: 500 }}>{eurCents(e.amountCents)}</td>
+                      <td style={{ whiteSpace: "nowrap", fontWeight: 500 }}>{eurCents(e.totalCents)}</td>
                       <td>
                         {e.fileUrl ? (
                           <a href={e.fileUrl} target="_blank" rel="noreferrer" className="du-muted" style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>

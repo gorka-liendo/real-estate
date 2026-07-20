@@ -519,5 +519,29 @@ packages/
       tokens/color-mix). Selector "Plantilla de portada" en el editor
       Micrositio (self-serve). Sin foto publicada, bold/editorial caen al
       solo-texto. Verificadas las 3 en navegador.
+- [x] **Módulo Contabilidad (facturas + pagos + PDF)** — absorbe `property_expenses`
+      en una entidad `invoices` generalizada con `direction` (`expense`|`income`),
+      migración 0014 (+ 0015 borra la tabla vieja tras migrar sus 2 filas reales,
+      script one-off verificado idempotente y luego eliminado). Un documento
+      cuelga opcionalmente de inmueble y/o cliente (nunca obligatorio). Ingresos:
+      numeración secuencial por año (`2026-0001`), IVA en `taxRateBps` (céntimos,
+      sin floats). `invoice_payments` (1:N, pagos parciales) — el estado pasa a
+      `paid` automáticamente al cubrirse el total; gasto con `status=paid` al
+      crear se auto-paga con un pago del total. API `apps/api/src/modules/invoices/`
+      bajo `/tenant/invoices` (CRUD + `POST /:id/payments` + upload multipart del
+      justificante + `GET /:id/pdf`), gateada por `requireModule('accounting')`.
+      PDF con `pdfkit` (texto-only en v1, sin logo — evita fetch remoto en
+      caliente) **solo para facturas `income`** (alcance decidido con el usuario:
+      sin IA en v1, PDF solo de facturas emitidas). Dashboard: página
+      `/contabilidad` reemplaza el stub — resumen (cobrado/pendiente/gastos/
+      balance del año), tabs Facturas emitidas / Gastos, alta de ambas, cobro
+      parcial inline, descarga de PDF (fetch autenticado a blob, no `<a href>`
+      directo porque el endpoint exige cookie+header de tenant). Card de Gastos
+      en Alquileres y portal del propietario migrados a `invoices`/`InvoiceCategory`
+      (antes `property_expenses`/`ExpenseCategory`). 101 tests API (15 en
+      `invoices.test.ts`, incl. aislamiento y PDF). Verificado E2E en navegador:
+      alta de factura con IVA, PDF descargado y con los datos correctos, cobro
+      parcial actualiza estado/resumen en vivo, gastos migrados visibles con su
+      adjunto original.
 - [ ] **Pendiente retomar**: theming/fuentes por inmobiliaria (ver gotcha de
       next/font arriba) y edición de marca en Ajustes.

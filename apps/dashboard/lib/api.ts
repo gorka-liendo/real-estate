@@ -203,7 +203,12 @@ export type RentalInput = {
   notes?: string;
 };
 
-export type ExpenseCategory =
+// Contabilidad: un documento con dirección — gasto que pagamos (expense) o
+// factura que emitimos (income). Puede colgar de un inmueble, de un cliente,
+// de ambos o de ninguno.
+export type InvoiceDirection = "expense" | "income";
+export type InvoiceStatus = "draft" | "pending" | "paid" | "cancelled";
+export type InvoiceCategory =
   | "water"
   | "electricity"
   | "gas"
@@ -212,26 +217,81 @@ export type ExpenseCategory =
   | "derrama"
   | "maintenance"
   | "insurance"
+  | "management_fee"
+  | "commission"
   | "other";
-export type Expense = {
+export type InvoicePaymentMethod = "transfer" | "cash" | "card" | "other";
+
+export type InvoicePayment = {
   id: string;
-  propertyId: string;
-  category: ExpenseCategory;
-  concept: string | null;
+  invoiceId: string;
   amountCents: number;
-  expenseDate: string;
+  paidAt: string;
+  method: InvoicePaymentMethod;
+  notes: string | null;
+  createdAt: string;
+};
+
+export type Invoice = {
+  id: string;
+  direction: InvoiceDirection;
+  status: InvoiceStatus;
+  propertyId: string | null;
+  clientId: string | null;
+  rentalId: string | null;
+  vendorName: string | null;
+  category: InvoiceCategory;
+  number: string | null;
+  concept: string | null;
+  issueDate: string;
+  dueDate: string | null;
+  subtotalCents: number;
+  taxRateBps: number;
+  taxCents: number;
+  totalCents: number;
   fileUrl: string | null;
   fileName: string | null;
   notes: string | null;
   createdAt: string;
+  updatedAt: string;
+  payments: InvoicePayment[];
+  paidCents: number;
+  remainingCents: number;
+  overdue: boolean;
 };
-export type ExpenseInput = {
-  propertyId: string;
-  category: ExpenseCategory;
-  amount: string; // euros con decimales, p. ej. "43.27"
-  expenseDate: string;
+
+export type CreateExpenseInput = {
+  propertyId?: string;
+  clientId?: string;
+  vendorName?: string;
+  category: InvoiceCategory;
   concept?: string;
+  amount: string; // euros con decimales, p. ej. "43.27"
+  issueDate: string;
+  dueDate?: string;
+  status?: "pending" | "paid";
+  notes?: string;
   file?: File | null;
+};
+
+export type CreateIncomeInput = {
+  propertyId?: string;
+  clientId?: string;
+  rentalId?: string;
+  category?: InvoiceCategory;
+  concept: string;
+  amount: number; // subtotal en euros
+  taxRatePercent?: number;
+  issueDate: string;
+  dueDate?: string;
+  notes?: string;
+};
+
+export type InvoiceListFilters = {
+  direction?: InvoiceDirection;
+  propertyId?: string;
+  clientId?: string;
+  status?: InvoiceStatus;
 };
 
 export type CatalogModule = {
@@ -397,24 +457,37 @@ export const api = {
       }),
   },
 
-  // --- gastos y facturas por inmueble (módulo Alquileres) ---
-  expenses: {
-    list: (slug: string, propertyId?: string) =>
-      request<{ expenses: Expense[] }>(
-        `/tenant/expenses${propertyId ? `?propertyId=${propertyId}` : ""}`,
-        { headers: { "x-tenant-slug": slug } },
-      ),
+  // --- Contabilidad: gastos, facturas emitidas y sus pagos ---
+  invoices: {
+    list: (slug: string, filters: InvoiceListFilters = {}) => {
+      const qs = new URLSearchParams(
+        Object.entries(filters).filter((e): e is [string, string] => Boolean(e[1])),
+      ).toString();
+      return request<{ invoices: Invoice[] }>(`/tenant/invoices${qs ? `?${qs}` : ""}`, {
+        headers: { "x-tenant-slug": slug },
+      });
+    },
+
+    get: (slug: string, id: string) =>
+      request<{ invoice: Invoice }>(`/tenant/invoices/${id}`, {
+        headers: { "x-tenant-slug": slug },
+      }),
 
     // multipart: campos + factura opcional (el navegador pone el boundary)
-    create: async (slug: string, data: ExpenseInput) => {
+    createExpense: async (slug: string, data: CreateExpenseInput) => {
       const fd = new FormData();
-      fd.append("propertyId", data.propertyId);
+      if (data.propertyId) fd.append("propertyId", data.propertyId);
+      if (data.clientId) fd.append("clientId", data.clientId);
+      if (data.vendorName) fd.append("vendorName", data.vendorName);
       fd.append("category", data.category);
       fd.append("amount", data.amount);
-      fd.append("expenseDate", data.expenseDate);
+      fd.append("issueDate", data.issueDate);
+      if (data.dueDate) fd.append("dueDate", data.dueDate);
+      if (data.status) fd.append("status", data.status);
       if (data.concept) fd.append("concept", data.concept);
+      if (data.notes) fd.append("notes", data.notes);
       if (data.file) fd.append("file", data.file);
-      const res = await fetch(`${API_URL}/tenant/expenses`, {
+      const res = await fetch(`${API_URL}/tenant/invoices/expense`, {
         method: "POST",
         credentials: "include",
         headers: { "x-tenant-slug": slug },
@@ -424,14 +497,50 @@ export const api = {
         const b = (await res.json().catch(() => ({}))) as { error?: string };
         throw new ApiError(res.status, b.error ?? `HTTP ${res.status}`);
       }
-      return (await res.json()) as { expense: Expense };
+      return (await res.json()) as { invoice: Invoice };
     },
 
+    createIncome: (slug: string, data: CreateIncomeInput) =>
+      request<{ invoice: Invoice }>("/tenant/invoices/income", {
+        method: "POST",
+        headers: { "x-tenant-slug": slug },
+        body: JSON.stringify(data),
+      }),
+
+    update: (slug: string, id: string, data: { status?: InvoiceStatus; notes?: string }) =>
+      request<{ invoice: Invoice }>(`/tenant/invoices/${id}`, {
+        method: "PATCH",
+        headers: { "x-tenant-slug": slug },
+        body: JSON.stringify(data),
+      }),
+
     remove: (slug: string, id: string) =>
-      request<void>(`/tenant/expenses/${id}`, {
+      request<void>(`/tenant/invoices/${id}`, {
         method: "DELETE",
         headers: { "x-tenant-slug": slug },
       }),
+
+    addPayment: (
+      slug: string,
+      id: string,
+      data: { amount: number; paidAt?: string; method?: InvoicePaymentMethod; notes?: string },
+    ) =>
+      request<{ invoice: Invoice }>(`/tenant/invoices/${id}/payments`, {
+        method: "POST",
+        headers: { "x-tenant-slug": slug },
+        body: JSON.stringify(data),
+      }),
+
+    // El endpoint exige la cookie de sesión + header de tenant, así que no
+    // sirve un <a href> directo: se descarga como blob y se abre desde JS.
+    pdf: async (slug: string, id: string) => {
+      const res = await fetch(`${API_URL}/tenant/invoices/${id}/pdf`, {
+        credentials: "include",
+        headers: { "x-tenant-slug": slug },
+      });
+      if (!res.ok) throw new ApiError(res.status, `HTTP ${res.status}`);
+      return res.blob();
+    },
   },
 
   // --- módulo Agenda (visitas) ---

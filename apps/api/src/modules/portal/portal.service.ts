@@ -1,17 +1,17 @@
 import { randomUUID } from "node:crypto";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, ne } from "drizzle-orm";
 import {
   clients,
+  invoices,
   properties,
-  propertyExpenses,
   rentalPayments,
   rentals,
   tenantDb,
   visits,
   type Client,
-  type ExpenseCategory,
+  type Invoice,
+  type InvoiceCategory,
   type Property,
-  type PropertyExpense,
   type Rental,
   type RentalPayment,
   type Visit,
@@ -52,9 +52,10 @@ export type PortalRental = {
 };
 
 // Gasto visible para el propietario, con su factura descargable si la hay.
+// (Viene de invoices con direction='expense' — ver módulo invoices.)
 export type PortalExpense = {
   date: string;
-  category: ExpenseCategory;
+  category: InvoiceCategory;
   concept: string | null;
   amountCents: number;
   fileUrl: string | null;
@@ -122,9 +123,13 @@ export async function getPortalData(token: string): Promise<PortalData | null> {
       and(inArray(rentals.propertyId, ids), eq(rentals.status, "active")),
     ) as Promise<Rental[]>,
     tenantDb().select(
-      propertyExpenses,
-      inArray(propertyExpenses.propertyId, ids),
-    ) as Promise<PropertyExpense[]>,
+      invoices,
+      and(
+        inArray(invoices.propertyId, ids),
+        eq(invoices.direction, "expense"),
+        ne(invoices.status, "cancelled"),
+      ),
+    ) as Promise<Invoice[]>,
   ]);
   const payments =
     activeRentals.length > 0
@@ -161,7 +166,7 @@ export async function getPortalData(token: string): Promise<PortalData | null> {
         )
       : [];
     const exps = allExpenses.filter(
-      (e) => e.propertyId === propertyId && e.expenseDate.startsWith(yearPrefix),
+      (e) => e.propertyId === propertyId && e.issueDate.startsWith(yearPrefix),
     );
     return Array.from({ length: 12 }, (_, i) => {
       const mm = String(i + 1).padStart(2, "0");
@@ -170,8 +175,8 @@ export async function getPortalData(token: string): Promise<PortalData | null> {
         incomeCents:
           paid.filter((p) => p.period.slice(5, 7) === mm).reduce((a, p) => a + p.amount, 0) * 100,
         expenseCents: exps
-          .filter((e) => e.expenseDate.slice(5, 7) === mm)
-          .reduce((a, e) => a + e.amountCents, 0),
+          .filter((e) => e.issueDate.slice(5, 7) === mm)
+          .reduce((a, e) => a + e.totalCents, 0),
       };
     });
   };
@@ -201,17 +206,17 @@ export async function getPortalData(token: string): Promise<PortalData | null> {
         interested: interestedClients.filter((cl) => cl.interestPropertyId === p.id).length,
         rental: toPortalRental(p.id),
         expensesThisYearCents: allExpenses
-          .filter((e) => e.propertyId === p.id && e.expenseDate.startsWith(yearPrefix))
-          .reduce((acc, e) => acc + e.amountCents, 0),
+          .filter((e) => e.propertyId === p.id && e.issueDate.startsWith(yearPrefix))
+          .reduce((acc, e) => acc + e.totalCents, 0),
         latestExpenses: allExpenses
           .filter((e) => e.propertyId === p.id)
-          .sort((a, b) => b.expenseDate.localeCompare(a.expenseDate))
+          .sort((a, b) => b.issueDate.localeCompare(a.issueDate))
           .slice(0, 6)
           .map((e) => ({
-            date: e.expenseDate,
+            date: e.issueDate,
             category: e.category,
             concept: e.concept,
-            amountCents: e.amountCents,
+            amountCents: e.totalCents,
             fileUrl: e.fileUrl,
           })),
         monthly: monthlyFor(p.id),
@@ -266,7 +271,7 @@ export type PortalPropertyDetail = {
     payments: PortalPaymentRow[]; // registro COMPLETO, desc
   } | null;
   expenses: PortalExpense[]; // todos, desc
-  expensesByCategory: Array<{ category: ExpenseCategory; totalCents: number }>;
+  expensesByCategory: Array<{ category: InvoiceCategory; totalCents: number }>;
   visits: {
     upcoming: Array<{ at: string; status: Visit["status"] }>;
     past: Array<{ at: string; status: Visit["status"] }>;
@@ -298,9 +303,13 @@ export async function getPortalPropertyDetail(
     tenantDb().select(clients, eq(clients.interestPropertyId, prop.id)) as Promise<Client[]>,
     tenantDb().select(rentals, eq(rentals.propertyId, prop.id)) as Promise<Rental[]>,
     tenantDb().select(
-      propertyExpenses,
-      eq(propertyExpenses.propertyId, prop.id),
-    ) as Promise<PropertyExpense[]>,
+      invoices,
+      and(
+        eq(invoices.propertyId, prop.id),
+        eq(invoices.direction, "expense"),
+        ne(invoices.status, "cancelled"),
+      ),
+    ) as Promise<Invoice[]>,
   ]);
 
   const rental =
@@ -317,9 +326,9 @@ export async function getPortalPropertyDetail(
   const yearPrefix = `${new Date().getFullYear()}-`;
   const now = Date.now();
 
-  const byCategory = new Map<ExpenseCategory, number>();
+  const byCategory = new Map<InvoiceCategory, number>();
   for (const e of exps) {
-    byCategory.set(e.category, (byCategory.get(e.category) ?? 0) + e.amountCents);
+    byCategory.set(e.category, (byCategory.get(e.category) ?? 0) + e.totalCents);
   }
 
   const monthly: PortalMonthly[] = Array.from({ length: 12 }, (_, i) => {
@@ -334,8 +343,8 @@ export async function getPortalPropertyDetail(
           )
           .reduce((a, p) => a + p.amount, 0) * 100,
       expenseCents: exps
-        .filter((e) => e.expenseDate.startsWith(yearPrefix) && e.expenseDate.slice(5, 7) === mm)
-        .reduce((a, e) => a + e.amountCents, 0),
+        .filter((e) => e.issueDate.startsWith(yearPrefix) && e.issueDate.slice(5, 7) === mm)
+        .reduce((a, e) => a + e.totalCents, 0),
     };
   });
 
@@ -371,12 +380,12 @@ export async function getPortalPropertyDetail(
         }
       : null,
     expenses: exps
-      .sort((a, b) => b.expenseDate.localeCompare(a.expenseDate))
+      .sort((a, b) => b.issueDate.localeCompare(a.issueDate))
       .map((e) => ({
-        date: e.expenseDate,
+        date: e.issueDate,
         category: e.category,
         concept: e.concept,
-        amountCents: e.amountCents,
+        amountCents: e.totalCents,
         fileUrl: e.fileUrl,
       })),
     expensesByCategory: [...byCategory.entries()]
