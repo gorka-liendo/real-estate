@@ -661,6 +661,8 @@ packages/
       panel asigna/quita en vivo. **PENDIENTE Block 3 (infra, solo prod)**: aprovisionar
       el dominio + TLS automático vía API de Vercel (add domain, verificación DNS,
       emisión de certificado) tras el deploy — no testeable en local. `custom_domain`
-      ya existía en el schema; sin migración.
+      ya existía en el schema; sin migración. **Doc de referencia:
+      `docs/dominios-propios.md`** (arquitectura, config, flujo operativo y plan
+      detallado de Block 3 con la API de Vercel).
 - [ ] **Pendiente retomar**: theming/fuentes por inmobiliaria (ver gotcha de
       next/font arriba) y edición de marca en Ajustes.
