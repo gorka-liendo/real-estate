@@ -46,11 +46,23 @@ export const createIncomeSchema = z.object({
 });
 
 // Update: SIN defaults (zod v4 los re-aplicaría en cada PATCH parcial — lección
-// aprendida en clients/properties). Solo estado y notas son editables tras crear;
-// el resto de una factura no se toca a mano (se anula y se crea otra si hace falta).
+// aprendida en clients/properties). Todos los campos son editables — el
+// servicio bloquea tocar importe/IVA si la factura ya tiene pagos registrados
+// (evitaría descuadrar lo ya cobrado), pero concepto/fechas/vínculos/notas y
+// el estado siguen editables siempre.
 export const updateInvoiceSchema = z.object({
+  propertyId: z.uuid().nullable().optional(),
+  clientId: z.uuid().nullable().optional(),
+  rentalId: z.uuid().nullable().optional(),
+  vendorName: z.string().max(200).nullable().optional(),
+  category: z.enum(CATEGORY_VALUES).optional(),
+  concept: z.string().max(200).optional(),
+  amount: z.coerce.number().positive().max(1_000_000).optional(),
+  taxRatePercent: z.coerce.number().min(0).max(100).optional(),
+  issueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
   status: z.enum(["draft", "pending", "paid", "cancelled"]).optional(),
-  notes: z.string().max(1000).optional(),
+  notes: z.string().max(1000).nullable().optional(),
 });
 
 export const createPaymentSchema = z.object({

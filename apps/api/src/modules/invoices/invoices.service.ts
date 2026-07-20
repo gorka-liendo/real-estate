@@ -203,15 +203,57 @@ export async function createIncome(input: CreateIncomeInput): Promise<CreateResu
   return { ok: true, invoice: decorate(rows[0]!, []) };
 }
 
-export async function updateInvoice(
-  id: string,
-  input: UpdateInvoiceInput,
-): Promise<InvoiceWithPayments | null> {
-  const rows = (await tenantDb()
-    .update(invoices, input, eq(invoices.id, id))
-    .returning()) as Invoice[];
-  if (!rows[0]) return null;
-  return getInvoice(id);
+export type UpdateResult =
+  | { ok: true; invoice: InvoiceWithPayments }
+  | { ok: false; error: "not_found" | "has_payments" | "invalid_property" | "invalid_client" | "invalid_rental" };
+
+export async function updateInvoice(id: string, input: UpdateInvoiceInput): Promise<UpdateResult> {
+  const current = await getInvoice(id);
+  if (!current) return { ok: false, error: "not_found" };
+
+  // El importe/IVA ya pagado quedaría descuadrado si se toca el total tras
+  // registrar un cobro/pago — el resto de campos (concepto, fechas, vínculos,
+  // notas, estado) son inofensivos y siguen editables siempre.
+  if ((input.amount !== undefined || input.taxRatePercent !== undefined) && current.paidCents > 0) {
+    return { ok: false, error: "has_payments" };
+  }
+
+  const invalid = await assertBelongsToTenant(
+    input.propertyId ?? undefined,
+    input.clientId ?? undefined,
+    input.rentalId ?? undefined,
+  );
+  if (invalid) return { ok: false, error: invalid };
+
+  const patch: Record<string, unknown> = {};
+  if (input.propertyId !== undefined) patch.propertyId = input.propertyId;
+  if (input.clientId !== undefined) patch.clientId = input.clientId;
+  if (input.rentalId !== undefined) patch.rentalId = input.rentalId;
+  if (input.vendorName !== undefined) patch.vendorName = input.vendorName;
+  if (input.category !== undefined) patch.category = input.category;
+  if (input.concept !== undefined) patch.concept = input.concept;
+  if (input.issueDate !== undefined) patch.issueDate = input.issueDate;
+  if (input.dueDate !== undefined) patch.dueDate = input.dueDate;
+  if (input.status !== undefined) patch.status = input.status;
+  if (input.notes !== undefined) patch.notes = input.notes;
+
+  if (input.amount !== undefined || input.taxRatePercent !== undefined) {
+    const subtotalCents = input.amount !== undefined ? round(input.amount * 100) : current.subtotalCents;
+    const taxRateBps =
+      current.direction === "income"
+        ? input.taxRatePercent !== undefined
+          ? round(input.taxRatePercent * 100)
+          : current.taxRateBps
+        : 0;
+    const taxCents = round((subtotalCents * taxRateBps) / 10_000);
+    patch.subtotalCents = subtotalCents;
+    patch.taxRateBps = taxRateBps;
+    patch.taxCents = taxCents;
+    patch.totalCents = subtotalCents + taxCents;
+  }
+
+  await tenantDb().update(invoices, patch, eq(invoices.id, id));
+  return { ok: true, invoice: (await getInvoice(id))! };
 }
 
 export type PaymentResult =

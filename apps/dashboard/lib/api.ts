@@ -294,6 +294,23 @@ export type InvoiceListFilters = {
   status?: InvoiceStatus;
 };
 
+// Edición: todo tocable salvo importe/IVA una vez hay pagos registrados (el
+// backend lo bloquea con 400 has_payments); null limpia el vínculo.
+export type UpdateInvoiceInput = {
+  propertyId?: string | null;
+  clientId?: string | null;
+  rentalId?: string | null;
+  vendorName?: string | null;
+  category?: InvoiceCategory;
+  concept?: string;
+  amount?: number;
+  taxRatePercent?: number;
+  issueDate?: string;
+  dueDate?: string | null;
+  status?: InvoiceStatus;
+  notes?: string | null;
+};
+
 export type CatalogModule = {
   id: string;
   code: string;
@@ -507,7 +524,7 @@ export const api = {
         body: JSON.stringify(data),
       }),
 
-    update: (slug: string, id: string, data: { status?: InvoiceStatus; notes?: string }) =>
+    update: (slug: string, id: string, data: UpdateInvoiceInput) =>
       request<{ invoice: Invoice }>(`/tenant/invoices/${id}`, {
         method: "PATCH",
         headers: { "x-tenant-slug": slug },

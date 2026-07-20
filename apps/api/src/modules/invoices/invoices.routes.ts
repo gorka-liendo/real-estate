@@ -101,9 +101,11 @@ invoices.post("/income", async (c) => {
 invoices.patch("/:id", async (c) => {
   const body = updateInvoiceSchema.safeParse(await c.req.json().catch(() => null));
   if (!body.success) return c.json({ error: "invalid_body", issues: body.error.issues }, 400);
-  const updated = await service.updateInvoice(c.req.param("id"), body.data);
-  if (!updated) return c.json({ error: "not_found" }, 404);
-  return c.json({ invoice: updated });
+  const result = await service.updateInvoice(c.req.param("id"), body.data);
+  if (!result.ok) {
+    return c.json({ error: result.error }, result.error === "not_found" ? 404 : 400);
+  }
+  return c.json({ invoice: result.invoice });
 });
 
 invoices.delete("/:id", async (c) => {

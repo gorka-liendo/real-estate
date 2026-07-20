@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, Paperclip, Plus, Trash2 } from "lucide-react";
+import { Download, Paperclip, Pencil, Plus, Trash2 } from "lucide-react";
 import { Fragment, useCallback, useEffect, useState } from "react";
 import { Badge, Button, Card, Input, Label, Select, Textarea } from "@rep/ui";
 import { useRequireModule, useWorkspace } from "@/contexts/workspace-context";
@@ -95,6 +95,7 @@ function ContabilidadInner({ slug }: { slug: string }) {
   const [clientsList, setClientsList] = useState<Client[]>([]);
   const [tab, setTab] = useState<InvoiceDirection>("income");
   const [showForm, setShowForm] = useState(false);
+  const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const [payingId, setPayingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [filterPropertyId, setFilterPropertyId] = useState("");
@@ -147,6 +148,20 @@ function ContabilidadInner({ slug }: { slug: string }) {
     setPayingId(null);
   }
 
+  function afterEdit(updated: Invoice) {
+    setItems((prev) => (prev ?? []).map((i) => (i.id === updated.id ? updated : i)));
+    setEditingInvoice(null);
+    setShowForm(false);
+  }
+
+  function startEdit(inv: Invoice) {
+    setPayingId(null);
+    setTab(inv.direction);
+    setEditingInvoice(inv);
+    setViewMode("movimientos");
+    setShowForm(true);
+  }
+
   const propNameById = Object.fromEntries(propsList.map((p) => [p.id, p.title]));
   const clientNameById = Object.fromEntries(clientsList.map((c) => [c.id, c.name]));
 
@@ -190,8 +205,9 @@ function ContabilidadInner({ slug }: { slug: string }) {
         <Button
           onClick={() => {
             setPayingId(null);
+            setEditingInvoice(null);
             setViewMode("movimientos");
-            setShowForm((v) => (viewMode === "movimientos" ? !v : true));
+            setShowForm((v) => (viewMode === "movimientos" && !editingInvoice ? !v : true));
           }}
         >
           <Plus size={16} />
@@ -238,10 +254,24 @@ function ContabilidadInner({ slug }: { slug: string }) {
         <>
       <div style={{ display: "flex", gap: "var(--ui-sp-3)", alignItems: "center", flexWrap: "wrap" }}>
         <div style={{ display: "flex", gap: "var(--ui-sp-2)" }}>
-          <TabButton active={tab === "income"} onClick={() => { setTab("income"); setShowForm(false); }}>
+          <TabButton
+            active={tab === "income"}
+            onClick={() => {
+              setTab("income");
+              setShowForm(false);
+              setEditingInvoice(null);
+            }}
+          >
             Facturas emitidas
           </TabButton>
-          <TabButton active={tab === "expense"} onClick={() => { setTab("expense"); setShowForm(false); }}>
+          <TabButton
+            active={tab === "expense"}
+            onClick={() => {
+              setTab("expense");
+              setShowForm(false);
+              setEditingInvoice(null);
+            }}
+          >
             Gastos
           </TabButton>
         </div>
@@ -298,22 +328,38 @@ function ContabilidadInner({ slug }: { slug: string }) {
             slug={slug}
             propsList={propsList}
             clientsList={clientsList}
+            initial={editingInvoice ?? undefined}
             onSaved={(inv) => {
-              setItems((prev) => [inv, ...(prev ?? [])]);
+              if (editingInvoice) {
+                afterEdit(inv);
+              } else {
+                setItems((prev) => [inv, ...(prev ?? [])]);
+                setShowForm(false);
+              }
+            }}
+            onCancel={() => {
+              setEditingInvoice(null);
               setShowForm(false);
             }}
-            onCancel={() => setShowForm(false)}
           />
         ) : (
           <ExpenseForm
             slug={slug}
             propsList={propsList}
             clientsList={clientsList}
+            initial={editingInvoice ?? undefined}
             onSaved={(inv) => {
-              setItems((prev) => [inv, ...(prev ?? [])]);
+              if (editingInvoice) {
+                afterEdit(inv);
+              } else {
+                setItems((prev) => [inv, ...(prev ?? [])]);
+                setShowForm(false);
+              }
+            }}
+            onCancel={() => {
+              setEditingInvoice(null);
               setShowForm(false);
             }}
-            onCancel={() => setShowForm(false)}
           />
         )
       ) : null}
@@ -418,6 +464,14 @@ function ContabilidadInner({ slug }: { slug: string }) {
                             Cobro
                           </Button>
                         ) : null}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => startEdit(inv)}
+                          aria-label="Editar"
+                        >
+                          <Pencil size={15} />
+                        </Button>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -616,25 +670,31 @@ function ExpenseForm({
   slug,
   propsList,
   clientsList,
+  initial,
   onSaved,
   onCancel,
 }: {
   slug: string;
   propsList: Property[];
   clientsList: Client[];
+  initial?: Invoice;
   onSaved: (i: Invoice) => void;
   onCancel: () => void;
 }) {
-  const [propertyId, setPropertyId] = useState("");
-  const [clientId, setClientId] = useState("");
-  const [vendorName, setVendorName] = useState("");
-  const [category, setCategory] = useState<InvoiceCategory>("other");
-  const [concept, setConcept] = useState("");
-  const [amount, setAmount] = useState("");
-  const [issueDate, setIssueDate] = useState(todayISO());
-  const [status, setStatus] = useState<"pending" | "paid">("paid");
+  const isEdit = initial != null;
+  const locked = isEdit && initial.paidCents > 0;
+  const [propertyId, setPropertyId] = useState(initial?.propertyId ?? "");
+  const [clientId, setClientId] = useState(initial?.clientId ?? "");
+  const [vendorName, setVendorName] = useState(initial?.vendorName ?? "");
+  const [category, setCategory] = useState<InvoiceCategory>(initial?.category ?? "other");
+  const [concept, setConcept] = useState(initial?.concept ?? "");
+  const [amount, setAmount] = useState(initial ? (initial.totalCents / 100).toFixed(2) : "");
+  const [issueDate, setIssueDate] = useState(initial?.issueDate ?? todayISO());
+  const [status, setStatus] = useState<"pending" | "paid" | "cancelled">(
+    (initial?.status as "pending" | "paid" | "cancelled" | undefined) ?? "paid",
+  );
   const [file, setFile] = useState<File | null>(null);
-  const [notes, setNotes] = useState("");
+  const [notes, setNotes] = useState(initial?.notes ?? "");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -643,20 +703,35 @@ function ExpenseForm({
     setSubmitting(true);
     setError(null);
     try {
-      const input: CreateExpenseInput = {
-        propertyId: propertyId || undefined,
-        clientId: clientId || undefined,
-        vendorName: vendorName || undefined,
-        category,
-        concept: concept || undefined,
-        amount,
-        issueDate,
-        status,
-        notes: notes || undefined,
-        file,
-      };
-      const { invoice } = await api.invoices.createExpense(slug, input);
-      onSaved(invoice);
+      if (isEdit) {
+        const { invoice } = await api.invoices.update(slug, initial.id, {
+          propertyId: propertyId || null,
+          clientId: clientId || null,
+          vendorName: vendorName || null,
+          category,
+          concept: concept || undefined,
+          amount: locked ? undefined : Number(amount),
+          issueDate,
+          status,
+          notes: notes || null,
+        });
+        onSaved(invoice);
+      } else {
+        const input: CreateExpenseInput = {
+          propertyId: propertyId || undefined,
+          clientId: clientId || undefined,
+          vendorName: vendorName || undefined,
+          category,
+          concept: concept || undefined,
+          amount,
+          issueDate,
+          status: status === "cancelled" ? "pending" : status,
+          notes: notes || undefined,
+          file,
+        };
+        const { invoice } = await api.invoices.createExpense(slug, input);
+        onSaved(invoice);
+      }
     } catch (err) {
       setError(
         err instanceof ApiError && err.message === "invalid_file_type"
@@ -708,9 +783,15 @@ function ExpenseForm({
               step="0.01"
               min="0.01"
               required
+              disabled={locked}
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
             />
+            {locked ? (
+              <p className="du-muted" style={{ fontSize: 12, marginTop: 4 }}>
+                Ya tiene un pago registrado — el importe no se puede editar.
+              </p>
+            ) : null}
           </div>
           <div>
             <Label htmlFor="ex-date">Fecha</Label>
@@ -718,19 +799,42 @@ function ExpenseForm({
           </div>
           <div>
             <Label htmlFor="ex-status">Estado</Label>
-            <Select id="ex-status" value={status} onChange={(e) => setStatus(e.target.value as "pending" | "paid")}>
+            <Select
+              id="ex-status"
+              value={status}
+              onChange={(e) => setStatus(e.target.value as "pending" | "paid" | "cancelled")}
+            >
               <option value="paid">Ya pagado</option>
               <option value="pending">Pendiente de pago</option>
+              {isEdit ? <option value="cancelled">Anulado</option> : null}
             </Select>
           </div>
           <div>
             <Label htmlFor="ex-concept">Concepto</Label>
             <Input id="ex-concept" value={concept} onChange={(e) => setConcept(e.target.value)} />
           </div>
-          <div>
-            <Label htmlFor="ex-file">Factura (PDF/imagen)</Label>
-            <Input id="ex-file" type="file" accept="application/pdf,image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
-          </div>
+          {isEdit ? (
+            initial.fileUrl ? (
+              <div>
+                <Label>Factura adjunta</Label>
+                <a
+                  href={initial.fileUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="du-muted"
+                  style={{ display: "inline-flex", alignItems: "center", gap: 4 }}
+                >
+                  <Paperclip size={14} />
+                  {initial.fileName ?? "Ver"}
+                </a>
+              </div>
+            ) : null
+          ) : (
+            <div>
+              <Label htmlFor="ex-file">Factura (PDF/imagen)</Label>
+              <Input id="ex-file" type="file" accept="application/pdf,image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+            </div>
+          )}
         </div>
 
         <div>
@@ -742,7 +846,7 @@ function ExpenseForm({
 
         <div style={{ display: "flex", gap: "var(--ui-sp-3)" }}>
           <Button type="submit" disabled={submitting}>
-            {submitting ? "Guardando…" : "Guardar gasto"}
+            {submitting ? "Guardando…" : isEdit ? "Guardar cambios" : "Guardar gasto"}
           </Button>
           <Button type="button" variant="ghost" onClick={onCancel}>
             Cancelar
@@ -757,24 +861,33 @@ function IncomeForm({
   slug,
   propsList,
   clientsList,
+  initial,
   onSaved,
   onCancel,
 }: {
   slug: string;
   propsList: Property[];
   clientsList: Client[];
+  initial?: Invoice;
   onSaved: (i: Invoice) => void;
   onCancel: () => void;
 }) {
-  const [propertyId, setPropertyId] = useState("");
-  const [clientId, setClientId] = useState("");
-  const [category, setCategory] = useState<InvoiceCategory>("management_fee");
-  const [concept, setConcept] = useState("");
-  const [amount, setAmount] = useState("");
-  const [taxRatePercent, setTaxRatePercent] = useState("21");
-  const [issueDate, setIssueDate] = useState(todayISO());
-  const [dueDate, setDueDate] = useState("");
-  const [notes, setNotes] = useState("");
+  const isEdit = initial != null;
+  const locked = isEdit && initial.paidCents > 0;
+  const [propertyId, setPropertyId] = useState(initial?.propertyId ?? "");
+  const [clientId, setClientId] = useState(initial?.clientId ?? "");
+  const [category, setCategory] = useState<InvoiceCategory>(initial?.category ?? "management_fee");
+  const [concept, setConcept] = useState(initial?.concept ?? "");
+  const [amount, setAmount] = useState(initial ? (initial.subtotalCents / 100).toFixed(2) : "");
+  const [taxRatePercent, setTaxRatePercent] = useState(
+    initial ? (initial.taxRateBps / 100).toFixed(2) : "21",
+  );
+  const [issueDate, setIssueDate] = useState(initial?.issueDate ?? todayISO());
+  const [dueDate, setDueDate] = useState(initial?.dueDate ?? "");
+  const [status, setStatus] = useState<"pending" | "cancelled">(
+    initial?.status === "cancelled" ? "cancelled" : "pending",
+  );
+  const [notes, setNotes] = useState(initial?.notes ?? "");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -783,21 +896,39 @@ function IncomeForm({
     setSubmitting(true);
     setError(null);
     try {
-      const input: CreateIncomeInput = {
-        propertyId: propertyId || undefined,
-        clientId: clientId || undefined,
-        category,
-        concept,
-        amount: Number(amount),
-        taxRatePercent: taxRatePercent ? Number(taxRatePercent) : undefined,
-        issueDate,
-        dueDate: dueDate || undefined,
-        notes: notes || undefined,
-      };
-      const { invoice } = await api.invoices.createIncome(slug, input);
-      onSaved(invoice);
+      if (isEdit) {
+        const { invoice } = await api.invoices.update(slug, initial.id, {
+          propertyId: propertyId || null,
+          clientId: clientId || null,
+          category,
+          concept,
+          amount: locked ? undefined : Number(amount),
+          taxRatePercent: locked ? undefined : taxRatePercent ? Number(taxRatePercent) : undefined,
+          issueDate,
+          dueDate: dueDate || null,
+          status: initial.status === "paid" ? undefined : status,
+          notes: notes || null,
+        });
+        onSaved(invoice);
+      } else {
+        const input: CreateIncomeInput = {
+          propertyId: propertyId || undefined,
+          clientId: clientId || undefined,
+          category,
+          concept,
+          amount: Number(amount),
+          taxRatePercent: taxRatePercent ? Number(taxRatePercent) : undefined,
+          issueDate,
+          dueDate: dueDate || undefined,
+          notes: notes || undefined,
+        };
+        const { invoice } = await api.invoices.createIncome(slug, input);
+        onSaved(invoice);
+      }
     } catch {
-      setError("No se pudo emitir la factura. Revisa los datos.");
+      setError(
+        isEdit ? "No se pudieron guardar los cambios." : "No se pudo emitir la factura. Revisa los datos.",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -839,9 +970,15 @@ function IncomeForm({
               step="0.01"
               min="0.01"
               required
+              disabled={locked}
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
             />
+            {locked ? (
+              <p className="du-muted" style={{ fontSize: 12, marginTop: 4 }}>
+                Ya tiene un cobro registrado — el importe no se puede editar.
+              </p>
+            ) : null}
           </div>
           <div>
             <Label htmlFor="in-tax">IVA (%)</Label>
@@ -850,6 +987,7 @@ function IncomeForm({
               type="number"
               step="0.01"
               min="0"
+              disabled={locked}
               value={taxRatePercent}
               onChange={(e) => setTaxRatePercent(e.target.value)}
             />
@@ -862,6 +1000,15 @@ function IncomeForm({
             <Label htmlFor="in-due">Vencimiento</Label>
             <Input id="in-due" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
           </div>
+          {isEdit && initial.status !== "paid" ? (
+            <div>
+              <Label htmlFor="in-status">Estado</Label>
+              <Select id="in-status" value={status} onChange={(e) => setStatus(e.target.value as "pending" | "cancelled")}>
+                <option value="pending">Pendiente</option>
+                <option value="cancelled">Anulada</option>
+              </Select>
+            </div>
+          ) : null}
         </div>
 
         <div>
@@ -878,7 +1025,7 @@ function IncomeForm({
 
         <div style={{ display: "flex", gap: "var(--ui-sp-3)" }}>
           <Button type="submit" disabled={submitting}>
-            {submitting ? "Emitiendo…" : "Emitir factura"}
+            {submitting ? "Guardando…" : isEdit ? "Guardar cambios" : "Emitir factura"}
           </Button>
           <Button type="button" variant="ghost" onClick={onCancel}>
             Cancelar

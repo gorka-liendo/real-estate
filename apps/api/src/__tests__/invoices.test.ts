@@ -114,6 +114,7 @@ type InvoiceJson = {
   subtotalCents: number;
   taxCents: number;
   number: string | null;
+  concept: string | null;
   fileUrl: string | null;
   fileName: string | null;
   paidCents: number;
@@ -288,6 +289,81 @@ describe("Facturas emitidas (income)", () => {
         })
       ).status,
     ).toBe(400);
+  });
+});
+
+describe("Edición", () => {
+  it("edita concepto/categoría/importe/IVA de una factura emitida sin pagos", async () => {
+    const res = await createIncome({
+      clientId: ownerId,
+      concept: "Honorarios de gestión",
+      amount: 500,
+      taxRatePercent: 21,
+      issueDate: `${year}-01-01`,
+    });
+    const { invoice } = (await res.json()) as { invoice: InvoiceJson };
+
+    const patched = await app.request(`/tenant/invoices/${invoice.id}`, {
+      method: "PATCH",
+      headers: { "x-tenant-slug": slug(), cookie, "content-type": "application/json" },
+      body: JSON.stringify({ concept: "Honorarios corregidos", amount: 600, taxRatePercent: 10 }),
+    });
+    expect(patched.status).toBe(200);
+    const { invoice: updated } = (await patched.json()) as { invoice: InvoiceJson };
+    expect(updated.concept).toBe("Honorarios corregidos");
+    expect(updated.subtotalCents).toBe(60_000);
+    expect(updated.taxCents).toBe(6_000);
+    expect(updated.totalCents).toBe(66_000);
+  });
+
+  it("bloquea tocar importe/IVA si ya tiene pagos (400 has_payments); notas/estado siguen editables", async () => {
+    const res = await createIncome({
+      clientId: ownerId,
+      concept: "Honorarios",
+      amount: 100,
+      issueDate: `${year}-01-01`,
+    });
+    const { invoice } = (await res.json()) as { invoice: InvoiceJson };
+    await app.request(`/tenant/invoices/${invoice.id}/payments`, {
+      method: "POST",
+      headers: { "x-tenant-slug": slug(), cookie, "content-type": "application/json" },
+      body: JSON.stringify({ amount: 50 }),
+    });
+
+    const blocked = await app.request(`/tenant/invoices/${invoice.id}`, {
+      method: "PATCH",
+      headers: { "x-tenant-slug": slug(), cookie, "content-type": "application/json" },
+      body: JSON.stringify({ amount: 999 }),
+    });
+    expect(blocked.status).toBe(400);
+    const blockedBody = (await blocked.json()) as { error: string };
+    expect(blockedBody.error).toBe("has_payments");
+
+    const notesOk = await app.request(`/tenant/invoices/${invoice.id}`, {
+      method: "PATCH",
+      headers: { "x-tenant-slug": slug(), cookie, "content-type": "application/json" },
+      body: JSON.stringify({ notes: "seguimiento" }),
+    });
+    expect(notesOk.status).toBe(200);
+  });
+
+  it("valida el nuevo inmueble/cliente al editar (400 invalid_property); 404 si no existe", async () => {
+    const res = await createExpense({ category: "water", amount: "10", issueDate: `${year}-01-01` });
+    const { invoice } = (await res.json()) as { invoice: InvoiceJson };
+
+    const invalid = await app.request(`/tenant/invoices/${invoice.id}`, {
+      method: "PATCH",
+      headers: { "x-tenant-slug": slug(), cookie, "content-type": "application/json" },
+      body: JSON.stringify({ propertyId: "00000000-0000-0000-0000-000000000000" }),
+    });
+    expect(invalid.status).toBe(400);
+
+    const missing = await app.request(`/tenant/invoices/00000000-0000-0000-0000-000000000000`, {
+      method: "PATCH",
+      headers: { "x-tenant-slug": slug(), cookie, "content-type": "application/json" },
+      body: JSON.stringify({ concept: "x" }),
+    });
+    expect(missing.status).toBe(404);
   });
 });
 
