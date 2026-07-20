@@ -53,6 +53,8 @@ function ContabilidadInner({ slug }: { slug: string }) {
   const [showForm, setShowForm] = useState(false);
   const [payingId, setPayingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [filterPropertyId, setFilterPropertyId] = useState("");
+  const [filterClientId, setFilterClientId] = useState("");
 
   const load = useCallback(async () => {
     try {
@@ -100,7 +102,14 @@ function ContabilidadInner({ slug }: { slug: string }) {
     setPayingId(null);
   }
 
-  const all = items ?? [];
+  const propNameById = Object.fromEntries(propsList.map((p) => [p.id, p.title]));
+  const clientNameById = Object.fromEntries(clientsList.map((c) => [c.id, c.name]));
+
+  const all = (items ?? []).filter(
+    (i) =>
+      (!filterPropertyId || i.propertyId === filterPropertyId) &&
+      (!filterClientId || i.clientId === filterClientId),
+  );
   const yearItems = all.filter((i) => i.issueDate.startsWith(String(currentYear)) && i.status !== "cancelled");
   const incomeCollected = yearItems.filter((i) => i.direction === "income").reduce((a, i) => a + i.paidCents, 0);
   const incomePending = yearItems
@@ -141,13 +150,60 @@ function ContabilidadInner({ slug }: { slug: string }) {
 
       {error ? <p className="du-alert">{error}</p> : null}
 
-      <div style={{ display: "flex", gap: "var(--ui-sp-2)" }}>
-        <TabButton active={tab === "income"} onClick={() => { setTab("income"); setShowForm(false); }}>
-          Facturas emitidas
-        </TabButton>
-        <TabButton active={tab === "expense"} onClick={() => { setTab("expense"); setShowForm(false); }}>
-          Gastos
-        </TabButton>
+      <div style={{ display: "flex", gap: "var(--ui-sp-3)", alignItems: "center", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: "var(--ui-sp-2)" }}>
+          <TabButton active={tab === "income"} onClick={() => { setTab("income"); setShowForm(false); }}>
+            Facturas emitidas
+          </TabButton>
+          <TabButton active={tab === "expense"} onClick={() => { setTab("expense"); setShowForm(false); }}>
+            Gastos
+          </TabButton>
+        </div>
+
+        {propsList.length > 0 ? (
+          <Select
+            aria-label="Filtrar por inmueble"
+            value={filterPropertyId}
+            onChange={(e) => setFilterPropertyId(e.target.value)}
+            style={{ maxWidth: 220 }}
+          >
+            <option value="">Todos los inmuebles</option>
+            {propsList.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.title}
+              </option>
+            ))}
+          </Select>
+        ) : null}
+
+        {clientsList.length > 0 ? (
+          <Select
+            aria-label="Filtrar por cliente"
+            value={filterClientId}
+            onChange={(e) => setFilterClientId(e.target.value)}
+            style={{ maxWidth: 220 }}
+          >
+            <option value="">Todos los clientes</option>
+            {clientsList.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </Select>
+        ) : null}
+
+        {filterPropertyId || filterClientId ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setFilterPropertyId("");
+              setFilterClientId("");
+            }}
+          >
+            Quitar filtros
+          </Button>
+        ) : null}
       </div>
 
       {showForm ? (
@@ -194,6 +250,8 @@ function ContabilidadInner({ slug }: { slug: string }) {
                   <th>Fecha</th>
                   <th>Concepto</th>
                   <th>Categoría</th>
+                  <th>Inmueble</th>
+                  <th>Cliente</th>
                   <th>Importe</th>
                   <th>Estado</th>
                   <th>Adjunto</th>
@@ -211,6 +269,12 @@ function ContabilidadInner({ slug }: { slug: string }) {
                       <td>{inv.concept ?? "—"}</td>
                       <td>
                         <Badge variant="default">{INVOICE_CATEGORY_LABELS[inv.category]}</Badge>
+                      </td>
+                      <td className="du-muted">
+                        {inv.propertyId ? (propNameById[inv.propertyId] ?? "—") : "—"}
+                      </td>
+                      <td className="du-muted">
+                        {inv.clientId ? (clientNameById[inv.clientId] ?? "—") : "—"}
                       </td>
                       <td style={{ whiteSpace: "nowrap", fontWeight: 500 }}>
                         {eurCents(inv.totalCents)}
@@ -280,7 +344,7 @@ function ContabilidadInner({ slug }: { slug: string }) {
                     </tr>
                     {payingId === inv.id ? (
                       <tr>
-                        <td colSpan={tab === "income" ? 8 : 7} style={{ background: "var(--ui-hover)" }}>
+                        <td colSpan={tab === "income" ? 10 : 9} style={{ background: "var(--ui-hover)" }}>
                           <PaymentForm slug={slug} invoice={inv} onSaved={afterPayment} onCancel={() => setPayingId(null)} />
                         </td>
                       </tr>
