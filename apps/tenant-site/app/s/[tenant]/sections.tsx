@@ -1,5 +1,12 @@
 import type { ComponentType } from "react";
-import { PillLink, PropertyGrid, type Listing } from "@rep/ui-tenant";
+import {
+  Faq,
+  PillLink,
+  PropertyGrid,
+  StatGrid,
+  Testimonials,
+  type Listing,
+} from "@rep/ui-tenant";
 import type { PublicProperty, SiteConfig, SiteSection, SiteSectionType } from "@/lib/tenant";
 import { ValuationWidget } from "./ValuationWidget";
 
@@ -154,8 +161,70 @@ function ValuationBody({
   );
 }
 
+// --- Cifras -----------------------------------------------------------------
+function StatsBody({
+  section,
+}: {
+  section: Extract<SiteSection, { type: "stats" }>;
+  ctx: SectionContext;
+}) {
+  const items = section.items ?? [];
+  if (items.length === 0) return null; // sección vacía → no se pinta
+  return (
+    <section className="rt-section" id="cifras">
+      <div className="rt-wrap">
+        {section.eyebrow ? <div className="rt-eyebrow">{section.eyebrow}</div> : null}
+        {section.title ? <h2 className="rt-section-title">{section.title}</h2> : null}
+        <StatGrid items={items} />
+      </div>
+    </section>
+  );
+}
+
+// --- Testimonios ------------------------------------------------------------
+function TestimonialsBody({
+  section,
+}: {
+  section: Extract<SiteSection, { type: "testimonials" }>;
+  ctx: SectionContext;
+}) {
+  const items = (section.items ?? []).filter((t) => t.quote.trim() && t.author.trim());
+  if (items.length === 0) return null;
+  return (
+    <section className="rt-section" id="opiniones">
+      <div className="rt-wrap">
+        {section.eyebrow ? <div className="rt-eyebrow">{section.eyebrow}</div> : null}
+        {section.title ? <h2 className="rt-section-title">{section.title}</h2> : null}
+        <Testimonials items={items} />
+      </div>
+    </section>
+  );
+}
+
+// --- Preguntas frecuentes ---------------------------------------------------
+function FaqBody({
+  section,
+}: {
+  section: Extract<SiteSection, { type: "faq" }>;
+  ctx: SectionContext;
+}) {
+  const items = (section.items ?? []).filter((f) => f.question.trim() && f.answer.trim());
+  if (items.length === 0) return null;
+  return (
+    <section className="rt-section" id="faq">
+      <div className="rt-wrap">
+        {section.eyebrow ? <div className="rt-eyebrow">{section.eyebrow}</div> : null}
+        {section.title ? <h2 className="rt-section-title">{section.title}</h2> : null}
+        <Faq items={items} />
+      </div>
+    </section>
+  );
+}
+
 // Registro tipado: la clave es el `type` de la sección. eslint no infiere la
 // covarianza del ComponentType con Extract, de ahí el cast controlado.
+// `navLabel` presente = la sección aparece en la nav (las cintas de contenido
+// como Cifras llevan ancla para deep-links pero NO saturan el menú).
 export const SECTION_REGISTRY: Record<SiteSectionType, SectionDef> = {
   hero: { Body: HeroBody as SectionDef["Body"] },
   properties: {
@@ -168,6 +237,18 @@ export const SECTION_REGISTRY: Record<SiteSectionType, SectionDef> = {
     anchor: "valoracion",
     navLabel: "Valora tu piso",
     Body: ValuationBody as SectionDef["Body"],
+  },
+  stats: {
+    anchor: "cifras",
+    Body: StatsBody as SectionDef["Body"],
+  },
+  testimonials: {
+    anchor: "opiniones",
+    Body: TestimonialsBody as SectionDef["Body"],
+  },
+  faq: {
+    anchor: "faq",
+    Body: FaqBody as SectionDef["Body"],
   },
 };
 
@@ -207,10 +288,13 @@ export function visibleSections(
   });
 }
 
-/** Ítems de nav derivados de las secciones visibles que tienen ancla. */
+/** Ítems de nav derivados de las secciones visibles con ancla Y etiqueta de
+ *  nav (las cintas de contenido sin `navLabel` no entran en el menú). */
 export function sectionNavItems(sections: SiteSection[]): { label: string; href: string }[] {
   return sections.flatMap((s) => {
     const def = SECTION_REGISTRY[s.type];
-    return def.anchor ? [{ label: def.navLabel ?? def.anchor, href: `#${def.anchor}` }] : [];
+    return def.anchor && def.navLabel
+      ? [{ label: def.navLabel, href: `#${def.anchor}` }]
+      : [];
   });
 }

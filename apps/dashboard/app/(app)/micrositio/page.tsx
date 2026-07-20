@@ -11,14 +11,125 @@ import {
   newSection,
   SECTION_META_BY_TYPE,
   SECTION_TYPE_METAS,
+  type ListField,
+  type ScalarField,
   type SectionField,
 } from "@/lib/microsite-sections";
 
-// Lee un campo de una sección (unión discriminada) de forma genérica para el
-// editor data-driven. Cast localizado y controlado.
+// Lee un campo escalar de una sección (unión discriminada) de forma genérica
+// para el editor data-driven. Cast localizado y controlado.
 function fieldValue(section: SiteSection, key: string): string {
   const v = (section as unknown as Record<string, unknown>)[key];
   return typeof v === "string" ? v : "";
+}
+// Lee un campo LISTA (array de sub-ítems) de forma genérica.
+function listValue(section: SiteSection, key: string): Record<string, string>[] {
+  const v = (section as unknown as Record<string, unknown>)[key];
+  return Array.isArray(v) ? (v as Record<string, string>[]) : [];
+}
+
+// Input escalar reutilizable: lo usan tanto los campos de nivel de sección como
+// los sub-campos de cada ítem de una lista.
+function ScalarInput({
+  id,
+  field,
+  value,
+  onChange,
+}: {
+  id: string;
+  field: ScalarField;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  if (field.type === "select") {
+    return (
+      <Select
+        id={id}
+        value={value || field.options![0]!.value}
+        onChange={(e) => onChange(e.target.value)}
+      >
+        {field.options!.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </Select>
+    );
+  }
+  if (field.type === "textarea") {
+    return (
+      <Textarea
+        id={id}
+        placeholder={field.placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    );
+  }
+  return (
+    <Input
+      id={id}
+      placeholder={field.placeholder}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+    />
+  );
+}
+
+// Editor de una lista de sub-ítems repetibles (p.ej. las cifras de la sección
+// Cifras). Cada ítem expone sus sub-campos escalares + un botón de quitar.
+function SectionListField({
+  section,
+  field,
+  onChange,
+}: {
+  section: SiteSection;
+  field: ListField;
+  onChange: (value: Record<string, string>[]) => void;
+}) {
+  const items = listValue(section, field.key);
+  const atMax = field.max != null && items.length >= field.max;
+
+  return (
+    <div>
+      <Label>{field.label}</Label>
+      <div style={{ display: "grid", gap: "var(--ui-sp-3)", marginTop: "var(--ui-sp-2)" }}>
+        {items.map((item, i) => (
+          <div key={i} style={{ display: "flex", gap: "var(--ui-sp-2)", alignItems: "flex-end" }}>
+            {field.itemFields.map((sf) => (
+              <div key={sf.key} style={{ flex: 1, minWidth: 0 }}>
+                <Label htmlFor={`${section.id}-${field.key}-${i}-${sf.key}`}>{sf.label}</Label>
+                <ScalarInput
+                  id={`${section.id}-${field.key}-${i}-${sf.key}`}
+                  field={sf}
+                  value={item[sf.key] ?? ""}
+                  onChange={(v) =>
+                    onChange(items.map((it, j) => (j === i ? { ...it, [sf.key]: v } : it)))
+                  }
+                />
+              </div>
+            ))}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onChange(items.filter((_, j) => j !== i))}
+              aria-label={`Quitar ${field.itemLabel}`}
+            >
+              <Trash2 size={15} />
+            </Button>
+          </div>
+        ))}
+        {!atMax ? (
+          <div>
+            <Button variant="outline" size="sm" onClick={() => onChange([...items, {}])}>
+              <Plus size={15} />
+              Añadir {field.itemLabel}
+            </Button>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
 }
 
 function SectionFieldInput({
@@ -28,41 +139,26 @@ function SectionFieldInput({
 }: {
   section: SiteSection;
   field: SectionField;
-  onChange: (key: string, value: string) => void;
+  onChange: (key: string, value: unknown) => void;
 }) {
-  const id = `${section.id}-${field.key}`;
-  const raw = fieldValue(section, field.key);
-
+  if (field.type === "list") {
+    return (
+      <SectionListField
+        section={section}
+        field={field}
+        onChange={(value) => onChange(field.key, value)}
+      />
+    );
+  }
   return (
     <div>
-      <Label htmlFor={id}>{field.label}</Label>
-      {field.type === "select" ? (
-        <Select
-          id={id}
-          value={raw || field.options![0]!.value}
-          onChange={(e) => onChange(field.key, e.target.value)}
-        >
-          {field.options!.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </Select>
-      ) : field.type === "textarea" ? (
-        <Textarea
-          id={id}
-          placeholder={field.placeholder}
-          value={raw}
-          onChange={(e) => onChange(field.key, e.target.value)}
-        />
-      ) : (
-        <Input
-          id={id}
-          placeholder={field.placeholder}
-          value={raw}
-          onChange={(e) => onChange(field.key, e.target.value)}
-        />
-      )}
+      <Label htmlFor={`${section.id}-${field.key}`}>{field.label}</Label>
+      <ScalarInput
+        id={`${section.id}-${field.key}`}
+        field={field}
+        value={fieldValue(section, field.key)}
+        onChange={(value) => onChange(field.key, value)}
+      />
     </div>
   );
 }
@@ -79,7 +175,7 @@ function SectionCard({
   section: SiteSection;
   index: number;
   total: number;
-  onPatch: (id: string, key: string, value: string) => void;
+  onPatch: (id: string, key: string, value: unknown) => void;
   onToggle: (id: string) => void;
   onMove: (id: string, dir: -1 | 1) => void;
   onRemove: (id: string) => void;
@@ -191,7 +287,7 @@ function Editor({ slug, name }: { slug: string; name: string }) {
   function setSections(next: SiteSection[]) {
     set("sections", next);
   }
-  function patchSection(id: string, key: string, value: string) {
+  function patchSection(id: string, key: string, value: unknown) {
     setSections(sections.map((s) => (s.id === id ? ({ ...s, [key]: value } as SiteSection) : s)));
   }
   function toggleSection(id: string) {

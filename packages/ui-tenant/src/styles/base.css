@@ -1142,6 +1142,104 @@
   margin: 0;
 }
 
+/* ===== rejilla de cifras (sección "stats") ===== */
+.rt-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--tenant-sp-5) var(--tenant-sp-4);
+  margin-top: var(--tenant-sp-5);
+}
+.rt-stat {
+  border-top: 1px solid var(--tenant-border);
+  padding-top: var(--tenant-sp-3);
+}
+.rt-stat__v {
+  font-family: var(--tenant-font-display);
+  font-weight: 800;
+  font-size: 44px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--tenant-text);
+}
+.rt-stat__l {
+  margin-top: var(--tenant-sp-2);
+  color: var(--tenant-muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+/* ===== testimonios (sección "testimonials") ===== */
+.rt-testimonials {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--tenant-sp-5);
+  margin-top: var(--tenant-sp-5);
+}
+.rt-testimonial {
+  margin: 0;
+  padding: var(--tenant-sp-5);
+  border: 1px solid var(--tenant-border);
+  border-radius: var(--tenant-radius);
+}
+.rt-testimonial__quote {
+  margin: 0;
+  font-family: var(--tenant-font-display);
+  font-weight: 500;
+  font-size: 20px;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  color: var(--tenant-text);
+}
+.rt-testimonial__author {
+  margin-top: var(--tenant-sp-4);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tenant-text);
+}
+.rt-testimonial__role {
+  font-weight: 400;
+  color: var(--tenant-muted);
+}
+
+/* ===== preguntas frecuentes (sección "faq") — acordeón nativo ===== */
+.rt-faq {
+  margin-top: var(--tenant-sp-5);
+  max-width: 68ch;
+}
+.rt-faq__item {
+  border-bottom: 1px solid var(--tenant-border);
+}
+.rt-faq__q {
+  cursor: pointer;
+  list-style: none;
+  padding: var(--tenant-sp-4) 0;
+  font-family: var(--tenant-font-display);
+  font-weight: 700;
+  font-size: 17px;
+  color: var(--tenant-text);
+  display: flex;
+  justify-content: space-between;
+  gap: var(--tenant-sp-4);
+}
+.rt-faq__q::-webkit-details-marker {
+  display: none;
+}
+.rt-faq__q::after {
+  content: "+";
+  font-weight: 400;
+  color: var(--tenant-muted);
+}
+.rt-faq__item[open] .rt-faq__q::after {
+  content: "–";
+}
+.rt-faq__a {
+  margin: 0 0 var(--tenant-sp-4) 0;
+  color: var(--tenant-muted);
+  font-size: 15px;
+  line-height: 1.6;
+  max-width: 60ch;
+}
+
 /* ===== menú móvil overlay — signature #7 ===== */
 .rt-mobilemenu {
   position: fixed;
@@ -1228,8 +1326,12 @@
   .rt-photopair {
     grid-template-columns: 1fr;
   }
-  .rt-steps {
+  .rt-steps,
+  .rt-stats {
     grid-template-columns: repeat(2, 1fr);
+  }
+  .rt-testimonials {
+    grid-template-columns: 1fr;
   }
   .rt-footer {
     grid-template-columns: 1fr 1fr;

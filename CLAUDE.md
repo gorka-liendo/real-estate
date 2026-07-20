@@ -624,8 +624,25 @@ packages/
       plano. `SiteSection` mirror en `lib/api.ts`. Verificado E2E en navegador:
       reordenar valuation↑ → guardar → BBDD `["hero","valuation","properties"]` →
       micrositio pinta ese orden y la nav se re-deriva igual. Seed re-ejecutado para
-      restaurar martinez al estado canónico (derivación). Pendiente: Paso 3
-      (secciones de contenido nuevas: Equipo/Testimonios/Cifras/FAQ/Servicios/Mapa),
-      Paso 4 (secciones-producto de pago: Blog…).
+      restaurar martinez al estado canónico (derivación).
+- [x] **Micrositio: secciones de contenido Cifras/Opiniones/FAQ (Paso 3)** — tres
+      secciones nuevas gratis + la INFRAESTRUCTURA de listas de sub-ítems
+      repetibles (el editor solo tenía campos escalares). Nuevo tipo de campo
+      `list` en `apps/dashboard/lib/microsite-sections.ts` (`ListField`:
+      `itemLabel`/`itemFields[]`/`max`) + componentes de editor `SectionListField`
+      y `ScalarInput` reutilizable. Tipos nuevos en la unión `SiteSection`
+      (@rep/db + api zod discriminada + mirrors tenant-site/dashboard):
+      `stats` (items value/label), `testimonials` (quote/author/role),
+      `faq` (question/answer). DS: `StatGrid`, `Testimonials`, `Faq` (acordeón
+      nativo <details>, sin JS) en `@rep/ui-tenant` + clases `rt-stats`/`rt-stat*`,
+      `rt-testimonials`/`rt-testimonial*`, `rt-faq*` 100% tokens `--tenant-*`
+      (responsive). Bodies + entradas de registro en tenant-site sections.tsx;
+      cintas de contenido llevan ancla (deep-link) pero SIN `navLabel` → no saturan
+      la nav (`sectionNavItems` ahora exige navLabel). Sección vacía (sin ítems) no
+      se pinta. Palette "Añadir" del editor las ofrece (sin moduleGate = gratis).
+      Verificado E2E: alta de Cifras con 3 ítems por el editor → BBDD → micrositio;
+      Opiniones y FAQ inyectadas → render correcto en Dwell + acordeón +/–.
+      104 tests API, typecheck+lint limpios. Pendiente: Paso 4 (secciones-producto
+      de pago: Blog…); otras de contenido posibles (Equipo con fotos, Servicios, Mapa).
 - [ ] **Pendiente retomar**: theming/fuentes por inmobiliaria (ver gotcha de
       next/font arriba) y edición de marca en Ajustes.

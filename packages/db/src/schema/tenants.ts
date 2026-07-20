@@ -70,7 +70,34 @@ export type ValuationSection = SiteSectionBase & {
   title?: string;
   intro?: string;
 };
-export type SiteSection = HeroSection | PropertiesSection | ValuationSection;
+export type StatItem = { value: string; label: string };
+export type StatsSection = SiteSectionBase & {
+  type: "stats";
+  eyebrow?: string;
+  title?: string;
+  items?: StatItem[];
+};
+export type TestimonialItem = { quote: string; author: string; role?: string };
+export type TestimonialsSection = SiteSectionBase & {
+  type: "testimonials";
+  eyebrow?: string;
+  title?: string;
+  items?: TestimonialItem[];
+};
+export type FaqItem = { question: string; answer: string };
+export type FaqSection = SiteSectionBase & {
+  type: "faq";
+  eyebrow?: string;
+  title?: string;
+  items?: FaqItem[];
+};
+export type SiteSection =
+  | HeroSection
+  | PropertiesSection
+  | ValuationSection
+  | StatsSection
+  | TestimonialsSection
+  | FaqSection;
 export type SiteSectionType = SiteSection["type"];
 
 export type SiteConfig = {

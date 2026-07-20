@@ -9,14 +9,27 @@ import type { SiteConfig, SiteSection, SiteSectionType } from "./api";
 // Añadir una sección nueva = una entrada aquí + su Body en tenant-site.
 // ============================================================================
 
-export type SectionFieldType = "text" | "textarea" | "select";
-export type SectionField = {
+// Campo escalar (text/textarea/select) o LISTA de sub-ítems repetibles
+// (type "list"): cada ítem tiene sus propios sub-campos escalares. Con esto
+// las secciones de contenido con varias entradas (Cifras, y más adelante
+// Testimonios/FAQ/Servicios) se editan sin código a medida.
+export type ScalarFieldType = "text" | "textarea" | "select";
+export type ScalarField = {
   key: string;
   label: string;
-  type: SectionFieldType;
+  type: ScalarFieldType;
   placeholder?: string;
   options?: { value: string; label: string }[];
 };
+export type ListField = {
+  key: string;
+  label: string;
+  type: "list";
+  itemLabel: string; // singular, p.ej. "Cifra" → botón "Añadir Cifra"
+  itemFields: ScalarField[];
+  max?: number;
+};
+export type SectionField = ScalarField | ListField;
 export type SectionTypeMeta = {
   type: SiteSectionType;
   label: string;
@@ -74,6 +87,82 @@ export const SECTION_TYPE_METAS: SectionTypeMeta[] = [
         label: "Texto introductorio",
         type: "textarea",
         placeholder: "Explica en una o dos frases cómo funciona la valoración.",
+      },
+    ],
+  },
+  {
+    type: "stats",
+    label: "Cifras",
+    description: "Cifras clave que transmiten confianza (años, ventas, valoración…).",
+    fields: [
+      { key: "eyebrow", label: "Antetítulo", type: "text", placeholder: "Por qué elegirnos" },
+      { key: "title", label: "Título", type: "text", placeholder: "En cifras" },
+      {
+        key: "items",
+        label: "Cifras",
+        type: "list",
+        itemLabel: "Cifra",
+        max: 8,
+        itemFields: [
+          { key: "value", label: "Valor", type: "text", placeholder: "+20" },
+          { key: "label", label: "Etiqueta", type: "text", placeholder: "años de experiencia" },
+        ],
+      },
+    ],
+  },
+  {
+    type: "testimonials",
+    label: "Opiniones",
+    description: "Testimonios de clientes: prueba social que ayuda a convertir.",
+    fields: [
+      { key: "eyebrow", label: "Antetítulo", type: "text", placeholder: "Lo que dicen de nosotros" },
+      { key: "title", label: "Título", type: "text", placeholder: "Opiniones de clientes" },
+      {
+        key: "items",
+        label: "Testimonios",
+        type: "list",
+        itemLabel: "Testimonio",
+        max: 12,
+        itemFields: [
+          {
+            key: "quote",
+            label: "Cita",
+            type: "textarea",
+            placeholder: "Nos ayudaron a vender en tres semanas.",
+          },
+          { key: "author", label: "Autor", type: "text", placeholder: "Ana G." },
+          { key: "role", label: "Detalle (opcional)", type: "text", placeholder: "Vendió en Deusto" },
+        ],
+      },
+    ],
+  },
+  {
+    type: "faq",
+    label: "Preguntas frecuentes",
+    description: "Resuelve dudas comunes y reduce fricción antes de que te escriban.",
+    fields: [
+      { key: "eyebrow", label: "Antetítulo", type: "text", placeholder: "¿Dudas?" },
+      { key: "title", label: "Título", type: "text", placeholder: "Preguntas frecuentes" },
+      {
+        key: "items",
+        label: "Preguntas",
+        type: "list",
+        itemLabel: "Pregunta",
+        max: 20,
+        itemFields: [
+          {
+            key: "question",
+            label: "Pregunta",
+            type: "text",
+            placeholder: "¿Cobráis por la valoración?",
+          },
+          {
+            key: "answer",
+            label: "Respuesta",
+            type: "textarea",
+            placeholder: "No, la valoración inicial es gratuita y sin compromiso.",
+          },
+        ],
       },
     ],
   },

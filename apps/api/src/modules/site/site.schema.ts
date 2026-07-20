@@ -38,10 +38,49 @@ const valuationSection = z.object({
   title: z.string().max(120).optional(),
   intro: z.string().max(400).optional(),
 });
+const statsSection = z.object({
+  ...sectionBase,
+  type: z.literal("stats"),
+  eyebrow: z.string().max(80).optional(),
+  title: z.string().max(120).optional(),
+  items: z
+    .array(z.object({ value: z.string().max(20), label: z.string().max(60) }))
+    .max(8)
+    .optional(),
+});
+const testimonialsSection = z.object({
+  ...sectionBase,
+  type: z.literal("testimonials"),
+  eyebrow: z.string().max(80).optional(),
+  title: z.string().max(120).optional(),
+  items: z
+    .array(
+      z.object({
+        quote: z.string().max(400),
+        author: z.string().max(80),
+        role: z.string().max(80).optional(),
+      }),
+    )
+    .max(12)
+    .optional(),
+});
+const faqSection = z.object({
+  ...sectionBase,
+  type: z.literal("faq"),
+  eyebrow: z.string().max(80).optional(),
+  title: z.string().max(120).optional(),
+  items: z
+    .array(z.object({ question: z.string().max(200), answer: z.string().max(800) }))
+    .max(20)
+    .optional(),
+});
 const siteSection = z.discriminatedUnion("type", [
   heroSection,
   propertiesSection,
   valuationSection,
+  statsSection,
+  testimonialsSection,
+  faqSection,
 ]);
 
 // Contenido del micrositio (site_config). Todo opcional: el editor manda el objeto
