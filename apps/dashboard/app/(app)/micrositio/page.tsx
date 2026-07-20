@@ -1,13 +1,165 @@
 "use client";
 
-import { ExternalLink, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, ExternalLink, Plus, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { Button, ButtonLink, Card, Input, Label, Select, Textarea } from "@rep/ui";
+import { Button, ButtonLink, Card, Input, Label, Select, Switch, Textarea } from "@rep/ui";
 import { useRequireModule, useWorkspace } from "@/contexts/workspace-context";
-import { api, type SiteConfig, type SocialLink } from "@/lib/api";
+import { api, type SiteConfig, type SiteSection, type SocialLink } from "@/lib/api";
 import { TENANT_SITE_URL } from "@/lib/config";
+import {
+  deriveEditorSections,
+  newSection,
+  SECTION_META_BY_TYPE,
+  SECTION_TYPE_METAS,
+  type SectionField,
+} from "@/lib/microsite-sections";
+
+// Lee un campo de una sección (unión discriminada) de forma genérica para el
+// editor data-driven. Cast localizado y controlado.
+function fieldValue(section: SiteSection, key: string): string {
+  const v = (section as unknown as Record<string, unknown>)[key];
+  return typeof v === "string" ? v : "";
+}
+
+function SectionFieldInput({
+  section,
+  field,
+  onChange,
+}: {
+  section: SiteSection;
+  field: SectionField;
+  onChange: (key: string, value: string) => void;
+}) {
+  const id = `${section.id}-${field.key}`;
+  const raw = fieldValue(section, field.key);
+
+  return (
+    <div>
+      <Label htmlFor={id}>{field.label}</Label>
+      {field.type === "select" ? (
+        <Select
+          id={id}
+          value={raw || field.options![0]!.value}
+          onChange={(e) => onChange(field.key, e.target.value)}
+        >
+          {field.options!.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </Select>
+      ) : field.type === "textarea" ? (
+        <Textarea
+          id={id}
+          placeholder={field.placeholder}
+          value={raw}
+          onChange={(e) => onChange(field.key, e.target.value)}
+        />
+      ) : (
+        <Input
+          id={id}
+          placeholder={field.placeholder}
+          value={raw}
+          onChange={(e) => onChange(field.key, e.target.value)}
+        />
+      )}
+    </div>
+  );
+}
+
+function SectionCard({
+  section,
+  index,
+  total,
+  onPatch,
+  onToggle,
+  onMove,
+  onRemove,
+}: {
+  section: SiteSection;
+  index: number;
+  total: number;
+  onPatch: (id: string, key: string, value: string) => void;
+  onToggle: (id: string) => void;
+  onMove: (id: string, dir: -1 | 1) => void;
+  onRemove: (id: string) => void;
+}) {
+  const meta = SECTION_META_BY_TYPE[section.type];
+
+  return (
+    <Card>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: "var(--ui-sp-3)" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onMove(section.id, -1)}
+            disabled={index === 0}
+            aria-label="Subir sección"
+          >
+            <ChevronUp size={16} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onMove(section.id, 1)}
+            disabled={index === total - 1}
+            aria-label="Bajar sección"
+          >
+            <ChevronDown size={16} />
+          </Button>
+        </div>
+
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+            <div>
+              <h3 className="du-h3">{meta.label}</h3>
+              <p className="du-muted" style={{ fontSize: 13, marginTop: 2 }}>
+                {meta.description}
+              </p>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "var(--ui-sp-2)" }}>
+              <Switch
+                checked={section.enabled}
+                onChange={() => onToggle(section.id)}
+                label={`${section.enabled ? "Ocultar" : "Mostrar"} ${meta.label}`}
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onRemove(section.id)}
+                aria-label={`Quitar ${meta.label}`}
+              >
+                <Trash2 size={15} />
+              </Button>
+            </div>
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gap: "var(--ui-sp-4)",
+              marginTop: "var(--ui-sp-4)",
+              opacity: section.enabled ? 1 : 0.55,
+            }}
+          >
+            {meta.fields.map((field) => (
+              <SectionFieldInput
+                key={field.key}
+                section={section}
+                field={field}
+                onChange={(key, value) => onPatch(section.id, key, value)}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+}
 
 function Editor({ slug, name }: { slug: string; name: string }) {
+  const { hasModule } = useWorkspace();
   const [config, setConfig] = useState<SiteConfig | null>(null);
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<number | null>(null);
@@ -15,11 +167,15 @@ function Editor({ slug, name }: { slug: string; name: string }) {
 
   const load = useCallback(async () => {
     try {
-      setConfig((await api.site.get(slug)).siteConfig ?? {});
+      const loaded = (await api.site.get(slug)).siteConfig ?? {};
+      // Materializa la lista de secciones (persistidas o derivadas) para que
+      // el editor siempre trabaje con un array concreto y el primer guardado
+      // la persista.
+      setConfig({ ...loaded, sections: deriveEditorSections(loaded, hasModule) });
     } catch {
       setError("No se pudo cargar la configuración.");
     }
-  }, [slug]);
+  }, [slug, hasModule]);
 
   useEffect(() => {
     void load();
@@ -30,21 +186,58 @@ function Editor({ slug, name }: { slug: string; name: string }) {
     setSavedAt(null);
   }
 
-  function setSocial(next: SocialLink[]) {
-    set("social", next);
+  const sections = config?.sections ?? [];
+
+  function setSections(next: SiteSection[]) {
+    set("sections", next);
   }
+  function patchSection(id: string, key: string, value: string) {
+    setSections(sections.map((s) => (s.id === id ? ({ ...s, [key]: value } as SiteSection) : s)));
+  }
+  function toggleSection(id: string) {
+    setSections(sections.map((s) => (s.id === id ? { ...s, enabled: !s.enabled } : s)));
+  }
+  function moveSection(id: string, dir: -1 | 1) {
+    const i = sections.findIndex((s) => s.id === id);
+    const j = i + dir;
+    if (i < 0 || j < 0 || j >= sections.length) return;
+    const next = [...sections];
+    [next[i], next[j]] = [next[j]!, next[i]!];
+    setSections(next);
+  }
+  function removeSection(id: string) {
+    setSections(sections.filter((s) => s.id !== id));
+  }
+  function addSection(type: SiteSection["type"]) {
+    setSections([...sections, newSection(type)]);
+  }
+
+  // Tipos que se pueden AÑADIR: no presentes ya + con su módulo (si lo exigen).
+  const presentTypes = new Set(sections.map((s) => s.type));
+  const addableTypes = SECTION_TYPE_METAS.filter(
+    (m) => !presentTypes.has(m.type) && (!m.moduleGate || hasModule(m.moduleGate)),
+  );
 
   async function save() {
     if (!config) return;
     setSaving(true);
     setError(null);
     try {
+      // `sections` es la fuente de verdad del hero → se dejan de escribir los
+      // campos planos legacy (template/hero*). El resto (footer/contacto) sigue.
+      const { template, heroEyebrow, heroTitle, heroSubtitle, ...rest } = config;
+      void template;
+      void heroEyebrow;
+      void heroTitle;
+      void heroSubtitle;
       const clean: SiteConfig = {
-        ...config,
+        ...rest,
         social: (config.social ?? []).filter((s) => s.label.trim() && s.url.trim()),
+        sections,
       };
       const res = await api.site.update(slug, clean);
-      setConfig(res.siteConfig ?? {});
+      const saved = res.siteConfig ?? {};
+      setConfig({ ...saved, sections: deriveEditorSections(saved, hasModule) });
       setSavedAt(Date.now());
     } catch {
       setError("No se pudo guardar. Revisa los campos.");
@@ -76,54 +269,40 @@ function Editor({ slug, name }: { slug: string; name: string }) {
 
       {error ? <p className="du-alert">{error}</p> : null}
 
-      <Card>
-        <h2 className="du-h3" style={{ marginBottom: "var(--ui-sp-4)" }}>
-          Portada
+      <div>
+        <h2 className="du-h2" style={{ marginBottom: 4 }}>
+          Secciones de la web
         </h2>
-        <div style={{ display: "grid", gap: "var(--ui-sp-4)" }}>
-          <div>
-            <Label htmlFor="template">Plantilla de portada</Label>
-            <Select
-              id="template"
-              value={config.template ?? "editorial"}
-              onChange={(e) =>
-                set("template", e.target.value as "editorial" | "minimal" | "bold")
-              }
-            >
-              <option value="editorial">Editorial — texto + foto destacada</option>
-              <option value="minimal">Minimal — centrado, solo texto</option>
-              <option value="bold">Bold — foto a pantalla completa</option>
-            </Select>
-          </div>
-          <div>
-            <Label htmlFor="eyebrow">Antetítulo</Label>
-            <Input
-              id="eyebrow"
-              placeholder="Inmobiliaria en Bilbao"
-              value={config.heroEyebrow ?? ""}
-              onChange={(e) => set("heroEyebrow", e.target.value)}
+        <p className="du-muted" style={{ fontSize: 13, marginBottom: "var(--ui-sp-4)" }}>
+          Ordena, muestra u oculta las secciones de tu web y edita su contenido.
+        </p>
+
+        <div style={{ display: "grid", gap: "var(--ui-sp-3)" }}>
+          {sections.map((section, i) => (
+            <SectionCard
+              key={section.id}
+              section={section}
+              index={i}
+              total={sections.length}
+              onPatch={patchSection}
+              onToggle={toggleSection}
+              onMove={moveSection}
+              onRemove={removeSection}
             />
-          </div>
-          <div>
-            <Label htmlFor="title">Titular</Label>
-            <Input
-              id="title"
-              placeholder="Tu próximo hogar, verificado."
-              value={config.heroTitle ?? ""}
-              onChange={(e) => set("heroTitle", e.target.value)}
-            />
-          </div>
-          <div>
-            <Label htmlFor="subtitle">Subtítulo</Label>
-            <Textarea
-              id="subtitle"
-              placeholder="Una frase que explique qué os hace diferentes."
-              value={config.heroSubtitle ?? ""}
-              onChange={(e) => set("heroSubtitle", e.target.value)}
-            />
-          </div>
+          ))}
         </div>
-      </Card>
+
+        {addableTypes.length > 0 ? (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--ui-sp-2)", marginTop: "var(--ui-sp-3)" }}>
+            {addableTypes.map((m) => (
+              <Button key={m.type} variant="outline" size="sm" onClick={() => addSection(m.type)}>
+                <Plus size={15} />
+                {m.label}
+              </Button>
+            ))}
+          </div>
+        ) : null}
+      </div>
 
       <Card>
         <h2 className="du-h3" style={{ marginBottom: "var(--ui-sp-4)" }}>
@@ -138,7 +317,7 @@ function Editor({ slug, name }: { slug: string; name: string }) {
 
       <Card>
         <h2 className="du-h3" style={{ marginBottom: "var(--ui-sp-4)" }}>
-          Contacto
+          Contacto y pie de página
         </h2>
         <div
           style={{
@@ -195,7 +374,10 @@ function Editor({ slug, name }: { slug: string; name: string }) {
                   placeholder="Instagram"
                   value={s.label}
                   onChange={(e) =>
-                    setSocial(social.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)))
+                    set(
+                      "social",
+                      social.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)),
+                    )
                   }
                   style={{ maxWidth: 180 }}
                 />
@@ -203,13 +385,16 @@ function Editor({ slug, name }: { slug: string; name: string }) {
                   placeholder="https://instagram.com/…"
                   value={s.url}
                   onChange={(e) =>
-                    setSocial(social.map((x, j) => (j === i ? { ...x, url: e.target.value } : x)))
+                    set(
+                      "social",
+                      social.map((x, j) => (j === i ? { ...x, url: e.target.value } : x)),
+                    )
                   }
                 />
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setSocial(social.filter((_, j) => j !== i))}
+                  onClick={() => set("social", social.filter((_, j) => j !== i))}
                   aria-label="Quitar enlace"
                 >
                   <Trash2 size={15} />
@@ -220,7 +405,7 @@ function Editor({ slug, name }: { slug: string; name: string }) {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setSocial([...social, { label: "", url: "" }])}
+                onClick={() => set("social", [...social, { label: "", url: "" } as SocialLink])}
               >
                 <Plus size={15} />
                 Añadir enlace

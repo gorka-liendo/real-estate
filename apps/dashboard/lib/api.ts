@@ -79,17 +79,48 @@ export type ClientProfile = {
 };
 
 export type SocialLink = { label: string; url: string };
+
+// Motor de secciones — espejo de `SiteSection` de @rep/db (el dashboard no
+// importa @rep/db: consume la API). Ver lib/microsite-sections.ts para los
+// metadatos de edición (etiquetas, campos) de cada tipo.
+export type SiteSectionBase = { id: string; enabled: boolean };
+export type HeroSection = SiteSectionBase & {
+  type: "hero";
+  template?: "editorial" | "minimal" | "bold";
+  eyebrow?: string;
+  title?: string;
+  subtitle?: string;
+};
+export type PropertiesSection = SiteSectionBase & {
+  type: "properties";
+  eyebrow?: string;
+  title?: string;
+};
+export type ValuationSection = SiteSectionBase & {
+  type: "valuation";
+  eyebrow?: string;
+  title?: string;
+  intro?: string;
+};
+export type SiteSection = HeroSection | PropertiesSection | ValuationSection;
+export type SiteSectionType = SiteSection["type"];
+
 export type SiteConfig = {
+  // Campos planos de hero: legacy / fuente de la derivación retrocompatible.
+  // Tras editar en el gestor de secciones se dejan de escribir (sections manda).
   template?: "editorial" | "minimal" | "bold";
   heroEyebrow?: string;
   heroTitle?: string;
   heroSubtitle?: string;
+  // Footer / contacto — "chrome" permanente, no son secciones del cuerpo.
   about?: string;
   contactEmail?: string;
   contactPhone?: string;
   social?: SocialLink[];
   footerAddress?: string;
   footerSchedule?: string;
+  // Motor de secciones: orden + activación del cuerpo del micrositio.
+  sections?: SiteSection[];
 };
 
 export type PropertyOperation = "sale" | "rent";

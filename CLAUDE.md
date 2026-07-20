@@ -607,9 +607,25 @@ packages/
       permanente (leen campos planos, fuera del motor). Dos puertas: contenido
       (self-serve `enabled`) vs producto (`moduleGate`, p.ej. valuation).
       Verificado: 104 tests API en verde, typecheck limpio, martinez idéntico
-      en el navegador (ruta de derivación). Pendiente: Paso 2 (editor del
-      dashboard = gestor de secciones), Paso 3 (secciones de contenido nuevas:
-      Equipo/Testimonios/Cifras/FAQ/Servicios/Mapa), Paso 4 (secciones-producto
-      de pago: Blog…).
+      en el navegador (ruta de derivación).
+- [x] **Micrositio: editor = gestor de secciones (Paso 2)** — la sección
+      Micrositio del dashboard (`apps/dashboard/app/(app)/micrositio/page.tsx`)
+      pasa de formulario fijo a GESTOR de secciones: reordenar (chevrons ↑/↓),
+      mostrar/ocultar (`du-switch`), editar contenido inline y añadir/quitar.
+      Metadatos de edición data-driven en `apps/dashboard/lib/microsite-sections.ts`
+      (`SECTION_TYPE_METAS`: label/description/`moduleGate?`/`fields[]` — el editor
+      pinta los inputs genéricamente; añadir sección nueva = 1 entrada aquí + 1 Body
+      en tenant-site). `deriveEditorSections` materializa las secciones (persistidas
+      o derivadas, filtradas por módulo). El palette "Añadir" solo ofrece tipos no
+      presentes y con su módulo (valuation solo si el tenant lo tiene). Al guardar
+      se LIMPIAN los campos planos legacy del hero (template/hero*) → `sections` es
+      la única fuente de verdad (verificado en BBDD: `has_sections=t`, `has_hero=f`).
+      Footer/contacto (about/email/tel/dirección/horario/redes) siguen como chrome
+      plano. `SiteSection` mirror en `lib/api.ts`. Verificado E2E en navegador:
+      reordenar valuation↑ → guardar → BBDD `["hero","valuation","properties"]` →
+      micrositio pinta ese orden y la nav se re-deriva igual. Seed re-ejecutado para
+      restaurar martinez al estado canónico (derivación). Pendiente: Paso 3
+      (secciones de contenido nuevas: Equipo/Testimonios/Cifras/FAQ/Servicios/Mapa),
+      Paso 4 (secciones-producto de pago: Blog…).
 - [ ] **Pendiente retomar**: theming/fuentes por inmobiliaria (ver gotcha de
       next/font arriba) y edición de marca en Ajustes.
