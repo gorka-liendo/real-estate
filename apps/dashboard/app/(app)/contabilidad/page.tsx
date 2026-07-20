@@ -44,6 +44,50 @@ const METHOD_LABEL: Record<InvoicePaymentMethod, string> = {
 const todayISO = () => new Date().toISOString().slice(0, 10);
 const currentYear = new Date().getFullYear();
 
+// Sentinel para "sin inmueble/cliente asignado" — distinto de "" (que en los
+// filtros significa "todos"), así la fila "Sin asignar" de la vista agrupada
+// puede filtrar específicamente los documentos sin ese vínculo.
+const NONE = "__none__";
+
+type GroupRow = {
+  id: string;
+  name: string;
+  count: number;
+  facturado: number;
+  cobrado: number;
+  pendiente: number;
+  gastos: number;
+  balance: number;
+};
+
+function groupInvoices(
+  items: Invoice[],
+  key: "propertyId" | "clientId",
+  nameById: Record<string, string>,
+): GroupRow[] {
+  const map = new Map<string, GroupRow>();
+  for (const inv of items) {
+    if (inv.status === "cancelled") continue;
+    const id = inv[key] ?? NONE;
+    const name = id === NONE ? "Sin asignar" : (nameById[id] ?? "—");
+    let row = map.get(id);
+    if (!row) {
+      row = { id, name, count: 0, facturado: 0, cobrado: 0, pendiente: 0, gastos: 0, balance: 0 };
+      map.set(id, row);
+    }
+    row.count += 1;
+    if (inv.direction === "income") {
+      row.facturado += inv.totalCents;
+      row.cobrado += inv.paidCents;
+      row.pendiente += inv.remainingCents;
+    } else {
+      row.gastos += inv.totalCents;
+    }
+  }
+  for (const row of map.values()) row.balance = row.cobrado - row.gastos;
+  return [...map.values()].sort((a, b) => b.facturado + b.gastos - (a.facturado + a.gastos));
+}
+
 function ContabilidadInner({ slug }: { slug: string }) {
   const { hasModule } = useWorkspace();
   const [items, setItems] = useState<Invoice[] | null>(null);
@@ -55,6 +99,7 @@ function ContabilidadInner({ slug }: { slug: string }) {
   const [error, setError] = useState<string | null>(null);
   const [filterPropertyId, setFilterPropertyId] = useState("");
   const [filterClientId, setFilterClientId] = useState("");
+  const [viewMode, setViewMode] = useState<"movimientos" | "byProperty" | "byClient">("movimientos");
 
   const load = useCallback(async () => {
     try {
@@ -105,11 +150,15 @@ function ContabilidadInner({ slug }: { slug: string }) {
   const propNameById = Object.fromEntries(propsList.map((p) => [p.id, p.title]));
   const clientNameById = Object.fromEntries(clientsList.map((c) => [c.id, c.name]));
 
-  const all = (items ?? []).filter(
-    (i) =>
-      (!filterPropertyId || i.propertyId === filterPropertyId) &&
-      (!filterClientId || i.clientId === filterClientId),
-  );
+  function matchesFilter(i: Invoice) {
+    const propOk =
+      !filterPropertyId || (filterPropertyId === NONE ? i.propertyId == null : i.propertyId === filterPropertyId);
+    const clientOk =
+      !filterClientId || (filterClientId === NONE ? i.clientId == null : i.clientId === filterClientId);
+    return propOk && clientOk;
+  }
+
+  const all = (items ?? []).filter(matchesFilter);
   const yearItems = all.filter((i) => i.issueDate.startsWith(String(currentYear)) && i.status !== "cancelled");
   const incomeCollected = yearItems.filter((i) => i.direction === "income").reduce((a, i) => a + i.paidCents, 0);
   const incomePending = yearItems
@@ -120,6 +169,20 @@ function ContabilidadInner({ slug }: { slug: string }) {
 
   const list = all.filter((i) => i.direction === tab);
 
+  const byProperty = groupInvoices(items ?? [], "propertyId", propNameById);
+  const byClient = groupInvoices(items ?? [], "clientId", clientNameById);
+
+  function openAccount(kind: "property" | "client", id: string) {
+    if (kind === "property") {
+      setFilterPropertyId(id);
+      setFilterClientId("");
+    } else {
+      setFilterClientId(id);
+      setFilterPropertyId("");
+    }
+    setViewMode("movimientos");
+  }
+
   return (
     <div style={{ display: "grid", gap: "var(--ui-sp-5)" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -127,7 +190,8 @@ function ContabilidadInner({ slug }: { slug: string }) {
         <Button
           onClick={() => {
             setPayingId(null);
-            setShowForm((v) => !v);
+            setViewMode("movimientos");
+            setShowForm((v) => (viewMode === "movimientos" ? !v : true));
           }}
         >
           <Plus size={16} />
@@ -150,6 +214,28 @@ function ContabilidadInner({ slug }: { slug: string }) {
 
       {error ? <p className="du-alert">{error}</p> : null}
 
+      <div style={{ display: "flex", gap: "var(--ui-sp-2)" }}>
+        <TabButton active={viewMode === "movimientos"} onClick={() => setViewMode("movimientos")}>
+          Movimientos
+        </TabButton>
+        {propsList.length > 0 ? (
+          <TabButton active={viewMode === "byProperty"} onClick={() => setViewMode("byProperty")}>
+            Por inmueble
+          </TabButton>
+        ) : null}
+        {clientsList.length > 0 ? (
+          <TabButton active={viewMode === "byClient"} onClick={() => setViewMode("byClient")}>
+            Por cliente
+          </TabButton>
+        ) : null}
+      </div>
+
+      {viewMode === "byProperty" ? (
+        <AccountsTable rows={byProperty} onSelect={(id) => openAccount("property", id)} />
+      ) : viewMode === "byClient" ? (
+        <AccountsTable rows={byClient} onSelect={(id) => openAccount("client", id)} />
+      ) : (
+        <>
       <div style={{ display: "flex", gap: "var(--ui-sp-3)", alignItems: "center", flexWrap: "wrap" }}>
         <div style={{ display: "flex", gap: "var(--ui-sp-2)" }}>
           <TabButton active={tab === "income"} onClick={() => { setTab("income"); setShowForm(false); }}>
@@ -356,7 +442,66 @@ function ContabilidadInner({ slug }: { slug: string }) {
           </div>
         )}
       </Card>
+        </>
+      )}
     </div>
+  );
+}
+
+function AccountsTable({ rows, onSelect }: { rows: GroupRow[]; onSelect: (id: string) => void }) {
+  return (
+    <Card padded={false}>
+      {rows.length === 0 ? (
+        <p className="du-muted" style={{ padding: "var(--ui-sp-5)" }}>
+          Sin movimientos todavía.
+        </p>
+      ) : (
+        <div style={{ overflowX: "auto" }}>
+          <table className="du-table">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Facturado</th>
+                <th>Cobrado</th>
+                <th>Pendiente</th>
+                <th>Gastos</th>
+                <th>Balance</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.id} onClick={() => onSelect(r.id)} style={{ cursor: "pointer" }}>
+                  <td style={{ fontWeight: 500 }}>
+                    {r.name}
+                    <span className="du-muted" style={{ fontWeight: 400 }}>
+                      {" "}
+                      · {r.count} documento{r.count === 1 ? "" : "s"}
+                    </span>
+                  </td>
+                  <td style={{ whiteSpace: "nowrap" }}>{eurCents(r.facturado)}</td>
+                  <td style={{ whiteSpace: "nowrap" }}>{eurCents(r.cobrado)}</td>
+                  <td style={{ whiteSpace: "nowrap" }}>{eurCents(r.pendiente)}</td>
+                  <td style={{ whiteSpace: "nowrap" }}>{eurCents(r.gastos)}</td>
+                  <td
+                    style={{
+                      whiteSpace: "nowrap",
+                      fontWeight: 600,
+                      color: r.balance >= 0 ? "var(--ui-success)" : "var(--ui-danger)",
+                    }}
+                  >
+                    {eurCents(r.balance)}
+                  </td>
+                  <td className="du-muted" style={{ textAlign: "right" }}>
+                    Ver detalle →
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Card>
   );
 }
 
