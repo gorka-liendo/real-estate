@@ -25,6 +25,11 @@ export function DashboardShell({ children }: { children: ReactNode }) {
 
   const sections = MODULE_SECTIONS.filter((s) => hasModule(s.code));
 
+  // Superadmin PURO (sin membership de ningún tenant): Inicio (rejilla de
+  // módulos de un tenant) y Ajustes (marca/logo de un tenant) no significan
+  // nada para él — su "inicio" es Administración.
+  const platformOnly = isPlatformAdmin && memberships.length === 0;
+
   return (
     <div className="dash-shell" data-theme={theme}>
       <aside className="dash-sidebar">
@@ -38,10 +43,12 @@ export function DashboardShell({ children }: { children: ReactNode }) {
         </div>
 
         <nav className="dash-nav">
-          <Link href={routes.home} className="dash-nav__item" data-active={isActive(routes.home)}>
-            <House size={16} />
-            Inicio
-          </Link>
+          {!platformOnly ? (
+            <Link href={routes.home} className="dash-nav__item" data-active={isActive(routes.home)}>
+              <House size={16} />
+              Inicio
+            </Link>
+          ) : null}
 
           {sections.map((s) => {
             const Icon = s.icon;
@@ -53,10 +60,12 @@ export function DashboardShell({ children }: { children: ReactNode }) {
             );
           })}
 
-          <Link href={routes.ajustes} className="dash-nav__item" data-active={isActive(routes.ajustes)}>
-            <Settings size={16} />
-            Ajustes
-          </Link>
+          {!platformOnly ? (
+            <Link href={routes.ajustes} className="dash-nav__item" data-active={isActive(routes.ajustes)}>
+              <Settings size={16} />
+              Ajustes
+            </Link>
+          ) : null}
 
           {isPlatformAdmin ? (
             <Link href={routes.admin} className="dash-nav__item" data-active={isActive(routes.admin)}>

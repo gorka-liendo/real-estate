@@ -1,8 +1,18 @@
 "use client";
 
-import { Building2, CalendarClock, ExternalLink, KeyRound, Plus, Users } from "lucide-react";
+import {
+  AlertTriangle,
+  Building2,
+  CalendarClock,
+  ExternalLink,
+  Euro,
+  KeyRound,
+  Landmark,
+  Plus,
+  Users,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Badge, Button, ButtonLink, Card, Input, Label, Select, Switch, THEMES } from "@rep/ui";
 import { useWorkspace } from "@/contexts/workspace-context";
 import { api, ApiError, type AdminTenant, type CatalogModule } from "@/lib/api";
@@ -72,6 +82,25 @@ export default function AdminPage() {
     }
   }
 
+  // Resumen de plataforma: derivado de lo que ya cargamos (tenants + catálogo),
+  // sin pegar a la API otra vez.
+  const summary = useMemo(() => {
+    const list = tenants ?? [];
+    const priceByCode = new Map(catalog.map((m) => [m.code, m.priceMonthly]));
+    const mrrCents = list.reduce(
+      (acc, t) => acc + t.activeModules.reduce((a, code) => a + (priceByCode.get(code) ?? 0), 0),
+      0,
+    );
+    const withoutModules = list.filter((t) => t.activeModules.length === 0);
+    return {
+      tenantCount: list.length,
+      mrrCents,
+      properties: list.reduce((a, t) => a + t.stats.properties, 0),
+      clients: list.reduce((a, t) => a + t.stats.clients, 0),
+      withoutModules,
+    };
+  }, [tenants, catalog]);
+
   if (!isPlatformAdmin) return null;
 
   return (
@@ -90,6 +119,62 @@ export default function AdminPage() {
       </div>
 
       {error ? <p className="du-alert">{error}</p> : null}
+
+      {tenants !== null ? (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+            gap: "var(--ui-sp-4)",
+          }}
+        >
+          <Card>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--ui-muted)" }}>
+              <Landmark size={15} />
+              <span style={{ fontSize: 13 }}>Inmobiliarias</span>
+            </div>
+            <div className="du-h2" style={{ marginTop: 6 }}>
+              {summary.tenantCount}
+            </div>
+          </Card>
+          <Card>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--ui-muted)" }}>
+              <Euro size={15} />
+              <span style={{ fontSize: 13 }}>MRR (módulos activos)</span>
+            </div>
+            <div className="du-h2" style={{ marginTop: 6 }}>
+              {eur(summary.mrrCents)}
+            </div>
+          </Card>
+          <Card>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--ui-muted)" }}>
+              <Users size={15} />
+              <span style={{ fontSize: 13 }}>Clientes en la plataforma</span>
+            </div>
+            <div className="du-h2" style={{ marginTop: 6 }}>
+              {summary.clients}
+            </div>
+          </Card>
+          <Card>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--ui-muted)" }}>
+              <Building2 size={15} />
+              <span style={{ fontSize: 13 }}>Inmuebles en la plataforma</span>
+            </div>
+            <div className="du-h2" style={{ marginTop: 6 }}>
+              {summary.properties}
+            </div>
+          </Card>
+        </div>
+      ) : null}
+
+      {summary.withoutModules.length > 0 ? (
+        <p className="du-alert" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <AlertTriangle size={15} />
+          {summary.withoutModules.length === 1
+            ? `${summary.withoutModules[0]!.name} no tiene ningún módulo activo.`
+            : `${summary.withoutModules.length} inmobiliarias sin ningún módulo activo: ${summary.withoutModules.map((t) => t.name).join(", ")}.`}
+        </p>
+      ) : null}
 
       {showForm ? (
         <NewTenantForm

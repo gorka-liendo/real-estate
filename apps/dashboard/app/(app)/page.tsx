@@ -1,15 +1,27 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useEffect } from "react";
 import { Card } from "@rep/ui";
 import { useAuth } from "@/contexts/auth-context";
 import { useWorkspace } from "@/contexts/workspace-context";
 import { MODULE_SECTIONS } from "@/lib/modules";
+import { routes } from "@/lib/routes";
 
 export default function HomePage() {
   const { me } = useAuth();
-  const { selected, activeModules, hasModule } = useWorkspace();
+  const { selected, memberships, activeModules, hasModule, isPlatformAdmin } = useWorkspace();
+  const router = useRouter();
   const sections = MODULE_SECTIONS.filter((s) => hasModule(s.code));
+
+  // Superadmin puro (sin tenant propio): esta rejilla de módulos no aplica —
+  // su "inicio" es Administración.
+  const platformOnly = isPlatformAdmin && memberships.length === 0;
+  useEffect(() => {
+    if (platformOnly) router.replace(routes.admin);
+  }, [platformOnly, router]);
+  if (platformOnly) return null;
 
   return (
     <div style={{ display: "grid", gap: "var(--ui-sp-6)" }}>
