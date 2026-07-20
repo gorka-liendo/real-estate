@@ -644,5 +644,23 @@ packages/
       Opiniones y FAQ inyectadas → render correcto en Dwell + acordeón +/–.
       104 tests API, typecheck+lint limpios. Pendiente: Paso 4 (secciones-producto
       de pago: Blog…); otras de contenido posibles (Equipo con fotos, Servicios, Mapa).
+- [x] **Dominios propios — resolución + panel (Blocks 1-2)** — cada inmobiliaria
+      puede tener su dominio propio (`www.suweb.es`) en vez del subdominio de la
+      plataforma. (1) RESOLUCIÓN: endpoint público `GET /public/resolve-domain?host=`
+      (API, hit directo a `tenants.custom_domain` → slug; sin CORS, lo llama el
+      proxy server-side). `apps/tenant-site/proxy.ts` ahora async: si el Host no es
+      subdominio de la plataforma y no hay slug, resuelve por custom_domain con
+      caché en memoria TTL (60s positivo / 20s negativo). Root domain configurable
+      (`NEXT_PUBLIC_ROOT_DOMAIN`, "localhost" siempre válido en dev). (2) PANEL: 
+      `PUT /admin/tenants/:slug/domain` (superadmin, valida hostname + unicidad →
+      409 domain_taken, 400 invalid_domain, null/"" limpia); `GET /admin/tenants` ya
+      exponía `customDomain`. UI: `DomainManager` por tarjeta en `/admin`
+      (asignar/quitar + instrucciones DNS del CNAME a `NEXT_PUBLIC_DOMAIN_CNAME_TARGET`).
+      9 tests nuevos (`domains.test.ts`, 113 API total). Verificado E2E: curl con
+      Host del dominio propio → micrositio correcto; Host desconocido → landing;
+      panel asigna/quita en vivo. **PENDIENTE Block 3 (infra, solo prod)**: aprovisionar
+      el dominio + TLS automático vía API de Vercel (add domain, verificación DNS,
+      emisión de certificado) tras el deploy — no testeable en local. `custom_domain`
+      ya existía en el schema; sin migración.
 - [ ] **Pendiente retomar**: theming/fuentes por inmobiliaria (ver gotcha de
       next/font arriba) y edición de marca en Ajustes.

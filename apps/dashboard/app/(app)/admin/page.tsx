@@ -6,6 +6,7 @@ import {
   CalendarClock,
   ExternalLink,
   Euro,
+  Globe,
   KeyRound,
   Landmark,
   Plus,
@@ -16,7 +17,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Badge, Button, ButtonLink, Card, Input, Label, Select, Switch, THEMES } from "@rep/ui";
 import { useWorkspace } from "@/contexts/workspace-context";
 import { api, ApiError, type AdminTenant, type CatalogModule } from "@/lib/api";
-import { TENANT_SITE_URL } from "@/lib/config";
+import { DOMAIN_CNAME_TARGET, TENANT_SITE_URL } from "@/lib/config";
 import { routes } from "@/lib/routes";
 
 // Panel de plataforma: una tarjeta por inmobiliaria con sus stats, su diseño,
@@ -79,6 +80,27 @@ export default function AdminPage() {
       );
     } catch {
       setError(`No se pudo cambiar el diseño de ${tenant.name}.`);
+    }
+  }
+
+  async function setDomain(tenant: AdminTenant, domain: string | null) {
+    setError(null);
+    try {
+      const res = await api.adminSetDomain(tenant.slug, domain);
+      setTenants((prev) =>
+        (prev ?? []).map((t) =>
+          t.slug === tenant.slug ? { ...t, customDomain: res.customDomain } : t,
+        ),
+      );
+    } catch (err) {
+      setError(
+        err instanceof ApiError && err.message === "domain_taken"
+          ? "Ese dominio ya está asignado a otra inmobiliaria."
+          : err instanceof ApiError && err.message === "invalid_domain"
+            ? "El dominio no es válido (usa algo como www.tudominio.es, sin http:// ni barras)."
+            : `No se pudo actualizar el dominio de ${tenant.name}.`,
+      );
+      throw err;
     }
   }
 
@@ -269,6 +291,13 @@ export default function AdminPage() {
               </span>
             </div>
 
+            {/* dominio propio */}
+            <DomainManager
+              slug={t.slug}
+              current={t.customDomain}
+              onSave={(domain) => setDomain(t, domain)}
+            />
+
             {/* módulos con nombre + precio */}
             <div
               style={{
@@ -311,6 +340,90 @@ export default function AdminPage() {
             </div>
           </Card>
         ))
+      )}
+    </div>
+  );
+}
+
+// Gestión del dominio propio de una inmobiliaria (superadmin). Asignar/quitar +
+// instrucciones DNS para relayar al cliente. El HTTPS lo emite la plataforma de
+// hosting al verificarse el CNAME (integración de aprovisionamiento: Block 3).
+function DomainManager({
+  slug,
+  current,
+  onSave,
+}: {
+  slug: string;
+  current: string | null;
+  onSave: (domain: string | null) => Promise<void>;
+}) {
+  const [value, setValue] = useState(current ?? "");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => setValue(current ?? ""), [current]);
+
+  const normalized = value.trim().toLowerCase() || null;
+  const dirty = normalized !== (current || null);
+
+  async function save(domain: string | null) {
+    setSaving(true);
+    try {
+      await onSave(domain);
+    } catch {
+      // el error lo muestra el panel; mantenemos el input para reintentar
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div
+      style={{
+        borderTop: "1px solid var(--ui-border)",
+        paddingTop: "var(--ui-sp-4)",
+        marginBottom: "var(--ui-sp-4)",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          marginBottom: "var(--ui-sp-2)",
+          color: "var(--ui-muted)",
+          fontSize: 13,
+        }}
+      >
+        <Globe size={14} />
+        Dominio propio
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--ui-sp-2)", alignItems: "center" }}>
+        <Input
+          placeholder="www.tudominio.es"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          aria-label={`Dominio propio de ${slug}`}
+          style={{ maxWidth: 320 }}
+        />
+        <Button size="sm" disabled={!dirty || saving} onClick={() => void save(normalized)}>
+          {saving ? "Guardando…" : "Guardar"}
+        </Button>
+        {current ? (
+          <Button variant="ghost" size="sm" disabled={saving} onClick={() => void save(null)}>
+            Quitar
+          </Button>
+        ) : null}
+      </div>
+      {current ? (
+        <p className="du-muted" style={{ fontSize: 12, marginTop: "var(--ui-sp-2)", lineHeight: 1.6 }}>
+          Activo en <strong>{current}</strong>. El cliente debe crear en su proveedor de dominio un
+          registro <code>CNAME</code> de <code>{current}</code> a <code>{DOMAIN_CNAME_TARGET}</code>.
+          El certificado HTTPS se emite automáticamente al verificarse el DNS.
+        </p>
+      ) : (
+        <p className="du-muted" style={{ fontSize: 12, marginTop: "var(--ui-sp-2)" }}>
+          Sin dominio propio: la web usa el subdominio de la plataforma.
+        </p>
       )}
     </div>
   );

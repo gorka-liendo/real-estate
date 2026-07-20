@@ -732,4 +732,11 @@ export const api = {
       method: "PUT",
       body: JSON.stringify({ theme }),
     }),
+
+  // domain = null o "" limpia el dominio propio del tenant.
+  adminSetDomain: (slug: string, domain: string | null) =>
+    request<{ tenant: string; customDomain: string | null }>(`/admin/tenants/${slug}/domain`, {
+      method: "PUT",
+      body: JSON.stringify({ domain }),
+    }),
 };

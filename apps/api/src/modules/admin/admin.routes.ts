@@ -123,6 +123,39 @@ admin.put("/tenants/:slug/theme", async (c) => {
   return c.json({ tenant: tenant.slug, theme: row!.brandConfig.theme });
 });
 
+// Asignar (o limpiar con null/"") el dominio propio de una inmobiliaria. Lo
+// hace la plataforma (superadmin); el tenant-site lo resuelve por custom_domain.
+const domainSchema = z.object({ domain: z.string().max(253).nullable() });
+// hostname válido: etiquetas alfanuméricas separadas por puntos + TLD (sin
+// protocolo, puerto ni ruta). Bloquea entradas tipo "http://x" o "x/y".
+const HOSTNAME_RE = /^([a-z0-9](-?[a-z0-9])*\.)+[a-z]{2,}$/;
+
+admin.put("/tenants/:slug/domain", async (c) => {
+  const body = domainSchema.safeParse(await c.req.json().catch(() => null));
+  if (!body.success) {
+    return c.json({ error: "invalid_body", detail: "se espera { domain: string | null }" }, 400);
+  }
+  const raw = (body.data.domain ?? "").trim().toLowerCase();
+  const domain = raw === "" ? null : raw;
+  if (domain && !HOSTNAME_RE.test(domain)) return c.json({ error: "invalid_domain" }, 400);
+
+  const [tenant] = await db.select().from(tenants).where(eq(tenants.slug, c.req.param("slug")));
+  if (!tenant) return c.json({ error: "tenant_not_found" }, 404);
+
+  // Unicidad: el dominio no puede estar asignado a otra inmobiliaria.
+  if (domain) {
+    const other = await db.query.tenants.findFirst({ where: eq(tenants.customDomain, domain) });
+    if (other && other.id !== tenant.id) return c.json({ error: "domain_taken" }, 409);
+  }
+
+  const [row] = await db
+    .update(tenants)
+    .set({ customDomain: domain })
+    .where(eq(tenants.id, tenant.id))
+    .returning();
+  return c.json({ tenant: tenant.slug, customDomain: row!.customDomain });
+});
+
 const toggleSchema = z.object({ active: z.boolean() });
 
 admin.put("/tenants/:slug/modules/:code", async (c) => {

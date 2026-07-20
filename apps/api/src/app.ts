@@ -66,6 +66,20 @@ app.use(
 
 app.get("/health", (c) => c.json({ status: "ok" }));
 
+// PÚBLICO: resuelve un dominio propio (custom_domain) → slug del tenant. Lo
+// consume el proxy del tenant-site SERVER-SIDE (no el navegador) para enrutar
+// dominios que no son subdominios de la plataforma. Sin credenciales, sin CORS.
+app.get("/public/resolve-domain", async (c) => {
+  const host = (c.req.query("host") ?? "").split(":")[0]!.trim().toLowerCase();
+  if (!host) return c.json({ error: "host_required" }, 400);
+  const t = await db.query.tenants.findFirst({
+    columns: { slug: true, status: true },
+    where: eq(tenants.customDomain, host),
+  });
+  if (!t || t.status !== "active") return c.json({ error: "not_found" }, 404);
+  return c.json({ slug: t.slug });
+});
+
 // Sirve las imágenes del storage local (dev). En prod las sirve R2/CDN.
 app.use(
   "/uploads/*",
