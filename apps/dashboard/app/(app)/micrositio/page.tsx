@@ -4,7 +4,7 @@ import { ChevronDown, ChevronUp, ExternalLink, Plus, Trash2 } from "lucide-react
 import { useCallback, useEffect, useState } from "react";
 import { Button, ButtonLink, Card, Input, Label, Select, Switch, Textarea } from "@rep/ui";
 import { useRequireModule, useWorkspace } from "@/contexts/workspace-context";
-import { api, type SiteConfig, type SiteSection, type SocialLink } from "@/lib/api";
+import { api, ApiError, type SiteConfig, type SiteSection, type SocialLink } from "@/lib/api";
 import { TENANT_SITE_URL } from "@/lib/config";
 import {
   deriveEditorSections,
@@ -12,6 +12,7 @@ import {
   SECTION_META_BY_TYPE,
   SECTION_TYPE_METAS,
   type ListField,
+  type MediaField,
   type ScalarField,
   type SectionField,
 } from "@/lib/microsite-sections";
@@ -132,11 +133,109 @@ function SectionListField({
   );
 }
 
-function SectionFieldInput({
+// Campo de media: sube imagen/vídeo a @rep/storage y guarda la URL. Muestra
+// vista previa (miniatura / vídeo) + subir/quitar.
+function MediaFieldInput({
+  slug,
   section,
   field,
   onChange,
 }: {
+  slug: string;
+  section: SiteSection;
+  field: MediaField;
+  onChange: (value: string | undefined) => void;
+}) {
+  const url = fieldValue(section, field.key) || undefined;
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function upload(file: File) {
+    setBusy(true);
+    setErr(null);
+    try {
+      const { url: uploaded } = await api.site.uploadMedia(slug, file);
+      onChange(uploaded);
+    } catch (e) {
+      setErr(
+        e instanceof ApiError && e.message === "too_large"
+          ? "El archivo es demasiado grande."
+          : e instanceof ApiError && e.message === "invalid_type"
+            ? "Formato no admitido."
+            : "No se pudo subir el archivo.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const inputId = `${section.id}-${field.key}-file`;
+  const accept = field.accept === "video" ? "video/*" : "image/*";
+
+  return (
+    <div>
+      <Label htmlFor={inputId}>{field.label}</Label>
+      <div style={{ display: "flex", alignItems: "center", gap: "var(--ui-sp-3)", flexWrap: "wrap" }}>
+        {url ? (
+          field.accept === "video" ? (
+            <video
+              src={url}
+              muted
+              style={{ width: 120, height: 68, objectFit: "cover", borderRadius: "var(--ui-radius-sm)", border: "1px solid var(--ui-border)" }}
+            />
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={url}
+              alt=""
+              style={{ width: 120, height: 68, objectFit: "cover", borderRadius: "var(--ui-radius-sm)", border: "1px solid var(--ui-border)" }}
+            />
+          )
+        ) : null}
+        <div style={{ display: "flex", gap: "var(--ui-sp-2)" }}>
+          <input
+            id={inputId}
+            type="file"
+            accept={accept}
+            style={{ display: "none" }}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) void upload(f);
+              e.target.value = ""; // permite re-subir el mismo archivo
+            }}
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={busy}
+            onClick={() => document.getElementById(inputId)?.click()}
+          >
+            {busy ? "Subiendo…" : url ? "Cambiar" : "Subir"}
+          </Button>
+          {url ? (
+            <Button variant="ghost" size="sm" disabled={busy} onClick={() => onChange(undefined)}>
+              Quitar
+            </Button>
+          ) : null}
+        </div>
+      </div>
+      {err ? <p className="du-alert" style={{ marginTop: "var(--ui-sp-2)" }}>{err}</p> : null}
+      {field.hint ? (
+        <p className="du-muted" style={{ fontSize: 12, marginTop: "var(--ui-sp-2)" }}>
+          {field.hint}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function SectionFieldInput({
+  slug,
+  section,
+  field,
+  onChange,
+}: {
+  slug: string;
   section: SiteSection;
   field: SectionField;
   onChange: (key: string, value: unknown) => void;
@@ -144,6 +243,16 @@ function SectionFieldInput({
   if (field.type === "list") {
     return (
       <SectionListField
+        section={section}
+        field={field}
+        onChange={(value) => onChange(field.key, value)}
+      />
+    );
+  }
+  if (field.type === "media") {
+    return (
+      <MediaFieldInput
+        slug={slug}
         section={section}
         field={field}
         onChange={(value) => onChange(field.key, value)}
@@ -164,6 +273,7 @@ function SectionFieldInput({
 }
 
 function SectionCard({
+  slug,
   section,
   index,
   total,
@@ -172,6 +282,7 @@ function SectionCard({
   onMove,
   onRemove,
 }: {
+  slug: string;
   section: SiteSection;
   index: number;
   total: number;
@@ -242,6 +353,7 @@ function SectionCard({
             {meta.fields.map((field) => (
               <SectionFieldInput
                 key={field.key}
+                slug={slug}
                 section={section}
                 field={field}
                 onChange={(key, value) => onPatch(section.id, key, value)}
@@ -377,6 +489,7 @@ function Editor({ slug, name }: { slug: string; name: string }) {
           {sections.map((section, i) => (
             <SectionCard
               key={section.id}
+              slug={slug}
               section={section}
               index={i}
               total={sections.length}

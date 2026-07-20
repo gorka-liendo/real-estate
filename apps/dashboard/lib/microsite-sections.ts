@@ -29,7 +29,15 @@ export type ListField = {
   itemFields: ScalarField[];
   max?: number;
 };
-export type SectionField = ScalarField | ListField;
+// Campo de media (imagen/vídeo): sube a @rep/storage y guarda la URL resultante.
+export type MediaField = {
+  key: string;
+  label: string;
+  type: "media";
+  accept: "image" | "video";
+  hint?: string;
+};
+export type SectionField = ScalarField | ListField | MediaField;
 export type SectionTypeMeta = {
   type: SiteSectionType;
   label: string;
@@ -43,16 +51,16 @@ export const SECTION_TYPE_METAS: SectionTypeMeta[] = [
   {
     type: "hero",
     label: "Portada",
-    description: "La cabecera de tu web: titular, subtítulo y foto destacada.",
+    description: "La cabecera de tu web: titular, subtítulo y una imagen o vídeo de fondo.",
     fields: [
       {
         key: "template",
-        label: "Plantilla",
+        label: "Plantilla (si no pones fondo propio)",
         type: "select",
         options: [
           { value: "editorial", label: "Editorial — texto + foto destacada" },
           { value: "minimal", label: "Minimal — centrado, solo texto" },
-          { value: "bold", label: "Bold — foto a pantalla completa" },
+          { value: "bold", label: "Bold — foto de una propiedad a pantalla completa" },
         ],
       },
       { key: "eyebrow", label: "Antetítulo", type: "text", placeholder: "Inmobiliaria en Bilbao" },
@@ -62,6 +70,20 @@ export const SECTION_TYPE_METAS: SectionTypeMeta[] = [
         label: "Subtítulo",
         type: "textarea",
         placeholder: "Una frase que explique qué os hace diferentes.",
+      },
+      {
+        key: "backgroundImageUrl",
+        label: "Imagen de fondo",
+        type: "media",
+        accept: "image",
+        hint: "Si la pones, la portada pasa a pantalla completa con esta imagen y el texto encima. JPG/PNG/WebP, máx. 10 MB.",
+      },
+      {
+        key: "backgroundVideoUrl",
+        label: "Vídeo de fondo (opcional)",
+        type: "media",
+        accept: "video",
+        hint: "Un vídeo corto en bucle de fondo. Manda sobre la imagen (que queda de respaldo). MP4/WebM, máx. 200 MB.",
       },
     ],
   },

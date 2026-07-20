@@ -10,6 +10,14 @@ const socialLink = z.object({
     .refine((u) => /^https?:\/\//i.test(u), { message: "url_must_be_http" }),
 });
 
+// URL de media servida por NOSOTROS (@rep/storage): relativa (/uploads/…) o
+// absoluta (R2). Bloquea esquemas ejecutables (javascript:, data:) porque se
+// inyecta como src / background-image.
+const mediaUrl = z
+  .string()
+  .max(500)
+  .refine((u) => /^(\/|https?:\/\/)/i.test(u), { message: "url_must_be_safe" });
+
 // Secciones del cuerpo del micrositio (motor de secciones). Unión discriminada
 // por `type` — espejo de validación de `SiteSection` de @rep/db. Cada tipo valida
 // solo su propio contenido; añadir un tipo = añadir un miembro aquí.
@@ -24,6 +32,8 @@ const heroSection = z.object({
   eyebrow: z.string().max(80).optional(),
   title: z.string().max(120).optional(),
   subtitle: z.string().max(400).optional(),
+  backgroundImageUrl: mediaUrl.optional(),
+  backgroundVideoUrl: mediaUrl.optional(),
 });
 const propertiesSection = z.object({
   ...sectionBase,

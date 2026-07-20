@@ -57,6 +57,40 @@ function HeroBody({
     `${ctx.tenantName} verifica cada propiedad en persona antes de publicarla: fotografía real, precios claros y cero ruido.`;
   const featured = ctx.featured;
 
+  // Media de fondo propia (subida por el cliente): hero "cover" a pantalla
+  // completa. Tiene PRECEDENCIA sobre la plantilla. Si hay vídeo manda (con la
+  // imagen de poster/fallback); si no, la imagen. Reutiliza el tratamiento bold.
+  const bgVideo = section.backgroundVideoUrl;
+  const bgImage = section.backgroundImageUrl;
+  if (bgVideo || bgImage) {
+    return (
+      <section className="rt-hero rt-hero--bold rt-hero--cover" data-reveal>
+        {bgVideo ? (
+          <video
+            className="rt-hero__bg"
+            autoPlay
+            muted
+            loop
+            playsInline
+            poster={bgImage}
+            preload="metadata"
+          >
+            <source src={bgVideo} />
+          </video>
+        ) : (
+          <img className="rt-hero__bg" src={bgImage} alt="" aria-hidden="true" decoding="async" />
+        )}
+        <div className="rt-hero__scrim" aria-hidden="true" />
+        <div className="rt-wrap">
+          <div className="rt-eyebrow">{eyebrow}</div>
+          <h1 className="rt-hero__title">{title}</h1>
+          <p className="rt-hero__sub">{subtitle}</p>
+          <PillLink href="#propiedades">Ver propiedades</PillLink>
+        </div>
+      </section>
+    );
+  }
+
   // bold = full-bleed con la foto de fondo. Sin foto, cae al tratamiento
   // solo-texto (editorial/minimal) para no mostrar un hero vacío.
   if (template === "bold" && featured) {

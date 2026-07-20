@@ -58,6 +58,10 @@ export type HeroSection = SiteSectionBase & {
   eyebrow?: string;
   title?: string;
   subtitle?: string;
+  // Media de fondo del hero (subida por el cliente a @rep/storage). Si hay
+  // vídeo manda; la imagen sirve de poster/fallback. Con media → hero "cover".
+  backgroundImageUrl?: string;
+  backgroundVideoUrl?: string;
 };
 export type PropertiesSection = SiteSectionBase & {
   type: "properties";

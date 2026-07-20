@@ -90,6 +90,8 @@ export type HeroSection = SiteSectionBase & {
   eyebrow?: string;
   title?: string;
   subtitle?: string;
+  backgroundImageUrl?: string;
+  backgroundVideoUrl?: string;
 };
 export type PropertiesSection = SiteSectionBase & {
   type: "properties";
@@ -454,6 +456,25 @@ export const api = {
         headers: { "x-tenant-slug": slug },
         body: JSON.stringify(data),
       }),
+
+    // Sube media (imagen/vídeo) del micrositio y devuelve su URL + tipo. El
+    // editor guarda esa URL en el campo de la sección. Multipart: sin
+    // content-type manual (el navegador pone el boundary).
+    uploadMedia: async (slug: string, file: File) => {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch(`${API_URL}/tenant/site/media`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "x-tenant-slug": slug },
+        body: fd,
+      });
+      if (!res.ok) {
+        const b = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new ApiError(res.status, b.error ?? `HTTP ${res.status}`);
+      }
+      return (await res.json()) as { url: string; kind: "image" | "video" };
+    },
   },
 
   // --- módulo Clientes (CRM) ---

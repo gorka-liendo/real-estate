@@ -13,6 +13,8 @@ export type HeroSection = SiteSectionBase & {
   eyebrow?: string;
   title?: string;
   subtitle?: string;
+  backgroundImageUrl?: string;
+  backgroundVideoUrl?: string;
 };
 export type PropertiesSection = SiteSectionBase & {
   type: "properties";
