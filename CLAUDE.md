@@ -543,5 +543,16 @@ packages/
       alta de factura con IVA, PDF descargado y con los datos correctos, cobro
       parcial actualiza estado/resumen en vivo, gastos migrados visibles con su
       adjunto original.
+- [x] **Contabilidad: filtros + vista de cuentas agrupada** — dos mejoras sobre
+      el módulo. (1) Filtros por inmueble/cliente en Movimientos, client-side
+      sobre los datos ya cargados (sin roundtrip), con columnas Inmueble/Cliente
+      en la tabla para verlo de un vistazo. (2) Pestañas "Por inmueble" / "Por
+      cliente": agregan facturado/cobrado/pendiente/gastos/balance por cuenta
+      (incluye grupo "Sin asignar"), ordenadas por actividad. Clic en una fila
+      vuelve a Movimientos con el filtro de esa cuenta ya aplicado — reutiliza
+      el mismo mecanismo de filtrado, sentinel `NONE` para distinguir "sin
+      filtro" de "sin inmueble/cliente asignado". Verificado en navegador:
+      filtro por cliente recalcula resumen y tabla en vivo, drill-down desde
+      la vista agrupada abre Movimientos con el filtro correcto.
 - [ ] **Pendiente retomar**: theming/fuentes por inmobiliaria (ver gotcha de
       next/font arriba) y edición de marca en Ajustes.
