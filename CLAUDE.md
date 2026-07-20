@@ -554,5 +554,23 @@ packages/
       filtro" de "sin inmueble/cliente asignado". Verificado en navegador:
       filtro por cliente recalcula resumen y tabla en vivo, drill-down desde
       la vista agrupada abre Movimientos con el filtro correcto.
+- [x] **Contabilidad: páginas de cuenta por inmueble/cliente** — evoluciona la
+      vista agrupada: las cards "Por inmueble"/"Por cliente" ya no filtran en
+      la propia página, enlazan a `/contabilidad/inmueble/[id]` y
+      `/contabilidad/cliente/[id]` (la card "Sin asignar" sigue usando el
+      filtro inline porque no hay id al que enlazar). Cada página es un "menú"
+      propio (mismo patrón que `/clientes/[id]`: `ButtonLink` de vuelta +
+      tarjetas resumen): facturado/cobrado/pendiente/gastos/balance de esa
+      cuenta + tabs Resumen (actividad reciente mezclando facturas y gastos) /
+      Facturas emitidas / Gastos — cada tab oculta la columna redundante con
+      el contexto de la página (inmueble oculta "Inmueble", cliente oculta
+      "Cliente") y el alta desde ahí preselecciona el inmueble/cliente
+      (`presetPropertyId`/`presetClientId` en los formularios). Refactor de
+      soporte: `_shared.tsx` centraliza `InvoiceTable`, `IncomeForm`,
+      `ExpenseForm`, `PaymentForm`, `SummaryCard`, `TabButton`, `EntityPicker`
+      y `AccountDetail` — una sola implementación para Movimientos y las 2
+      páginas de cuenta, en vez de tres copias divergiendo con el tiempo.
+      Verificado en navegador: navegación cards→cuenta, columnas correctas
+      por tab, alta con preselección, build de los 3 dashboard routes.
 - [ ] **Pendiente retomar**: theming/fuentes por inmobiliaria (ver gotcha de
       next/font arriba) y edición de marca en Ajustes.

@@ -1,0 +1,1035 @@
+"use client";
+
+import { ArrowLeft, Download, Paperclip, Pencil, Plus, Trash2 } from "lucide-react";
+import { Fragment, useState } from "react";
+import { Badge, Button, ButtonLink, Card, Input, Label, Select, Textarea } from "@rep/ui";
+import {
+  api,
+  ApiError,
+  type Client,
+  type CreateExpenseInput,
+  type CreateIncomeInput,
+  type Invoice,
+  type InvoiceCategory,
+  type InvoiceDirection,
+  type InvoicePaymentMethod,
+  type InvoiceStatus,
+  type Property,
+} from "@/lib/api";
+import { INVOICE_CATEGORY_LABELS } from "@/lib/invoice-labels";
+
+// Piezas de Contabilidad compartidas entre la página principal (Movimientos +
+// vista agrupada) y las páginas de cuenta (/contabilidad/inmueble|cliente/[id]).
+// Una sola tabla, un solo par de formularios — evita que las tres vistas
+// diverjan con el tiempo.
+
+export const eurCents = (c: number) =>
+  `${new Intl.NumberFormat("es-ES", { minimumFractionDigits: 2 }).format(c / 100)} €`;
+
+export const todayISO = () => new Date().toISOString().slice(0, 10);
+
+export const STATUS_LABEL: Record<InvoiceStatus, string> = {
+  draft: "Borrador",
+  pending: "Pendiente",
+  paid: "Pagada",
+  cancelled: "Anulada",
+};
+export const STATUS_VARIANT: Record<InvoiceStatus, "muted" | "success" | "danger" | "default"> = {
+  draft: "muted",
+  pending: "default",
+  paid: "success",
+  cancelled: "muted",
+};
+const METHOD_LABEL: Record<InvoicePaymentMethod, string> = {
+  transfer: "Transferencia",
+  cash: "Efectivo",
+  card: "Tarjeta",
+  other: "Otro",
+};
+
+export function SummaryCard({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: string;
+  accent?: "success" | "danger";
+}) {
+  return (
+    <Card>
+      <p className="du-muted" style={{ fontSize: 12, marginBottom: 4 }}>
+        {label}
+      </p>
+      <p
+        style={{
+          fontSize: 22,
+          fontWeight: 700,
+          color:
+            accent === "success"
+              ? "var(--ui-success)"
+              : accent === "danger"
+                ? "var(--ui-danger)"
+                : "var(--ui-text)",
+        }}
+      >
+        {value}
+      </p>
+    </Card>
+  );
+}
+
+export function TabButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        padding: "var(--ui-sp-2) var(--ui-sp-4)",
+        borderRadius: "var(--ui-radius)",
+        border: "1px solid var(--ui-border)",
+        background: active ? "var(--ui-primary)" : "transparent",
+        color: active ? "var(--ui-on-primary)" : "var(--ui-text)",
+        cursor: "pointer",
+        fontSize: 14,
+        fontWeight: 500,
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+export function EntityPicker({
+  propsList,
+  clientsList,
+  propertyId,
+  setPropertyId,
+  clientId,
+  setClientId,
+}: {
+  propsList: Property[];
+  clientsList: Client[];
+  propertyId: string;
+  setPropertyId: (v: string) => void;
+  clientId: string;
+  setClientId: (v: string) => void;
+}) {
+  return (
+    <>
+      {propsList.length > 0 ? (
+        <div>
+          <Label htmlFor="inv-prop">Inmueble (opcional)</Label>
+          <Select id="inv-prop" value={propertyId} onChange={(e) => setPropertyId(e.target.value)}>
+            <option value="">— Ninguno —</option>
+            {propsList.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.title}
+              </option>
+            ))}
+          </Select>
+        </div>
+      ) : null}
+      {clientsList.length > 0 ? (
+        <div>
+          <Label htmlFor="inv-client">Cliente (opcional)</Label>
+          <Select id="inv-client" value={clientId} onChange={(e) => setClientId(e.target.value)}>
+            <option value="">— Ninguno —</option>
+            {clientsList.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </Select>
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+export function ExpenseForm({
+  slug,
+  propsList,
+  clientsList,
+  initial,
+  presetPropertyId,
+  presetClientId,
+  onSaved,
+  onCancel,
+}: {
+  slug: string;
+  propsList: Property[];
+  clientsList: Client[];
+  initial?: Invoice;
+  presetPropertyId?: string;
+  presetClientId?: string;
+  onSaved: (i: Invoice) => void;
+  onCancel: () => void;
+}) {
+  const isEdit = initial != null;
+  const locked = isEdit && initial.paidCents > 0;
+  const [propertyId, setPropertyId] = useState(initial?.propertyId ?? presetPropertyId ?? "");
+  const [clientId, setClientId] = useState(initial?.clientId ?? presetClientId ?? "");
+  const [vendorName, setVendorName] = useState(initial?.vendorName ?? "");
+  const [category, setCategory] = useState<InvoiceCategory>(initial?.category ?? "other");
+  const [concept, setConcept] = useState(initial?.concept ?? "");
+  const [amount, setAmount] = useState(initial ? (initial.totalCents / 100).toFixed(2) : "");
+  const [issueDate, setIssueDate] = useState(initial?.issueDate ?? todayISO());
+  const [status, setStatus] = useState<"pending" | "paid" | "cancelled">(
+    (initial?.status as "pending" | "paid" | "cancelled" | undefined) ?? "paid",
+  );
+  const [file, setFile] = useState<File | null>(null);
+  const [notes, setNotes] = useState(initial?.notes ?? "");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setSubmitting(true);
+    setError(null);
+    try {
+      if (isEdit) {
+        const { invoice } = await api.invoices.update(slug, initial.id, {
+          propertyId: propertyId || null,
+          clientId: clientId || null,
+          vendorName: vendorName || null,
+          category,
+          concept: concept || undefined,
+          amount: locked ? undefined : Number(amount),
+          issueDate,
+          status,
+          notes: notes || null,
+        });
+        onSaved(invoice);
+      } else {
+        const input: CreateExpenseInput = {
+          propertyId: propertyId || undefined,
+          clientId: clientId || undefined,
+          vendorName: vendorName || undefined,
+          category,
+          concept: concept || undefined,
+          amount,
+          issueDate,
+          status: status === "cancelled" ? "pending" : status,
+          notes: notes || undefined,
+          file,
+        };
+        const { invoice } = await api.invoices.createExpense(slug, input);
+        onSaved(invoice);
+      }
+    } catch (err) {
+      setError(
+        err instanceof ApiError && err.message === "invalid_file_type"
+          ? "Archivo no admitido: sube un PDF o una imagen."
+          : "No se pudo guardar el gasto. Revisa los datos.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  const fieldGrid = {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+    gap: "var(--ui-sp-4)",
+  } as const;
+
+  return (
+    <Card>
+      <form onSubmit={submit} style={{ display: "grid", gap: "var(--ui-sp-4)" }}>
+        <div style={fieldGrid}>
+          <EntityPicker
+            propsList={propsList}
+            clientsList={clientsList}
+            propertyId={propertyId}
+            setPropertyId={setPropertyId}
+            clientId={clientId}
+            setClientId={setClientId}
+          />
+          <div>
+            <Label htmlFor="ex-vendor">Proveedor</Label>
+            <Input id="ex-vendor" value={vendorName} onChange={(e) => setVendorName(e.target.value)} />
+          </div>
+          <div>
+            <Label htmlFor="ex-cat">Categoría</Label>
+            <Select id="ex-cat" value={category} onChange={(e) => setCategory(e.target.value as InvoiceCategory)}>
+              {Object.entries(INVOICE_CATEGORY_LABELS).map(([v, l]) => (
+                <option key={v} value={v}>
+                  {l}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div>
+            <Label htmlFor="ex-amount">Importe (€)</Label>
+            <Input
+              id="ex-amount"
+              type="number"
+              step="0.01"
+              min="0.01"
+              required
+              disabled={locked}
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+            />
+            {locked ? (
+              <p className="du-muted" style={{ fontSize: 12, marginTop: 4 }}>
+                Ya tiene un pago registrado — el importe no se puede editar.
+              </p>
+            ) : null}
+          </div>
+          <div>
+            <Label htmlFor="ex-date">Fecha</Label>
+            <Input id="ex-date" type="date" required value={issueDate} onChange={(e) => setIssueDate(e.target.value)} />
+          </div>
+          <div>
+            <Label htmlFor="ex-status">Estado</Label>
+            <Select
+              id="ex-status"
+              value={status}
+              onChange={(e) => setStatus(e.target.value as "pending" | "paid" | "cancelled")}
+            >
+              <option value="paid">Ya pagado</option>
+              <option value="pending">Pendiente de pago</option>
+              {isEdit ? <option value="cancelled">Anulado</option> : null}
+            </Select>
+          </div>
+          <div>
+            <Label htmlFor="ex-concept">Concepto</Label>
+            <Input id="ex-concept" value={concept} onChange={(e) => setConcept(e.target.value)} />
+          </div>
+          {isEdit ? (
+            initial.fileUrl ? (
+              <div>
+                <Label>Factura adjunta</Label>
+                <a
+                  href={initial.fileUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="du-muted"
+                  style={{ display: "inline-flex", alignItems: "center", gap: 4 }}
+                >
+                  <Paperclip size={14} />
+                  {initial.fileName ?? "Ver"}
+                </a>
+              </div>
+            ) : null
+          ) : (
+            <div>
+              <Label htmlFor="ex-file">Factura (PDF/imagen)</Label>
+              <Input id="ex-file" type="file" accept="application/pdf,image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+            </div>
+          )}
+        </div>
+
+        <div>
+          <Label htmlFor="ex-notes">Notas</Label>
+          <Textarea id="ex-notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
+        </div>
+
+        {error ? <p className="du-alert">{error}</p> : null}
+
+        <div style={{ display: "flex", gap: "var(--ui-sp-3)" }}>
+          <Button type="submit" disabled={submitting}>
+            {submitting ? "Guardando…" : isEdit ? "Guardar cambios" : "Guardar gasto"}
+          </Button>
+          <Button type="button" variant="ghost" onClick={onCancel}>
+            Cancelar
+          </Button>
+        </div>
+      </form>
+    </Card>
+  );
+}
+
+export function IncomeForm({
+  slug,
+  propsList,
+  clientsList,
+  initial,
+  presetPropertyId,
+  presetClientId,
+  onSaved,
+  onCancel,
+}: {
+  slug: string;
+  propsList: Property[];
+  clientsList: Client[];
+  initial?: Invoice;
+  presetPropertyId?: string;
+  presetClientId?: string;
+  onSaved: (i: Invoice) => void;
+  onCancel: () => void;
+}) {
+  const isEdit = initial != null;
+  const locked = isEdit && initial.paidCents > 0;
+  const [propertyId, setPropertyId] = useState(initial?.propertyId ?? presetPropertyId ?? "");
+  const [clientId, setClientId] = useState(initial?.clientId ?? presetClientId ?? "");
+  const [category, setCategory] = useState<InvoiceCategory>(initial?.category ?? "management_fee");
+  const [concept, setConcept] = useState(initial?.concept ?? "");
+  const [amount, setAmount] = useState(initial ? (initial.subtotalCents / 100).toFixed(2) : "");
+  const [taxRatePercent, setTaxRatePercent] = useState(
+    initial ? (initial.taxRateBps / 100).toFixed(2) : "21",
+  );
+  const [issueDate, setIssueDate] = useState(initial?.issueDate ?? todayISO());
+  const [dueDate, setDueDate] = useState(initial?.dueDate ?? "");
+  const [status, setStatus] = useState<"pending" | "cancelled">(
+    initial?.status === "cancelled" ? "cancelled" : "pending",
+  );
+  const [notes, setNotes] = useState(initial?.notes ?? "");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setSubmitting(true);
+    setError(null);
+    try {
+      if (isEdit) {
+        const { invoice } = await api.invoices.update(slug, initial.id, {
+          propertyId: propertyId || null,
+          clientId: clientId || null,
+          category,
+          concept,
+          amount: locked ? undefined : Number(amount),
+          taxRatePercent: locked ? undefined : taxRatePercent ? Number(taxRatePercent) : undefined,
+          issueDate,
+          dueDate: dueDate || null,
+          status: initial.status === "paid" ? undefined : status,
+          notes: notes || null,
+        });
+        onSaved(invoice);
+      } else {
+        const input: CreateIncomeInput = {
+          propertyId: propertyId || undefined,
+          clientId: clientId || undefined,
+          category,
+          concept,
+          amount: Number(amount),
+          taxRatePercent: taxRatePercent ? Number(taxRatePercent) : undefined,
+          issueDate,
+          dueDate: dueDate || undefined,
+          notes: notes || undefined,
+        };
+        const { invoice } = await api.invoices.createIncome(slug, input);
+        onSaved(invoice);
+      }
+    } catch {
+      setError(
+        isEdit ? "No se pudieron guardar los cambios." : "No se pudo emitir la factura. Revisa los datos.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  const fieldGrid = {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+    gap: "var(--ui-sp-4)",
+  } as const;
+
+  return (
+    <Card>
+      <form onSubmit={submit} style={{ display: "grid", gap: "var(--ui-sp-4)" }}>
+        <div style={fieldGrid}>
+          <EntityPicker
+            propsList={propsList}
+            clientsList={clientsList}
+            propertyId={propertyId}
+            setPropertyId={setPropertyId}
+            clientId={clientId}
+            setClientId={setClientId}
+          />
+          <div>
+            <Label htmlFor="in-cat">Categoría</Label>
+            <Select id="in-cat" value={category} onChange={(e) => setCategory(e.target.value as InvoiceCategory)}>
+              {Object.entries(INVOICE_CATEGORY_LABELS).map(([v, l]) => (
+                <option key={v} value={v}>
+                  {l}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div>
+            <Label htmlFor="in-amount">Base imponible (€)</Label>
+            <Input
+              id="in-amount"
+              type="number"
+              step="0.01"
+              min="0.01"
+              required
+              disabled={locked}
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+            />
+            {locked ? (
+              <p className="du-muted" style={{ fontSize: 12, marginTop: 4 }}>
+                Ya tiene un cobro registrado — el importe no se puede editar.
+              </p>
+            ) : null}
+          </div>
+          <div>
+            <Label htmlFor="in-tax">IVA (%)</Label>
+            <Input
+              id="in-tax"
+              type="number"
+              step="0.01"
+              min="0"
+              disabled={locked}
+              value={taxRatePercent}
+              onChange={(e) => setTaxRatePercent(e.target.value)}
+            />
+          </div>
+          <div>
+            <Label htmlFor="in-date">Fecha de emisión</Label>
+            <Input id="in-date" type="date" required value={issueDate} onChange={(e) => setIssueDate(e.target.value)} />
+          </div>
+          <div>
+            <Label htmlFor="in-due">Vencimiento</Label>
+            <Input id="in-due" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+          </div>
+          {isEdit && initial.status !== "paid" ? (
+            <div>
+              <Label htmlFor="in-status">Estado</Label>
+              <Select id="in-status" value={status} onChange={(e) => setStatus(e.target.value as "pending" | "cancelled")}>
+                <option value="pending">Pendiente</option>
+                <option value="cancelled">Anulada</option>
+              </Select>
+            </div>
+          ) : null}
+        </div>
+
+        <div>
+          <Label htmlFor="in-concept">Concepto</Label>
+          <Input id="in-concept" required value={concept} onChange={(e) => setConcept(e.target.value)} />
+        </div>
+
+        <div>
+          <Label htmlFor="in-notes">Notas</Label>
+          <Textarea id="in-notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
+        </div>
+
+        {error ? <p className="du-alert">{error}</p> : null}
+
+        <div style={{ display: "flex", gap: "var(--ui-sp-3)" }}>
+          <Button type="submit" disabled={submitting}>
+            {submitting ? "Guardando…" : isEdit ? "Guardar cambios" : "Emitir factura"}
+          </Button>
+          <Button type="button" variant="ghost" onClick={onCancel}>
+            Cancelar
+          </Button>
+        </div>
+      </form>
+    </Card>
+  );
+}
+
+export function PaymentForm({
+  slug,
+  invoice,
+  onSaved,
+  onCancel,
+}: {
+  slug: string;
+  invoice: Invoice;
+  onSaved: (i: Invoice) => void;
+  onCancel: () => void;
+}) {
+  const [amount, setAmount] = useState((invoice.remainingCents / 100).toFixed(2));
+  const [method, setMethod] = useState<InvoicePaymentMethod>("transfer");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setSubmitting(true);
+    setError(null);
+    try {
+      const { invoice: updated } = await api.invoices.addPayment(slug, invoice.id, {
+        amount: Number(amount),
+        method,
+      });
+      onSaved(updated);
+    } catch {
+      setError("No se pudo registrar el cobro.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <form
+      onSubmit={submit}
+      style={{
+        display: "flex",
+        gap: "var(--ui-sp-3)",
+        alignItems: "end",
+        flexWrap: "wrap",
+        padding: "var(--ui-sp-3) 0",
+      }}
+    >
+      <div>
+        <Label htmlFor="pay-amount">Importe (€)</Label>
+        <Input
+          id="pay-amount"
+          type="number"
+          step="0.01"
+          min="0.01"
+          required
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          style={{ width: 120 }}
+        />
+      </div>
+      <div>
+        <Label htmlFor="pay-method">Método</Label>
+        <Select id="pay-method" value={method} onChange={(e) => setMethod(e.target.value as InvoicePaymentMethod)}>
+          {Object.entries(METHOD_LABEL).map(([v, l]) => (
+            <option key={v} value={v}>
+              {l}
+            </option>
+          ))}
+        </Select>
+      </div>
+      {error ? <p className="du-alert">{error}</p> : null}
+      <Button type="submit" size="sm" disabled={submitting}>
+        {submitting ? "Guardando…" : "Registrar"}
+      </Button>
+      <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
+        Cancelar
+      </Button>
+    </form>
+  );
+}
+
+// Tabla de movimientos — usada tanto en Contabilidad > Movimientos como en
+// las páginas de cuenta (donde se ocultan las columnas Inmueble/Cliente, ya
+// que son redundantes con el contexto de la página).
+export function InvoiceTable({
+  slug,
+  items,
+  direction,
+  propNameById = {},
+  clientNameById = {},
+  showPropertyColumn = true,
+  showClientColumn = true,
+  onEdit,
+  onChange,
+  emptyMessage,
+}: {
+  slug: string;
+  items: Invoice[];
+  direction: InvoiceDirection;
+  propNameById?: Record<string, string>;
+  clientNameById?: Record<string, string>;
+  showPropertyColumn?: boolean;
+  showClientColumn?: boolean;
+  onEdit: (inv: Invoice) => void;
+  onChange: (updater: (prev: Invoice[]) => Invoice[]) => void;
+  emptyMessage: string;
+}) {
+  const [payingId, setPayingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const list = items.filter((i) => i.direction === direction);
+
+  async function remove(id: string) {
+    try {
+      await api.invoices.remove(slug, id);
+      onChange((prev) => prev.filter((i) => i.id !== id));
+    } catch (err) {
+      setError(
+        err instanceof ApiError && err.status === 409
+          ? "No se puede borrar: ya tiene un pago registrado."
+          : "No se pudo borrar.",
+      );
+    }
+  }
+
+  async function downloadPdf(id: string) {
+    try {
+      const blob = await api.invoices.pdf(slug, id);
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank");
+      setTimeout(() => URL.revokeObjectURL(url), 30_000);
+    } catch {
+      setError("No se pudo generar el PDF.");
+    }
+  }
+
+  function afterPayment(updated: Invoice) {
+    onChange((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
+    setPayingId(null);
+  }
+
+  const colSpan =
+    (direction === "income" ? 1 : 0) + (showPropertyColumn ? 1 : 0) + (showClientColumn ? 1 : 0) + 7;
+
+  return (
+    <div style={{ display: "grid", gap: "var(--ui-sp-3)" }}>
+      {error ? <p className="du-alert">{error}</p> : null}
+      <Card padded={false}>
+        {list.length === 0 ? (
+          <p className="du-muted" style={{ padding: "var(--ui-sp-5)" }}>
+            {emptyMessage}
+          </p>
+        ) : (
+          <div style={{ overflowX: "auto" }}>
+            <table className="du-table">
+              <thead>
+                <tr>
+                  {direction === "income" ? <th>Número</th> : null}
+                  <th>Fecha</th>
+                  <th>Concepto</th>
+                  <th>Categoría</th>
+                  {showPropertyColumn ? <th>Inmueble</th> : null}
+                  {showClientColumn ? <th>Cliente</th> : null}
+                  <th>Importe</th>
+                  <th>Estado</th>
+                  <th>Adjunto</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {list.map((inv) => (
+                  <Fragment key={inv.id}>
+                    <tr>
+                      {direction === "income" ? <td style={{ whiteSpace: "nowrap" }}>{inv.number ?? "—"}</td> : null}
+                      <td style={{ whiteSpace: "nowrap" }}>
+                        {new Date(inv.issueDate).toLocaleDateString("es-ES")}
+                      </td>
+                      <td>{inv.concept ?? "—"}</td>
+                      <td>
+                        <Badge variant="default">{INVOICE_CATEGORY_LABELS[inv.category]}</Badge>
+                      </td>
+                      {showPropertyColumn ? (
+                        <td className="du-muted">{inv.propertyId ? (propNameById[inv.propertyId] ?? "—") : "—"}</td>
+                      ) : null}
+                      {showClientColumn ? (
+                        <td className="du-muted">{inv.clientId ? (clientNameById[inv.clientId] ?? "—") : "—"}</td>
+                      ) : null}
+                      <td style={{ whiteSpace: "nowrap", fontWeight: 500 }}>
+                        {eurCents(inv.totalCents)}
+                        {inv.status !== "paid" && inv.status !== "cancelled" && inv.paidCents > 0 ? (
+                          <span className="du-muted" style={{ fontWeight: 400 }}>
+                            {" "}
+                            · quedan {eurCents(inv.remainingCents)}
+                          </span>
+                        ) : null}
+                      </td>
+                      <td>
+                        <Badge variant={STATUS_VARIANT[inv.status]}>{STATUS_LABEL[inv.status]}</Badge>
+                        {inv.overdue ? (
+                          <Badge variant="danger" style={{ marginLeft: 4 }}>
+                            Vencida
+                          </Badge>
+                        ) : null}
+                      </td>
+                      <td>
+                        {inv.fileUrl ? (
+                          <a
+                            href={inv.fileUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="du-muted"
+                            style={{ display: "inline-flex", alignItems: "center", gap: 4 }}
+                          >
+                            <Paperclip size={14} />
+                            {inv.fileName ?? "Ver"}
+                          </a>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+                      <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+                        {inv.direction === "income" ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => void downloadPdf(inv.id)}
+                            aria-label="Descargar PDF"
+                          >
+                            <Download size={15} />
+                          </Button>
+                        ) : null}
+                        {inv.status === "pending" || inv.status === "draft" ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setPayingId(payingId === inv.id ? null : inv.id)}
+                          >
+                            Cobro
+                          </Button>
+                        ) : null}
+                        <Button variant="ghost" size="sm" onClick={() => onEdit(inv)} aria-label="Editar">
+                          <Pencil size={15} />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => void remove(inv.id)}
+                          aria-label="Eliminar"
+                        >
+                          <Trash2 size={15} />
+                        </Button>
+                      </td>
+                    </tr>
+                    {payingId === inv.id ? (
+                      <tr>
+                        <td colSpan={colSpan} style={{ background: "var(--ui-hover)" }}>
+                          <PaymentForm slug={slug} invoice={inv} onSaved={afterPayment} onCancel={() => setPayingId(null)} />
+                        </td>
+                      </tr>
+                    ) : null}
+                  </Fragment>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}
+
+// Página de cuenta (/contabilidad/inmueble|cliente/[id]): mismos datos que la
+// vista agrupada de Contabilidad pero en su propio "menú" — resumen + tabs de
+// facturas/gastos ya filtrados por esta cuenta, sin tener que repetir el
+// filtro cada vez. `kind` decide qué columna de InvoiceTable es redundante
+// (la propia cuenta) y qué campo se preselecciona al dar de alta.
+export function AccountDetail({
+  slug,
+  kind,
+  id,
+  name,
+  items,
+  setItems,
+  propsList,
+  clientsList,
+}: {
+  slug: string;
+  kind: "property" | "client";
+  id: string;
+  name: string;
+  items: Invoice[];
+  setItems: (updater: (prev: Invoice[]) => Invoice[]) => void;
+  propsList: Property[];
+  clientsList: Client[];
+}) {
+  const [tab, setTab] = useState<"resumen" | InvoiceDirection>("resumen");
+  const [showForm, setShowForm] = useState(false);
+  const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
+
+  const active = items.filter((i) => i.status !== "cancelled");
+  const facturado = active.filter((i) => i.direction === "income").reduce((a, i) => a + i.totalCents, 0);
+  const cobrado = active.filter((i) => i.direction === "income").reduce((a, i) => a + i.paidCents, 0);
+  const pendiente = active.filter((i) => i.direction === "income").reduce((a, i) => a + i.remainingCents, 0);
+  const gastos = active.filter((i) => i.direction === "expense").reduce((a, i) => a + i.totalCents, 0);
+  const balance = cobrado - gastos;
+
+  const recent = [...active].sort((a, b) => b.issueDate.localeCompare(a.issueDate)).slice(0, 6);
+
+  function afterEdit(updated: Invoice) {
+    setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
+    setEditingInvoice(null);
+    setShowForm(false);
+  }
+
+  function startEdit(inv: Invoice) {
+    setTab(inv.direction);
+    setEditingInvoice(inv);
+    setShowForm(true);
+  }
+
+  const propNameById = Object.fromEntries(propsList.map((p) => [p.id, p.title]));
+  const clientNameById = Object.fromEntries(clientsList.map((c) => [c.id, c.name]));
+
+  return (
+    <div style={{ display: "grid", gap: "var(--ui-sp-5)" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "var(--ui-sp-3)" }}>
+        <ButtonLink href="/contabilidad" variant="ghost" size="sm">
+          <ArrowLeft size={15} />
+          Contabilidad
+        </ButtonLink>
+        <h1 className="du-h1" style={{ margin: 0 }}>
+          {name}
+        </h1>
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+          gap: "var(--ui-sp-4)",
+        }}
+      >
+        <SummaryCard label="Facturado" value={eurCents(facturado)} />
+        <SummaryCard label="Cobrado" value={eurCents(cobrado)} />
+        <SummaryCard label="Pendiente" value={eurCents(pendiente)} />
+        <SummaryCard label="Gastos" value={eurCents(gastos)} />
+        <SummaryCard label="Balance" value={eurCents(balance)} accent={balance >= 0 ? "success" : "danger"} />
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: "var(--ui-sp-3)",
+        }}
+      >
+        <div style={{ display: "flex", gap: "var(--ui-sp-2)" }}>
+          <TabButton
+            active={tab === "resumen"}
+            onClick={() => {
+              setTab("resumen");
+              setShowForm(false);
+            }}
+          >
+            Resumen
+          </TabButton>
+          <TabButton
+            active={tab === "income"}
+            onClick={() => {
+              setTab("income");
+              setShowForm(false);
+              setEditingInvoice(null);
+            }}
+          >
+            Facturas emitidas
+          </TabButton>
+          <TabButton
+            active={tab === "expense"}
+            onClick={() => {
+              setTab("expense");
+              setShowForm(false);
+              setEditingInvoice(null);
+            }}
+          >
+            Gastos
+          </TabButton>
+        </div>
+        {tab !== "resumen" ? (
+          <Button
+            size="sm"
+            onClick={() => {
+              setEditingInvoice(null);
+              setShowForm((v) => !v);
+            }}
+          >
+            <Plus size={16} />
+            {tab === "income" ? "Nueva factura" : "Nuevo gasto"}
+          </Button>
+        ) : null}
+      </div>
+
+      {showForm && tab !== "resumen" ? (
+        tab === "income" ? (
+          <IncomeForm
+            slug={slug}
+            propsList={propsList}
+            clientsList={clientsList}
+            initial={editingInvoice ?? undefined}
+            presetPropertyId={kind === "property" ? id : undefined}
+            presetClientId={kind === "client" ? id : undefined}
+            onSaved={(inv) => {
+              if (editingInvoice) {
+                afterEdit(inv);
+              } else {
+                setItems((prev) => [inv, ...prev]);
+                setShowForm(false);
+              }
+            }}
+            onCancel={() => {
+              setEditingInvoice(null);
+              setShowForm(false);
+            }}
+          />
+        ) : (
+          <ExpenseForm
+            slug={slug}
+            propsList={propsList}
+            clientsList={clientsList}
+            initial={editingInvoice ?? undefined}
+            presetPropertyId={kind === "property" ? id : undefined}
+            presetClientId={kind === "client" ? id : undefined}
+            onSaved={(inv) => {
+              if (editingInvoice) {
+                afterEdit(inv);
+              } else {
+                setItems((prev) => [inv, ...prev]);
+                setShowForm(false);
+              }
+            }}
+            onCancel={() => {
+              setEditingInvoice(null);
+              setShowForm(false);
+            }}
+          />
+        )
+      ) : null}
+
+      {tab === "resumen" ? (
+        <Card padded={false}>
+          {recent.length === 0 ? (
+            <p className="du-muted" style={{ padding: "var(--ui-sp-5)" }}>
+              Sin movimientos todavía.
+            </p>
+          ) : (
+            <div>
+              {recent.map((inv, i) => (
+                <div
+                  key={inv.id}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: "var(--ui-sp-4)",
+                    padding: "var(--ui-sp-3) var(--ui-sp-4)",
+                    borderTop: i > 0 ? "1px solid var(--ui-border)" : "none",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: "var(--ui-sp-3)" }}>
+                    <Badge variant={inv.direction === "income" ? "success" : "default"}>
+                      {inv.direction === "income" ? "Factura" : "Gasto"}
+                    </Badge>
+                    <span>{inv.concept ?? "—"}</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "var(--ui-sp-3)" }}>
+                    <span className="du-muted" style={{ fontSize: 13, whiteSpace: "nowrap" }}>
+                      {new Date(inv.issueDate).toLocaleDateString("es-ES")}
+                    </span>
+                    <span style={{ fontWeight: 500, whiteSpace: "nowrap" }}>{eurCents(inv.totalCents)}</span>
+                    <Badge variant={STATUS_VARIANT[inv.status]}>{STATUS_LABEL[inv.status]}</Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      ) : (
+        <InvoiceTable
+          slug={slug}
+          items={items}
+          direction={tab}
+          propNameById={propNameById}
+          clientNameById={clientNameById}
+          showPropertyColumn={kind !== "property"}
+          showClientColumn={kind !== "client"}
+          onEdit={startEdit}
+          onChange={setItems}
+          emptyMessage={tab === "income" ? "Aún no se han emitido facturas." : "Aún no hay gastos registrados."}
+        />
+      )}
+    </div>
+  );
+}
