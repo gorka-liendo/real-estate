@@ -55,3 +55,38 @@
   --ui-shadow-sm: 0 1px 2px rgba(10, 10, 10, 0.05);
   --ui-shadow: 0 4px 16px rgba(10, 10, 10, 0.06);
 }
+
+/*
+ * Modo oscuro — fallback genérico de seguridad, igual que :root para el modo
+ * claro: cubre cualquier tema (incluidos los "a medida" sin bloque dark
+ * propio). El dashboard pone data-mode="dark" en la raíz junto a data-theme;
+ * los temas de themes/<id>.css pueden afinar sus propios tonos con
+ * [data-theme="<id>"][data-mode="dark"] (más específico, gana sobre esto).
+ */
+[data-mode="dark"] {
+  --ui-bg: #0b0b0c;
+  --ui-surface: #17181a;
+  --ui-text: #f5f5f5;
+  --ui-muted: #9a9a9a;
+  --ui-border: rgba(255, 255, 255, 0.1);
+  --ui-border-strong: rgba(255, 255, 255, 0.22);
+  --ui-hover: rgba(255, 255, 255, 0.06);
+  --ui-active: rgba(255, 255, 255, 0.1);
+
+  --ui-primary: #f5f5f5;
+  --ui-primary-hover: #d4d4d4;
+  --ui-on-primary: #0b0b0c;
+  --ui-ring: rgba(245, 245, 245, 0.35);
+
+  --ui-success: #34d399;
+  --ui-success-bg: rgba(52, 211, 153, 0.16);
+  --ui-danger: #f87171;
+  --ui-danger-bg: rgba(248, 113, 113, 0.16);
+  --ui-warning: #fbbf24;
+  --ui-warning-bg: rgba(251, 191, 36, 0.16);
+
+  --ui-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --ui-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+
+  color-scheme: dark;
+}

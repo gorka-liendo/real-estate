@@ -15,6 +15,9 @@ import { routes } from "@/lib/routes";
 import { useAuth } from "./auth-context";
 
 const STORAGE_KEY = "rep.workspace.tenant";
+const MODE_KEY = "rep.workspace.mode";
+
+export type ColorMode = "light" | "dark";
 
 type WorkspaceValue = {
   memberships: Membership[];
@@ -25,6 +28,8 @@ type WorkspaceValue = {
   activeModules: string[] | null; // null = cargando
   hasModule: (code: string) => boolean;
   isPlatformAdmin: boolean;
+  mode: ColorMode;
+  setMode: (m: ColorMode) => void; // persiste en localStorage, independiente del tenant
 };
 
 const WorkspaceContext = createContext<WorkspaceValue | null>(null);
@@ -36,6 +41,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [activeModules, setActiveModules] = useState<string[] | null>(null);
   const [brandConfig, setBrandConfig] = useState<BrandConfig | null>(null);
+  const [mode, setModeState] = useState<ColorMode>("light");
 
   useEffect(() => {
     if (memberships.length === 0) return;
@@ -43,6 +49,18 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     const valid = memberships.find((m) => m.slug === stored);
     setSelectedSlug((prev) => prev ?? valid?.slug ?? memberships[0]!.slug);
   }, [memberships]);
+
+  // Preferencia de modo: la elección explícita del usuario (localStorage) manda;
+  // sin elección previa, respeta prefers-color-scheme del sistema.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const stored = localStorage.getItem(MODE_KEY);
+    if (stored === "light" || stored === "dark") {
+      setModeState(stored);
+    } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      setModeState("dark");
+    }
+  }, []);
 
   // carga módulos activos + branding del tenant seleccionado
   useEffect(() => {
@@ -65,6 +83,11 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     if (typeof window !== "undefined") localStorage.setItem(STORAGE_KEY, slug);
   }
 
+  function setMode(next: ColorMode) {
+    setModeState(next);
+    if (typeof window !== "undefined") localStorage.setItem(MODE_KEY, next);
+  }
+
   const value: WorkspaceValue = {
     memberships,
     selected: memberships.find((m) => m.slug === selectedSlug) ?? null,
@@ -74,6 +97,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     activeModules,
     hasModule: (code) => (activeModules ?? []).includes(code),
     isPlatformAdmin: me?.isPlatformAdmin ?? false,
+    mode,
+    setMode,
   };
 
   return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>;

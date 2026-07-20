@@ -20,3 +20,21 @@
   --ui-radius-lg: 0px;
   --ui-radius-btn: 999px; /* botones píldora */
 }
+
+/* Dwell oscuro — misma identidad (negro/blanco puro, sin gris cálido)
+   invertida: fondo negro, tinta blanca. Radios se heredan del bloque claro. */
+[data-theme="dwell"][data-mode="dark"] {
+  --ui-bg: #000000;
+  --ui-surface: #111111;
+  --ui-text: #fbfbfb;
+  --ui-muted: #8f8f8f;
+  --ui-border: rgba(255, 255, 255, 0.08);
+  --ui-border-strong: rgba(255, 255, 255, 0.22);
+  --ui-hover: rgba(255, 255, 255, 0.06);
+  --ui-active: rgba(255, 255, 255, 0.1);
+
+  --ui-primary: #fbfbfb;
+  --ui-primary-hover: #d4d4d4;
+  --ui-on-primary: #000000;
+  --ui-ring: rgba(255, 255, 255, 0.3);
+}

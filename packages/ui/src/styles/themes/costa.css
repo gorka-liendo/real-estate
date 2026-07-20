@@ -20,3 +20,22 @@
   --ui-radius-lg: 16px;
   --ui-radius-btn: 14px;
 }
+
+/* Costa oscuro — mantiene la identidad azul frío sobre marino oscuro; el azul
+   primario se aclara para seguir teniendo contraste sobre el fondo. Radios
+   se heredan del bloque claro. */
+[data-theme="costa"][data-mode="dark"] {
+  --ui-bg: #0b1620;
+  --ui-surface: #122232;
+  --ui-text: #e9f1f7;
+  --ui-muted: #7f97a8;
+  --ui-border: rgba(255, 255, 255, 0.1);
+  --ui-border-strong: rgba(255, 255, 255, 0.24);
+  --ui-hover: rgba(255, 255, 255, 0.06);
+  --ui-active: rgba(255, 255, 255, 0.1);
+
+  --ui-primary: #4f9fd6;
+  --ui-primary-hover: #6fb3e0;
+  --ui-on-primary: #06131d;
+  --ui-ring: rgba(79, 159, 214, 0.35);
+}

@@ -572,5 +572,23 @@ packages/
       páginas de cuenta, en vez de tres copias divergiendo con el tiempo.
       Verificado en navegador: navegación cards→cuenta, columnas correctas
       por tab, alta con preselección, build de los 3 dashboard routes.
+- [x] **Modo oscuro en el dashboard** — toggle en el pie del sidebar (icono
+      sol/luna), persistido en `localStorage` (`rep.workspace.mode`,
+      independiente del tenant seleccionado) con fallback inicial a
+      `prefers-color-scheme` del sistema si el usuario no ha elegido antes.
+      `WorkspaceContext` expone `mode`/`setMode`; `DashboardShell` añade
+      `data-mode={mode}` junto a `data-theme` en `.dash-shell`. CSS: mismo
+      patrón que los temas — fallback genérico `[data-mode="dark"]` en
+      `tokens.css` (cubre cualquier tema, incluidos los "a medida" sin bloque
+      dark propio) + afinado por tema en `themes/dwell.css` y `themes/costa.css`
+      con `[data-theme="<id>"][data-mode="dark"]` (más específico, gana sobre
+      el genérico); los radios NO se repiten en los bloques dark, se heredan
+      del bloque claro — el modo oscuro cambia color, nunca la identidad de
+      forma. Cero cambios en componentes: todo `du-*` ya salía de `--ui-*`,
+      así que el dark mode es 100% tokens. Cuidado documentado: la primera
+      vez que se activa dark, en dev con HMR a veces hace falta refrescar
+      para que el navegador repinte del todo (gotcha de CSS/tokens ya
+      conocido) — el estado real (`getComputedStyle`) es siempre correcto
+      aunque una captura de pantalla puntual quede rezagada.
 - [ ] **Pendiente retomar**: theming/fuentes por inmobiliaria (ver gotcha de
       next/font arriba) y edición de marca en Ajustes.

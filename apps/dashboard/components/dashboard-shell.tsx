@@ -1,6 +1,6 @@
 "use client";
 
-import { House, LogOut, Settings, Shield } from "lucide-react";
+import { House, LogOut, Moon, Settings, Shield, Sun } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -12,7 +12,7 @@ import { routes } from "@/lib/routes";
 
 export function DashboardShell({ children }: { children: ReactNode }) {
   const { me, logout } = useAuth();
-  const { memberships, selected, selectSlug, brandConfig, hasModule, isPlatformAdmin } =
+  const { memberships, selected, selectSlug, brandConfig, hasModule, isPlatformAdmin, mode, setMode } =
     useWorkspace();
   const pathname = usePathname();
 
@@ -31,7 +31,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
   const platformOnly = isPlatformAdmin && memberships.length === 0;
 
   return (
-    <div className="dash-shell" data-theme={theme}>
+    <div className="dash-shell" data-theme={theme} data-mode={mode}>
       <aside className="dash-sidebar">
         <div className="dash-brand">
           {logoUrl ? (
@@ -76,6 +76,15 @@ export function DashboardShell({ children }: { children: ReactNode }) {
         </nav>
 
         <div className="dash-sidebar__foot">
+          <button
+            className="du-btn du-btn--ghost du-btn--sm"
+            style={{ width: "100%", justifyContent: "flex-start", marginBottom: "var(--ui-sp-2)" }}
+            onClick={() => setMode(mode === "dark" ? "light" : "dark")}
+            aria-label={mode === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+          >
+            {mode === "dark" ? <Sun size={15} /> : <Moon size={15} />}
+            {mode === "dark" ? "Modo claro" : "Modo oscuro"}
+          </button>
           <div className="dash-user">{me?.user.email}</div>
           <button className="du-btn du-btn--ghost du-btn--sm" onClick={() => void logout()}>
             <LogOut size={15} />
