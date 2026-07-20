@@ -77,8 +77,9 @@
 }
 .dash-content {
   padding: var(--ui-sp-6);
-  max-width: 960px;
+  max-width: 1280px;
   width: 100%;
+  margin: 0 auto;
 }
 .dash-tile {
   height: 100%;
