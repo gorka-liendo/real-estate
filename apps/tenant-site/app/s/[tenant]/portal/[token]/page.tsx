@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { OPERATION_LABELS } from "@rep/ui-tenant";
 import { fetchPortal, fetchTenant, type PortalProperty } from "@/lib/tenant";
 import { SiteFooter } from "../../SiteFooter";
+import { TopbarBrand } from "../../TopbarBrand";
 
 // Portal del propietario: enlace privado por token que la agencia comparte con
 // el dueño. Server-rendered sin caché y SIN indexar (robots noindex).
@@ -36,7 +37,7 @@ export default async function OwnerPortal({ params }: Params) {
     >
       <header className="rt-topbar">
         <div className="rt-wrap rt-topbar__inner">
-          <span className="rt-topbar__brand">{tenant.name}</span>
+          <TopbarBrand name={tenant.name} logoUrl={tenant.brandConfig.logoUrl} />
           <span className="rt-eyebrow" style={{ margin: 0 }}>
             Portal del propietario
           </span>

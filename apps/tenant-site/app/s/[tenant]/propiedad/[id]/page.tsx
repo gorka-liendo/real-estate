@@ -6,6 +6,7 @@ import { fetchModules, fetchProperty, fetchTenant, type PublicProperty } from "@
 import { CONDITION_LABELS, featureLabel, KIND_LABELS } from "@/lib/property-meta";
 import { ContactForm } from "../../ContactForm";
 import { SiteFooter } from "../../SiteFooter";
+import { TopbarBrand } from "../../TopbarBrand";
 import { VisitWidget } from "../../VisitWidget";
 
 export const revalidate = 60;
@@ -58,9 +59,7 @@ export default async function PropertyDetail({ params }: Params) {
     >
       <header className="rt-topbar">
         <div className="rt-wrap rt-topbar__inner">
-          <Link className="rt-topbar__brand" href="/" style={{ textDecoration: "none" }}>
-            {tenant.name}
-          </Link>
+          <TopbarBrand name={tenant.name} logoUrl={tenant.brandConfig.logoUrl} href="/" />
           <nav className="rt-topbar__nav">
             <Link href="/#propiedades">Propiedades</Link>
             <Link href="/#contacto">Contacto</Link>

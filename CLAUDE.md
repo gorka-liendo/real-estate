@@ -698,5 +698,13 @@ packages/
       containing block de los fixed). Aplica a las 3 páginas (home/ficha/portal,
       comparten `rt-topbar`). Verificado E2E a 1440/375/1280: hero a pantalla,
       pill flotante glass, hamburguesa→overlay OK, ficha sin solape.
+      **Refinamiento (feedback)**: (1) LOGO en el header — componente compartido
+      `TopbarBrand` (logo de `brand_config.logoUrl` con el nombre como fallback,
+      opcionalmente enlazable) usado en las 3 páginas; clases `rt-topbar__logo`
+      (h34/28) y `rt-topbar__brandlink`. (2) Pill con más cuerpo (padding vertical
+      sp2→sp3, max-width 1120→1200, glass y sombra más marcados). (3) Texto del
+      hero cover CENTRADO verticalmente (`align-items: center` + padding sp8
+      simétrico) en vez de pegado abajo — quedaba muy bajo con 100svh. Verificado
+      a 1440/390.
 - [ ] **Pendiente retomar**: theming/fuentes por inmobiliaria (ver gotcha de
       next/font arriba) y edición de marca en Ajustes.

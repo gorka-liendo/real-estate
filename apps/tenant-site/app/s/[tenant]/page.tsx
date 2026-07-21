@@ -16,6 +16,7 @@ import {
 } from "./sections";
 import { RevealObserver } from "./RevealObserver";
 import { SiteFooter } from "./SiteFooter";
+import { TopbarBrand } from "./TopbarBrand";
 
 function toListing(p: PublicProperty): Listing {
   const meta = [PROPERTY_KIND_LABELS[p.kind], p.city, p.areaM2 ? `${p.areaM2} m²` : null]
@@ -82,7 +83,7 @@ export default async function Microsite({ params }: Params) {
       {/* topbar */}
       <header className="rt-topbar">
         <div className="rt-wrap rt-topbar__inner">
-          <span className="rt-topbar__brand">{tenant.name}</span>
+          <TopbarBrand name={tenant.name} logoUrl={tenant.brandConfig.logoUrl} />
           <nav className="rt-topbar__nav">
             {navItems.map((item) => (
               <a key={item.href} href={item.href}>

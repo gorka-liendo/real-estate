@@ -127,29 +127,42 @@
 }
 .rt-topbar__inner {
   pointer-events: auto;
-  max-width: 1120px;
+  max-width: 1200px;
   margin: 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--tenant-sp-4);
-  padding: var(--tenant-sp-2) var(--tenant-sp-2) var(--tenant-sp-2) var(--tenant-sp-4);
+  gap: var(--tenant-sp-5);
+  padding: var(--tenant-sp-3) var(--tenant-sp-4) var(--tenant-sp-3) var(--tenant-sp-5);
   border-radius: var(--tenant-radius);
-  background: color-mix(in srgb, var(--tenant-bg) 68%, transparent);
-  border: 1px solid color-mix(in srgb, var(--tenant-text) 12%, transparent);
-  box-shadow: 0 14px 34px -16px color-mix(in srgb, var(--tenant-scrim) 65%, transparent);
-  backdrop-filter: blur(16px) saturate(1.4);
-  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  background: color-mix(in srgb, var(--tenant-bg) 72%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tenant-text) 10%, transparent);
+  box-shadow: 0 16px 40px -18px color-mix(in srgb, var(--tenant-scrim) 70%, transparent);
+  backdrop-filter: blur(18px) saturate(1.5);
+  -webkit-backdrop-filter: blur(18px) saturate(1.5);
 }
 .rt-topbar__brand {
   font-family: var(--tenant-font-display);
   font-weight: 800;
-  font-size: 17px;
+  font-size: 18px;
   letter-spacing: -0.01em;
   text-transform: uppercase;
   color: var(--tenant-text);
   text-decoration: none;
   white-space: nowrap;
+}
+.rt-topbar__brandlink {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+/* logo del tenant (brand_config.logoUrl) en el header, si lo hay */
+.rt-topbar__logo {
+  display: block;
+  height: 34px;
+  width: auto;
+  max-width: 200px;
+  object-fit: contain;
 }
 .rt-topbar__nav {
   display: flex;
@@ -190,7 +203,7 @@
     padding: var(--tenant-sp-2) var(--tenant-sp-2) 0;
   }
   .rt-topbar__inner {
-    padding: var(--tenant-sp-1) var(--tenant-sp-1) var(--tenant-sp-1) var(--tenant-sp-4);
+    padding: var(--tenant-sp-2) var(--tenant-sp-2) var(--tenant-sp-2) var(--tenant-sp-4);
   }
   .rt-topbar__nav {
     display: none;
@@ -199,7 +212,10 @@
     display: flex;
   }
   .rt-topbar__brand {
-    font-size: 15px;
+    font-size: 16px;
+  }
+  .rt-topbar__logo {
+    height: 28px;
   }
 }
 
@@ -279,13 +295,16 @@
   height: 100%;
   object-fit: cover;
 }
-/* hero "cover" con media propia: portada a PANTALLA COMPLETA, texto abajo.
+/* hero "cover" con media propia: portada a PANTALLA COMPLETA con el texto
+   centrado verticalmente (ligero sesgo hacia abajo por el padding asimétrico).
    100svh usa el viewport "pequeño" (sin la barra de URL móvil) para no saltar. */
 .rt-hero--cover {
   min-height: 100vh;
   min-height: 100svh;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
+  padding-top: var(--tenant-sp-8);
+  padding-bottom: var(--tenant-sp-8);
 }
 .rt-hero--cover .rt-wrap {
   width: 100%;
