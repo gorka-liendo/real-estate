@@ -251,7 +251,10 @@ tenant→auth→membership→`requireModule`. UI de cliente en `apps/dashboard/a
   edición de renta/notas y finalización.
 - **accounting**: `invoices` (`direction` income/expense, IVA en bps, pagos
   parciales, PDF de `income` con pdfkit), páginas de cuenta por inmueble/cliente.
-  Absorbió el antiguo `property_expenses`.
+  Absorbió el antiguo `property_expenses`. UI: `SummaryCard` con icono+acento;
+  los movimientos son una **lista** (no tabla) con indicador de dirección
+  (verde entra / rojo sale), concepto + metadatos en una línea, importe con signo
+  y estado; `InvoiceTable` compartido por la página principal y las cuentas.
 - **microsite**: ver abajo. Bloqueado por alta externa: **whatsapp_bot** (Meta).
 
 ### Micrositio (`tenant-site` + `@rep/ui-tenant`)

@@ -1,9 +1,9 @@
 "use client";
 
-import { Plus } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, Clock, Plus, Scale } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { Button, Card, Select } from "@rep/ui";
+import { Button, Select } from "@rep/ui";
 import { useRequireModule, useWorkspace } from "@/contexts/workspace-context";
 import { api, type Client, type Invoice, type InvoiceDirection, type Property } from "@/lib/api";
 import {
@@ -161,10 +161,15 @@ function ContabilidadInner({ slug }: { slug: string }) {
           gap: "var(--ui-sp-4)",
         }}
       >
-        <SummaryCard label={`Cobrado ${currentYear}`} value={eurCents(incomeCollected)} />
-        <SummaryCard label="Pendiente de cobro" value={eurCents(incomePending)} />
-        <SummaryCard label={`Gastos ${currentYear}`} value={eurCents(expensesTotal)} />
-        <SummaryCard label="Balance" value={eurCents(balance)} accent={balance >= 0 ? "success" : "danger"} />
+        <SummaryCard label={`Cobrado ${currentYear}`} value={eurCents(incomeCollected)} icon={<ArrowDownLeft size={20} />} />
+        <SummaryCard label="Pendiente de cobro" value={eurCents(incomePending)} icon={<Clock size={20} />} />
+        <SummaryCard label={`Gastos ${currentYear}`} value={eurCents(expensesTotal)} icon={<ArrowUpRight size={20} />} />
+        <SummaryCard
+          label="Balance"
+          value={eurCents(balance)}
+          accent={balance >= 0 ? "success" : "danger"}
+          icon={<Scale size={20} />}
+        />
       </div>
 
       {error ? <p className="du-alert">{error}</p> : null}
@@ -343,11 +348,21 @@ function AccountsCards({
       {rows.map((r) => {
         const body = (
           <>
-            <p className="du-muted" style={{ fontSize: 12, marginBottom: 4 }}>
-              {r.count} documento{r.count === 1 ? "" : "s"}
-            </p>
-            <p style={{ fontWeight: 600, fontSize: 16, marginBottom: "var(--ui-sp-3)" }}>{r.name}</p>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 12px", fontSize: 13 }}>
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "var(--ui-sp-2)" }}>
+              <span style={{ fontWeight: 600, fontSize: 16 }}>{r.name}</span>
+              <span className="du-muted" style={{ fontSize: 12, whiteSpace: "nowrap" }}>
+                {r.count} doc{r.count === 1 ? "" : "s"}
+              </span>
+            </div>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "4px 12px",
+                fontSize: 13,
+                marginTop: "var(--ui-sp-3)",
+              }}
+            >
               <span className="du-muted">Facturado</span>
               <span style={{ textAlign: "right" }}>{eurCents(r.facturado)}</span>
               <span className="du-muted">Pendiente</span>
@@ -355,34 +370,48 @@ function AccountsCards({
               <span className="du-muted">Gastos</span>
               <span style={{ textAlign: "right" }}>{eurCents(r.gastos)}</span>
             </div>
-            <p
+            <div
               style={{
                 marginTop: "var(--ui-sp-3)",
-                marginBottom: 0,
-                fontWeight: 700,
-                color: r.balance >= 0 ? "var(--ui-success)" : "var(--ui-danger)",
+                paddingTop: "var(--ui-sp-3)",
+                borderTop: "1px solid var(--ui-border)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
               }}
             >
-              Balance {eurCents(r.balance)}
-            </p>
+              <span className="du-muted" style={{ fontSize: 13 }}>
+                Balance
+              </span>
+              <span
+                style={{
+                  fontWeight: 700,
+                  color: r.balance >= 0 ? "var(--ui-success)" : "var(--ui-danger)",
+                }}
+              >
+                {eurCents(r.balance)}
+              </span>
+            </div>
           </>
         );
+
+        const baseStyle = {
+          display: "block",
+          textAlign: "left" as const,
+          background: "var(--ui-surface)",
+          borderRadius: "var(--ui-radius-lg)",
+          padding: "var(--ui-sp-4)",
+          height: "100%",
+          font: "inherit",
+          color: "inherit",
+        };
 
         if (r.id === NONE) {
           return (
             <button
               key={r.id}
               onClick={onSelectUnassigned}
-              style={{
-                textAlign: "left",
-                cursor: "pointer",
-                border: "1px dashed var(--ui-border-strong)",
-                background: "transparent",
-                padding: "var(--ui-sp-4)",
-                borderRadius: "var(--ui-radius)",
-                font: "inherit",
-                color: "inherit",
-              }}
+              style={{ ...baseStyle, cursor: "pointer", border: "1px dashed var(--ui-border-strong)" }}
             >
               {body}
             </button>
@@ -390,10 +419,13 @@ function AccountsCards({
         }
 
         return (
-          <Link key={r.id} href={`/contabilidad/${kind}/${r.id}`} style={{ textDecoration: "none", color: "inherit" }}>
-            <Card className="dash-tile" style={{ cursor: "pointer", height: "100%" }}>
-              {body}
-            </Card>
+          <Link
+            key={r.id}
+            href={`/contabilidad/${kind}/${r.id}`}
+            className="dash-tile"
+            style={{ ...baseStyle, textDecoration: "none", border: "1px solid var(--ui-border)", boxShadow: "var(--ui-shadow-sm)" }}
+          >
+            {body}
           </Link>
         );
       })}

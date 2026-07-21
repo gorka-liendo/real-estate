@@ -1,7 +1,16 @@
 "use client";
 
-import { ArrowLeft, Download, Paperclip, Pencil, Plus, Trash2 } from "lucide-react";
-import { Fragment, useState } from "react";
+import {
+  ArrowDownLeft,
+  ArrowLeft,
+  ArrowUpRight,
+  Download,
+  Paperclip,
+  Pencil,
+  Plus,
+  Trash2,
+} from "lucide-react";
+import { Fragment, type ReactNode, useState } from "react";
 import { Badge, Button, ButtonLink, Card, Input, Label, Select, Textarea } from "@rep/ui";
 import {
   api,
@@ -51,31 +60,40 @@ export function SummaryCard({
   label,
   value,
   accent,
+  icon,
 }: {
   label: string;
   value: string;
   accent?: "success" | "danger";
+  icon?: ReactNode;
 }) {
+  const color =
+    accent === "success"
+      ? "var(--ui-success)"
+      : accent === "danger"
+        ? "var(--ui-danger)"
+        : "var(--ui-text)";
   return (
-    <Card>
-      <p className="du-muted" style={{ fontSize: 12, marginBottom: 4 }}>
-        {label}
-      </p>
-      <p
-        style={{
-          fontSize: 22,
-          fontWeight: 700,
-          color:
-            accent === "success"
-              ? "var(--ui-success)"
-              : accent === "danger"
-                ? "var(--ui-danger)"
-                : "var(--ui-text)",
-        }}
-      >
-        {value}
-      </p>
-    </Card>
+    <div
+      style={{
+        background: "var(--ui-surface)",
+        border: "1px solid var(--ui-border)",
+        borderRadius: "var(--ui-radius-lg)",
+        padding: "var(--ui-sp-4)",
+        display: "flex",
+        alignItems: "flex-start",
+        justifyContent: "space-between",
+        gap: "var(--ui-sp-3)",
+      }}
+    >
+      <div>
+        <p className="du-muted" style={{ fontSize: 13, marginBottom: 2 }}>
+          {label}
+        </p>
+        <p style={{ fontSize: 26, fontWeight: 600, color, margin: 0 }}>{value}</p>
+      </div>
+      {icon ? <span style={{ color: accent ? color : "var(--ui-muted)", opacity: 0.9 }}>{icon}</span> : null}
+    </div>
   );
 }
 
@@ -670,9 +688,6 @@ export function InvoiceTable({
     setPayingId(null);
   }
 
-  const colSpan =
-    (direction === "income" ? 1 : 0) + (showPropertyColumn ? 1 : 0) + (showClientColumn ? 1 : 0) + 7;
-
   return (
     <div style={{ display: "grid", gap: "var(--ui-sp-3)" }}>
       {error ? <p className="du-alert">{error}</p> : null}
@@ -682,117 +697,118 @@ export function InvoiceTable({
             {emptyMessage}
           </p>
         ) : (
-          <div style={{ overflowX: "auto" }}>
-            <table className="du-table">
-              <thead>
-                <tr>
-                  {direction === "income" ? <th>Número</th> : null}
-                  <th>Fecha</th>
-                  <th>Concepto</th>
-                  <th>Categoría</th>
-                  {showPropertyColumn ? <th>Inmueble</th> : null}
-                  {showClientColumn ? <th>Cliente</th> : null}
-                  <th>Importe</th>
-                  <th>Estado</th>
-                  <th>Adjunto</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {list.map((inv) => (
-                  <Fragment key={inv.id}>
-                    <tr>
-                      {direction === "income" ? <td style={{ whiteSpace: "nowrap" }}>{inv.number ?? "—"}</td> : null}
-                      <td style={{ whiteSpace: "nowrap" }}>
-                        {new Date(inv.issueDate).toLocaleDateString("es-ES")}
-                      </td>
-                      <td>{inv.concept ?? "—"}</td>
-                      <td>
-                        <Badge variant="default">{INVOICE_CATEGORY_LABELS[inv.category]}</Badge>
-                      </td>
-                      {showPropertyColumn ? (
-                        <td className="du-muted">{inv.propertyId ? (propNameById[inv.propertyId] ?? "—") : "—"}</td>
-                      ) : null}
-                      {showClientColumn ? (
-                        <td className="du-muted">{inv.clientId ? (clientNameById[inv.clientId] ?? "—") : "—"}</td>
-                      ) : null}
-                      <td style={{ whiteSpace: "nowrap", fontWeight: 500 }}>
-                        {eurCents(inv.totalCents)}
-                        {inv.status !== "paid" && inv.status !== "cancelled" && inv.paidCents > 0 ? (
-                          <span className="du-muted" style={{ fontWeight: 400 }}>
-                            {" "}
-                            · quedan {eurCents(inv.remainingCents)}
-                          </span>
-                        ) : null}
-                      </td>
-                      <td>
-                        <Badge variant={STATUS_VARIANT[inv.status]}>{STATUS_LABEL[inv.status]}</Badge>
-                        {inv.overdue ? (
-                          <Badge variant="danger" style={{ marginLeft: 4 }}>
-                            Vencida
-                          </Badge>
-                        ) : null}
-                      </td>
-                      <td>
+          <div>
+            {list.map((inv, idx) => {
+              const isIncome = inv.direction === "income";
+              const partial =
+                inv.status !== "paid" && inv.status !== "cancelled" && inv.paidCents > 0;
+              const meta = [
+                new Date(inv.issueDate).toLocaleDateString("es-ES"),
+                isIncome && inv.number ? inv.number : null,
+                INVOICE_CATEGORY_LABELS[inv.category],
+                showPropertyColumn && inv.propertyId ? propNameById[inv.propertyId] : null,
+                showClientColumn && inv.clientId ? clientNameById[inv.clientId] : null,
+              ].filter(Boolean);
+
+              return (
+                <Fragment key={inv.id}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "var(--ui-sp-3)",
+                      flexWrap: "wrap",
+                      padding: "var(--ui-sp-3) var(--ui-sp-4)",
+                      borderTop: idx > 0 ? "1px solid var(--ui-border)" : "none",
+                    }}
+                  >
+                    {/* Indicador de dirección */}
+                    <span
+                      style={{
+                        flexShrink: 0,
+                        width: 34,
+                        height: 34,
+                        borderRadius: "50%",
+                        display: "grid",
+                        placeItems: "center",
+                        background: isIncome ? "var(--ui-success-bg)" : "var(--ui-danger-bg)",
+                        color: isIncome ? "var(--ui-success)" : "var(--ui-danger)",
+                      }}
+                    >
+                      {isIncome ? <ArrowDownLeft size={17} /> : <ArrowUpRight size={17} />}
+                    </span>
+
+                    {/* Concepto + metadatos */}
+                    <div style={{ flex: 1, minWidth: 160 }}>
+                      <div style={{ fontWeight: 500 }}>
+                        {inv.concept || INVOICE_CATEGORY_LABELS[inv.category]}
+                      </div>
+                      <div
+                        className="du-muted"
+                        style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}
+                      >
+                        <span>{meta.join(" · ")}</span>
                         {inv.fileUrl ? (
                           <a
                             href={inv.fileUrl}
                             target="_blank"
                             rel="noreferrer"
                             className="du-muted"
-                            style={{ display: "inline-flex", alignItems: "center", gap: 4 }}
+                            style={{ display: "inline-flex", alignItems: "center", gap: 3 }}
+                            aria-label="Ver adjunto"
                           >
-                            <Paperclip size={14} />
-                            {inv.fileName ?? "Ver"}
+                            <Paperclip size={13} />
                           </a>
-                        ) : (
-                          "—"
-                        )}
-                      </td>
-                      <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
-                        {inv.direction === "income" ? (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => void downloadPdf(inv.id)}
-                            aria-label="Descargar PDF"
-                          >
-                            <Download size={15} />
-                          </Button>
                         ) : null}
-                        {inv.status === "pending" || inv.status === "draft" ? (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setPayingId(payingId === inv.id ? null : inv.id)}
-                          >
-                            Cobro
-                          </Button>
-                        ) : null}
-                        <Button variant="ghost" size="sm" onClick={() => onEdit(inv)} aria-label="Editar">
-                          <Pencil size={15} />
+                      </div>
+                    </div>
+
+                    {/* Importe + estado */}
+                    <div style={{ textAlign: "right", minWidth: 110 }}>
+                      <div style={{ fontWeight: 600, whiteSpace: "nowrap" }}>
+                        {isIncome ? "" : "−"}
+                        {eurCents(inv.totalCents)}
+                      </div>
+                      <div style={{ display: "flex", gap: 4, justifyContent: "flex-end", marginTop: 2 }}>
+                        <Badge variant={STATUS_VARIANT[inv.status]}>{STATUS_LABEL[inv.status]}</Badge>
+                        {inv.overdue ? <Badge variant="danger">Vencida</Badge> : null}
+                      </div>
+                      {partial ? (
+                        <div className="du-muted" style={{ fontSize: 12, marginTop: 2 }}>
+                          quedan {eurCents(inv.remainingCents)}
+                        </div>
+                      ) : null}
+                    </div>
+
+                    {/* Acciones */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 2, flexShrink: 0 }}>
+                      {isIncome ? (
+                        <Button variant="ghost" size="sm" onClick={() => void downloadPdf(inv.id)} aria-label="Descargar PDF">
+                          <Download size={15} />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => void remove(inv.id)}
-                          aria-label="Eliminar"
-                        >
-                          <Trash2 size={15} />
+                      ) : null}
+                      {inv.status === "pending" || inv.status === "draft" ? (
+                        <Button variant="ghost" size="sm" onClick={() => setPayingId(payingId === inv.id ? null : inv.id)}>
+                          Cobro
                         </Button>
-                      </td>
-                    </tr>
-                    {payingId === inv.id ? (
-                      <tr>
-                        <td colSpan={colSpan} style={{ background: "var(--ui-hover)" }}>
-                          <PaymentForm slug={slug} invoice={inv} onSaved={afterPayment} onCancel={() => setPayingId(null)} />
-                        </td>
-                      </tr>
-                    ) : null}
-                  </Fragment>
-                ))}
-              </tbody>
-            </table>
+                      ) : null}
+                      <Button variant="ghost" size="sm" onClick={() => onEdit(inv)} aria-label="Editar">
+                        <Pencil size={15} />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => void remove(inv.id)} aria-label="Eliminar">
+                        <Trash2 size={15} />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {payingId === inv.id ? (
+                    <div style={{ background: "var(--ui-hover)", padding: "var(--ui-sp-4)", borderTop: "1px solid var(--ui-border)" }}>
+                      <PaymentForm slug={slug} invoice={inv} onSaved={afterPayment} onCancel={() => setPayingId(null)} />
+                    </div>
+                  ) : null}
+                </Fragment>
+              );
+            })}
           </div>
         )}
       </Card>
