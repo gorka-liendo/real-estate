@@ -226,7 +226,12 @@ tenant→auth→membership→`requireModule`. UI de cliente en `apps/dashboard/a
 - **clients** (CRM): stage, `kind` (owner/renter/buyer/…), cuota, notas; perfil
   `/clientes/[id]` con timeline. Auto-clasificación en captación.
 - **properties**: operation/kind/status/precio/…, fotos + vídeos (multipart),
-  `owner_client_id`. Público: `GET /tenant/listings` (solo `published`).
+  `owner_client_id`. Público: `GET /tenant/listings` (solo `published`). UI: listado
+  en **tarjetas** (foto, estado, chip Alquilado/Libre) → **detalle** `/propiedades/[id]`
+  con estado de alquiler (libre / piso entero / por habitaciones, enlaza a Alquileres),
+  **rentabilidad del año** (ingresos = cobros de alquiler + facturas cobradas; gastos =
+  facturas de gasto; neto) y propietario. Editar = `PropertyForm` + `PhotoManager` (en
+  `_shared.tsx`, reusados por listado y detalle).
 - **valuation**: widget "Valora tu piso" (estimación €/m² desde comparables
   publicados del propio tenant) → lead de propietario.
 - **visits** (agenda): `POST /tenant/visits/request` público + gestión privada con
