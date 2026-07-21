@@ -135,7 +135,9 @@ export type SiteSection =
 export type SiteSectionType = SiteSection["type"];
 
 export type SiteConfig = {
+  headerStyle?: "floating" | "solid";
   headerBrand?: "logo" | "text";
+  logoScale?: number;
   // Campos planos de hero: legacy / fuente de la derivación retrocompatible.
   // Tras editar en el gestor de secciones se dejan de escribir (sections manda).
   template?: "editorial" | "minimal" | "bold";

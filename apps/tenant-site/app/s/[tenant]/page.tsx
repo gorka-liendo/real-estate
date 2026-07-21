@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import type { CSSProperties } from "react";
 import {
   MobileNav,
   OPERATION_LABELS,
@@ -82,10 +83,10 @@ export default async function Microsite({ params }: Params) {
     <div
       className="rt-root"
       data-theme={tenant.brandConfig.theme ?? "dwell"}
-      style={{ minHeight: "100vh" }}
+      style={{ minHeight: "100vh", "--rt-logo-scale": site.logoScale ?? 1 } as CSSProperties}
     >
-      {/* topbar: logo · nav centrado · CTA */}
-      <header className="rt-topbar">
+      {/* topbar: logo · nav centrado · CTA (flotante o barra sólida) */}
+      <header className={`rt-topbar${site.headerStyle === "solid" ? " rt-topbar--solid" : ""}`}>
         <div className="rt-topbar__inner">
           <div className="rt-topbar__left">
             <TopbarBrand

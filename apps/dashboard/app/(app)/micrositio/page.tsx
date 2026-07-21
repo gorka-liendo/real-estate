@@ -517,16 +517,48 @@ function Editor({ slug, name }: { slug: string; name: string }) {
         <h2 className="du-h3" style={{ marginBottom: "var(--ui-sp-4)" }}>
           Cabecera
         </h2>
-        <div style={{ maxWidth: 360 }}>
-          <Label htmlFor="header-brand">Qué mostrar en la cabecera</Label>
-          <Select
-            id="header-brand"
-            value={config.headerBrand ?? "logo"}
-            onChange={(e) => set("headerBrand", e.target.value as "logo" | "text")}
-          >
-            <option value="logo">Logo (si no hay, el nombre)</option>
-            <option value="text">Nombre de la inmobiliaria</option>
-          </Select>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+            gap: "var(--ui-sp-4)",
+          }}
+        >
+          <div>
+            <Label htmlFor="header-style">Estilo de la cabecera</Label>
+            <Select
+              id="header-style"
+              value={config.headerStyle ?? "floating"}
+              onChange={(e) => set("headerStyle", e.target.value as "floating" | "solid")}
+            >
+              <option value="floating">Flotante — pastilla sobre la portada</option>
+              <option value="solid">Barra sólida — clásica, a ancho completo</option>
+            </Select>
+          </div>
+          <div>
+            <Label htmlFor="header-brand">Qué mostrar como marca</Label>
+            <Select
+              id="header-brand"
+              value={config.headerBrand ?? "logo"}
+              onChange={(e) => set("headerBrand", e.target.value as "logo" | "text")}
+            >
+              <option value="logo">Logo (si no hay, el nombre)</option>
+              <option value="text">Nombre de la inmobiliaria</option>
+            </Select>
+          </div>
+          <div>
+            <Label htmlFor="logo-scale">Tamaño del logo</Label>
+            <Select
+              id="logo-scale"
+              value={String(config.logoScale ?? 1)}
+              onChange={(e) => set("logoScale", Number(e.target.value))}
+            >
+              <option value="1">Normal (×1)</option>
+              <option value="1.25">Grande (×1.25)</option>
+              <option value="1.5">Muy grande (×1.5)</option>
+              <option value="2">Enorme (×2)</option>
+            </Select>
+          </div>
         </div>
         <p className="du-muted" style={{ fontSize: 12, marginTop: "var(--ui-sp-2)" }}>
           El logo se sube en Ajustes. Si eliges «Logo» y aún no lo has subido, se

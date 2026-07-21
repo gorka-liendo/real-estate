@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import type { CSSProperties } from "react";
 import { OPERATION_LABELS } from "@rep/ui-tenant";
 import { fetchPortal, fetchTenant, type PortalProperty } from "@/lib/tenant";
 import { SiteFooter } from "../../SiteFooter";
@@ -33,9 +34,16 @@ export default async function OwnerPortal({ params }: Params) {
     <div
       className="rt-root"
       data-theme={tenant.brandConfig.theme ?? "dwell"}
-      style={{ minHeight: "100vh" }}
+      style={
+        {
+          minHeight: "100vh",
+          "--rt-logo-scale": tenant.siteConfig?.logoScale ?? 1,
+        } as CSSProperties
+      }
     >
-      <header className="rt-topbar">
+      <header
+        className={`rt-topbar${tenant.siteConfig?.headerStyle === "solid" ? " rt-topbar--solid" : ""}`}
+      >
         <div className="rt-topbar__inner rt-topbar__inner--split">
           <div className="rt-topbar__left">
             <TopbarBrand

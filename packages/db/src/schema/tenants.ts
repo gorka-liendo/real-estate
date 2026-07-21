@@ -105,9 +105,14 @@ export type SiteSection =
 export type SiteSectionType = SiteSection["type"];
 
 export type SiteConfig = {
-  // Cabecera: qué mostrar como marca. "logo" (usa brand_config.logoUrl, con el
-  // nombre de fallback si no hay logo) o "text" (siempre el nombre). Default: logo.
+  // Cabecera: estilo del header. "floating" (pastilla glass flotante sobre el
+  // hero) o "solid" (barra sólida a ancho completo, clásica). Default: floating.
+  headerStyle?: "floating" | "solid";
+  // Qué mostrar como marca. "logo" (usa brand_config.logoUrl, con el nombre de
+  // fallback si no hay logo) o "text" (siempre el nombre). Default: logo.
   headerBrand?: "logo" | "text";
+  // Escala del logo del header (multiplicador sobre el tamaño base). Default 1.
+  logoScale?: number;
   // Campos planos de hero (legacy / fuente de la derivación retrocompatible).
   template?: "editorial" | "minimal" | "bold";
   heroEyebrow?: string;

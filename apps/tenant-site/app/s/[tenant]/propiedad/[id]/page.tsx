@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import type { CSSProperties } from "react";
 import { Gallery, MobileNav, OPERATION_LABELS, PillLink, type GalleryItem } from "@rep/ui-tenant";
 import { fetchModules, fetchProperty, fetchTenant, type PublicProperty } from "@/lib/tenant";
 import { CONDITION_LABELS, featureLabel, KIND_LABELS } from "@/lib/property-meta";
@@ -55,9 +56,9 @@ export default async function PropertyDetail({ params }: Params) {
     <div
       className="rt-root"
       data-theme={tenant.brandConfig.theme ?? "dwell"}
-      style={{ minHeight: "100vh" }}
+      style={{ minHeight: "100vh", "--rt-logo-scale": site.logoScale ?? 1 } as CSSProperties}
     >
-      <header className="rt-topbar">
+      <header className={`rt-topbar${site.headerStyle === "solid" ? " rt-topbar--solid" : ""}`}>
         <div className="rt-topbar__inner">
           <div className="rt-topbar__left">
             <TopbarBrand

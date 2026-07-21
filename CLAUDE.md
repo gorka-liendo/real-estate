@@ -252,9 +252,12 @@ tenant→auth→membership→`requireModule`. UI de cliente en `apps/dashboard/a
   (`moduleGate`). Footer/contacto = "chrome" (campos planos, fuera del motor).
 - Hero: plantillas editorial/minimal/bold + media de fondo self-serve
   (`backgroundImageUrl`/`backgroundVideoUrl` → hero "cover" `100svh`, vídeo manda).
-  Header = **pill flotante** glass (`rt-topbar` fixed) con logo o nombre
-  (`site_config.headerBrand` + `TopbarBrand`). Animaciones sutiles (`RevealObserver`
-  scroll + Ken Burns), respetan `prefers-reduced-motion`.
+  Header (`rt-topbar`, layout grid 3 zonas: logo · nav centrado · CTA a #contacto)
+  con opciones editables en `site_config`: `headerStyle` ("floating" pastilla
+  glass fixed / "solid" barra sólida clásica `rt-topbar--solid`), `headerBrand`
+  ("logo"/"text", `TopbarBrand`), `logoScale` (×1–×2, vía `--rt-logo-scale` en
+  `.rt-root`). Animaciones sutiles (`RevealObserver` scroll + Ken Burns),
+  respetan `prefers-reduced-motion`.
 - Captación: leads/valoración/visitas públicos con honeypot + throttle en memoria
   (`leads/public-intake.ts`). CORS: rutas públicas del micrositio reflejan cualquier
   origen (dominios de tenant dinámicos); el resto, `TRUSTED_ORIGINS`.

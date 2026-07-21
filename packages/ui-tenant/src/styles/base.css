@@ -175,9 +175,11 @@
 }
 .rt-topbar__logo {
   display: block;
-  height: 40px;
+  /* tamaño = base × escala elegible por el cliente (site_config.logoScale,
+     inyectada como --rt-logo-scale en .rt-root). Default x1. */
+  height: calc(44px * var(--rt-logo-scale, 1));
   width: auto;
-  max-width: 220px;
+  max-width: calc(220px * var(--rt-logo-scale, 1));
   object-fit: contain;
 }
 /* nav centrado */
@@ -243,8 +245,29 @@
     font-size: 17px;
   }
   .rt-topbar__logo {
-    height: 34px;
+    height: calc(34px * var(--rt-logo-scale, 1));
   }
+}
+
+/* Variante SÓLIDA (site_config.headerStyle="solid"): barra clásica a ancho
+   completo, opaca, en flujo (no flota sobre el hero). Misma disposición de
+   3 zonas dentro de un contenedor centrado. */
+.rt-topbar--solid {
+  position: sticky;
+  padding: 0;
+  pointer-events: auto;
+  background: var(--tenant-bg);
+  border-bottom: 1px solid var(--tenant-border);
+}
+.rt-topbar--solid .rt-topbar__inner {
+  max-width: 1280px;
+  padding: var(--tenant-sp-3) var(--tenant-sp-5);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 /* ===== hero ===== */

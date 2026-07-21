@@ -58,7 +58,9 @@ export type SiteSection =
 export type SiteSectionType = SiteSection["type"];
 
 export type SiteConfig = {
+  headerStyle?: "floating" | "solid";
   headerBrand?: "logo" | "text";
+  logoScale?: number;
   template?: "editorial" | "minimal" | "bold";
   heroEyebrow?: string;
   heroTitle?: string;
