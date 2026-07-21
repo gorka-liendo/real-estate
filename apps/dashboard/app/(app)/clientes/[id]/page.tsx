@@ -1,9 +1,10 @@
 "use client";
 
-import { ArrowLeft, Link2 } from "lucide-react";
+import { Link2 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { Badge, Button, ButtonLink, Card, Input, Label, Select, Textarea } from "@rep/ui";
+import { Badge, Button, Card, Input, Label, Select, Textarea } from "@rep/ui";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { useRequireModule, useWorkspace } from "@/contexts/workspace-context";
 import { api, ApiError, type ClientKind, type ClientProfile, type ClientStage } from "@/lib/api";
 import { TENANT_SITE_URL } from "@/lib/config";
@@ -97,15 +98,14 @@ function ProfileInner({ slug, clientId }: { slug: string; clientId: string }) {
 
   return (
     <div style={{ display: "grid", gap: "var(--ui-sp-5)" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: "var(--ui-sp-3)" }}>
-        <ButtonLink href="/clientes" variant="ghost" size="sm">
-          <ArrowLeft size={15} />
-          Clientes
-        </ButtonLink>
-        <h1 className="du-h1" style={{ margin: 0 }}>
-          {c.name}
-        </h1>
-        <Badge variant={c.stage === "active" ? "success" : "muted"}>{STAGE_LABELS[c.stage]}</Badge>
+      <div>
+        <Breadcrumbs items={[{ label: "Clientes", href: "/clientes" }, { label: c.name }]} />
+        <div style={{ display: "flex", alignItems: "center", gap: "var(--ui-sp-3)", flexWrap: "wrap" }}>
+          <h1 className="du-h1" style={{ margin: 0 }}>
+            {c.name}
+          </h1>
+          <Badge variant={c.stage === "active" ? "success" : "muted"}>{STAGE_LABELS[c.stage]}</Badge>
+        </div>
       </div>
 
       {error ? <p className="du-alert">{error}</p> : null}

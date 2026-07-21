@@ -1,10 +1,11 @@
 "use client";
 
-import { ArrowLeft, Mail, Phone, Square, User } from "lucide-react";
+import { Mail, Phone, Square, User } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { Badge, Button, ButtonLink, Card, Input, Label, Textarea } from "@rep/ui";
+import { Badge, Button, Card, Input, Label, Textarea } from "@rep/ui";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { useRequireModule, useWorkspace } from "@/contexts/workspace-context";
 import {
   api,
@@ -167,18 +168,25 @@ function RentalDetailInner({ slug, rentalId }: { slug: string; rentalId: string 
 
   return (
     <div style={{ display: "grid", gap: "var(--ui-sp-5)" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: "var(--ui-sp-3)" }}>
-        <ButtonLink href="/alquileres" variant="ghost" size="sm">
-          <ArrowLeft size={15} />
-          Alquileres
-        </ButtonLink>
-        <h1 className="du-h1" style={{ margin: 0 }}>
-          {property ? property.title : "Contrato"}
-        </h1>
-        {detail.room ? <Badge variant="muted">{detail.room.name}</Badge> : null}
-        <Badge variant={isActive ? "success" : "default"}>
-          {isActive ? "Activo" : "Finalizado"}
-        </Badge>
+      <div>
+        <Breadcrumbs
+          items={[
+            { label: "Alquileres", href: "/alquileres" },
+            ...(detail.room && property
+              ? [{ label: property.title, href: `/alquileres/propiedad/${property.id}` }]
+              : []),
+            { label: detail.room ? detail.room.name : (property?.title ?? "Contrato") },
+          ]}
+        />
+        <div style={{ display: "flex", alignItems: "center", gap: "var(--ui-sp-3)", flexWrap: "wrap" }}>
+          <h1 className="du-h1" style={{ margin: 0 }}>
+            {property ? property.title : "Contrato"}
+          </h1>
+          {detail.room ? <Badge variant="muted">{detail.room.name}</Badge> : null}
+          <Badge variant={isActive ? "success" : "default"}>
+            {isActive ? "Activo" : "Finalizado"}
+          </Badge>
+        </div>
       </div>
 
       {error ? <p className="du-alert">{error}</p> : null}

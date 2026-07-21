@@ -2,7 +2,6 @@
 
 import {
   ArrowDownLeft,
-  ArrowLeft,
   ArrowUpRight,
   Download,
   Paperclip,
@@ -11,7 +10,8 @@ import {
   Trash2,
 } from "lucide-react";
 import { Fragment, type ReactNode, useEffect, useState } from "react";
-import { Badge, Button, ButtonLink, Card, Input, Label, Select, Textarea } from "@rep/ui";
+import { Badge, Button, Card, Input, Label, Select, Textarea } from "@rep/ui";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import {
   api,
   ApiError,
@@ -974,11 +974,8 @@ export function AccountDetail({
 
   return (
     <div style={{ display: "grid", gap: "var(--ui-sp-5)" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: "var(--ui-sp-3)" }}>
-        <ButtonLink href="/contabilidad" variant="ghost" size="sm">
-          <ArrowLeft size={15} />
-          Contabilidad
-        </ButtonLink>
+      <div>
+        <Breadcrumbs items={[{ label: "Contabilidad", href: "/contabilidad" }, { label: name }]} />
         <h1 className="du-h1" style={{ margin: 0 }}>
           {name}
         </h1>

@@ -234,7 +234,12 @@ tenant→auth→membership→`requireModule`. UI de cliente en `apps/dashboard/a
   `_shared.tsx`, reusados por listado y detalle). Estado `sold` (Vendida) en el enum
   `property_status` (no sale en el micrositio). Listado con **filtros de situación**
   (Todas/Alquiladas/Libres/En venta/Vendidas) con contadores, derivados de
-  operación + estado + contrato activo.
+  operación + estado + contrato activo. Detalle: acción rápida "Marcar como
+  vendida" / "Reabrir" (sin entrar a editar).
+- **Navegación**: componente `Breadcrumbs` (`components/breadcrumbs.tsx`, siempre
+  arranca en "Inicio") en las páginas de detalle (propiedad, contrato/piso de
+  alquiler, cuenta de contabilidad, ficha de cliente) — cada nivel es clicable, así
+  el "atrás" es predecible y no depende del historial del navegador.
 - **valuation**: widget "Valora tu piso" (estimación €/m² desde comparables
   publicados del propio tenant) → lead de propietario.
 - **visits** (agenda): `POST /tenant/visits/request` público + gestión privada con
