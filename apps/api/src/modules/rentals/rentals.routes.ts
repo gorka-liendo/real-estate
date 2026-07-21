@@ -25,6 +25,13 @@ rentals.get("/", async (c) => {
   return c.json({ rentals: await service.listRentals() });
 });
 
+// Detalle de gestión de un contrato (cobros + inmueble + inquilino/propietario).
+rentals.get("/:id", async (c) => {
+  const detail = await service.getRentalDetail(c.req.param("id"));
+  if (!detail) return c.json({ error: "not_found" }, 404);
+  return c.json(detail);
+});
+
 rentals.post("/", async (c) => {
   const body = createRentalSchema.safeParse(await c.req.json().catch(() => null));
   if (!body.success) return c.json({ error: "invalid_body", issues: body.error.issues }, 400);

@@ -281,6 +281,24 @@ export type RentalInput = {
   startDate: string;
   notes?: string;
 };
+export type RentalClientRef = {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+};
+export type RentalDetail = {
+  rental: Rental;
+  payments: RentalPayment[];
+  property: {
+    id: string;
+    title: string;
+    city: string | null;
+    ownerClientId: string | null;
+  } | null;
+  tenant: RentalClientRef | null; // inquilino vinculado
+  owner: RentalClientRef | null; // propietario del inmueble
+};
 
 // Contabilidad: un documento con dirección — gasto que pagamos (expense) o
 // factura que emitimos (income). Puede colgar de un inmueble, de un cliente,
@@ -574,6 +592,9 @@ export const api = {
     list: (slug: string) =>
       request<{ rentals: Rental[] }>("/tenant/rentals", { headers: { "x-tenant-slug": slug } }),
 
+    get: (slug: string, id: string) =>
+      request<RentalDetail>(`/tenant/rentals/${id}`, { headers: { "x-tenant-slug": slug } }),
+
     create: (slug: string, data: RentalInput) =>
       request<{ rental: Rental }>("/tenant/rentals", {
         method: "POST",
@@ -581,7 +602,11 @@ export const api = {
         body: JSON.stringify(data),
       }),
 
-    update: (slug: string, id: string, data: { status?: RentalStatus; monthlyRent?: number }) =>
+    update: (
+      slug: string,
+      id: string,
+      data: { status?: RentalStatus; monthlyRent?: number; notes?: string; endDate?: string | null },
+    ) =>
       request<{ rental: Rental }>(`/tenant/rentals/${id}`, {
         method: "PATCH",
         headers: { "x-tenant-slug": slug },

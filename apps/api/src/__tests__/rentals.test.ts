@@ -7,6 +7,7 @@ import {
   memberships,
   modules,
   properties,
+  rentals,
   subscriptions,
   tenants,
   user,
@@ -167,6 +168,62 @@ describe("Contratos de alquiler", () => {
     await db.update(subscriptions).set({ active: false }).where(eq(subscriptions.tenantId, tenantA.id));
     await invalidateModules(tenantA.id);
     expect((await req("")).status).toBe(403);
+  });
+});
+
+describe("Detalle de gestión del contrato", () => {
+  it("devuelve cobros + inmueble + inquilino y propietario vinculados", async () => {
+    const [renter] = await db
+      .insert(clients)
+      .values({ tenantId: tenantA.id, name: "Inquilina CRM", email: "inq@x.com", stage: "active" })
+      .returning();
+    const create = await req("", {
+      method: "POST",
+      body: JSON.stringify({
+        propertyId: propId,
+        renterClientId: renter!.id,
+        renterName: "Inquilina CRM",
+        monthlyRent: 1200,
+        startDate: "2026-01-01",
+      }),
+    });
+    const id = ((await create.json()) as { rental: { id: string } }).rental.id;
+    await req(`/${id}/payments/2026-03`, { method: "PUT", body: JSON.stringify({ status: "paid" }) });
+
+    const res = await req(`/${id}`);
+    expect(res.status).toBe(200);
+    const detail = (await res.json()) as {
+      rental: { id: string };
+      payments: unknown[];
+      property: { id: string; title: string } | null;
+      tenant: { id: string; name: string } | null;
+      owner: { id: string; name: string } | null;
+    };
+    expect(detail.rental.id).toBe(id);
+    expect(detail.payments).toHaveLength(1);
+    expect(detail.property!.title).toBe("Piso alquilado");
+    expect(detail.tenant).toMatchObject({ id: renter!.id, name: "Inquilina CRM" });
+    expect(detail.owner).toMatchObject({ id: ownerId, name: "Dueña Renta" });
+  });
+
+  it("404 si el contrato no existe o es de otro tenant", async () => {
+    expect((await req("/00000000-0000-0000-0000-000000000000")).status).toBe(404);
+
+    const [foreignProp] = await db
+      .insert(properties)
+      .values({ tenantId: tenantB.id, title: "De B", status: "published" })
+      .returning();
+    const [foreignRental] = await db
+      .insert(rentals)
+      .values({
+        tenantId: tenantB.id,
+        propertyId: foreignProp!.id,
+        renterName: "Ajeno",
+        monthlyRent: 700,
+        startDate: "2026-01-01",
+      })
+      .returning();
+    expect((await req(`/${foreignRental!.id}`)).status).toBe(404);
   });
 });
 

@@ -33,6 +33,55 @@ export async function listRentals(): Promise<RentalWithPayments[]> {
     }));
 }
 
+type ClientRef = { id: string; name: string; email: string | null; phone: string | null };
+export type RentalDetail = {
+  rental: Rental;
+  payments: RentalPayment[];
+  property: {
+    id: string;
+    title: string;
+    city: string | null;
+    ownerClientId: string | null;
+  } | null;
+  tenant: ClientRef | null; // inquilino (cliente del CRM vinculado)
+  owner: ClientRef | null; // propietario del inmueble (owner_client del piso)
+};
+
+/** Detalle completo de un contrato: cobros, inmueble y clientes (inquilino +
+ *  propietario) para la página de gestión. */
+export async function getRentalDetail(id: string): Promise<RentalDetail | null> {
+  const rentalRows = (await tenantDb().select(rentals, eq(rentals.id, id))) as Rental[];
+  const rental = rentalRows[0];
+  if (!rental) return null;
+
+  const payments = (
+    (await tenantDb().select(rentalPayments, eq(rentalPayments.rentalId, id))) as RentalPayment[]
+  ).sort((a, b) => a.period.localeCompare(b.period));
+
+  const propRows = await tenantDb().select(properties, eq(properties.id, rental.propertyId));
+  const prop = propRows[0];
+  const property = prop
+    ? { id: prop.id, title: prop.title, city: prop.city, ownerClientId: prop.ownerClientId }
+    : null;
+
+  const clientIds = [rental.renterClientId, prop?.ownerClientId].filter(Boolean) as string[];
+  const clientRows = clientIds.length
+    ? await tenantDb().select(clients, inArray(clients.id, clientIds))
+    : [];
+  const ref = (cid: string | null | undefined): ClientRef | null => {
+    const c = cid ? clientRows.find((x) => x.id === cid) : null;
+    return c ? { id: c.id, name: c.name, email: c.email, phone: c.phone } : null;
+  };
+
+  return {
+    rental,
+    payments,
+    property,
+    tenant: ref(rental.renterClientId),
+    owner: ref(prop?.ownerClientId),
+  };
+}
+
 export type CreateRentalResult =
   | { ok: true; rental: Rental }
   | { ok: false; error: "property_not_found" | "invalid_renter" | "active_rental_exists" };

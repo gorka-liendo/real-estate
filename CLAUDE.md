@@ -234,7 +234,10 @@ tenant→auth→membership→`requireModule`. UI de cliente en `apps/dashboard/a
 - **owner_portal**: enlace por token capability (`/portal/[token]`, público
   server-side, `noindex`) — el dueño ve rendimiento sin cuenta; detalle por
   inmueble con tabs + gráfico SVG.
-- **rentals**: contratos + `rental_payments` + rendimiento en el portal.
+- **rentals**: contratos + `rental_payments` + rendimiento en el portal. Página de
+  gestión por contrato `/alquileres/[id]` (`GET /tenant/rentals/:id` → `getRentalDetail`):
+  inquilino y propietario vinculados a sus clientes del CRM, historial de cobros mes a
+  mes (desde el inicio del contrato), edición de renta/notas y finalización.
 - **accounting**: `invoices` (`direction` income/expense, IVA en bps, pagos
   parciales, PDF de `income` con pdfkit), páginas de cuenta por inmueble/cliente.
   Absorbió el antiguo `property_expenses`.

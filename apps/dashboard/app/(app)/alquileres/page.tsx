@@ -1,8 +1,9 @@
 "use client";
 
 import { Paperclip, Plus, Square, Trash2 } from "lucide-react";
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { Badge, Button, Card, Input, Label, Select } from "@rep/ui";
+import { Badge, Button, ButtonLink, Card, Input, Label, Select } from "@rep/ui";
 import { useRequireModule, useWorkspace } from "@/contexts/workspace-context";
 import {
   api,
@@ -136,7 +137,14 @@ function AlquileresInner({ slug }: { slug: string }) {
               <tbody>
                 {items.map((r) => (
                   <tr key={r.id}>
-                    <td style={{ fontWeight: 500 }}>{titles[r.propertyId] ?? "—"}</td>
+                    <td style={{ fontWeight: 500 }}>
+                      <Link
+                        href={`/alquileres/${r.id}`}
+                        style={{ color: "inherit", textDecoration: "underline" }}
+                      >
+                        {titles[r.propertyId] ?? "—"}
+                      </Link>
+                    </td>
                     <td>
                       {r.renterName}
                       <div className="du-muted" style={{ fontSize: 12 }}>
@@ -169,7 +177,10 @@ function AlquileresInner({ slug }: { slug: string }) {
                         {r.status === "active" ? "Activo" : "Finalizado"}
                       </Badge>
                     </td>
-                    <td style={{ textAlign: "right" }}>
+                    <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+                      <ButtonLink href={`/alquileres/${r.id}`} variant="ghost" size="sm">
+                        Gestionar
+                      </ButtonLink>
                       {r.status === "active" ? (
                         <Button variant="ghost" size="sm" onClick={() => void endRental(r)}>
                           <Square size={13} />
