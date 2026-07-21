@@ -133,7 +133,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--tenant-sp-5);
-  padding: var(--tenant-sp-4) var(--tenant-sp-4) var(--tenant-sp-4) var(--tenant-sp-5);
+  padding: var(--tenant-sp-3) var(--tenant-sp-4);
   border-radius: var(--tenant-radius);
   background: color-mix(in srgb, var(--tenant-bg) 72%, transparent);
   border: 1px solid color-mix(in srgb, var(--tenant-text) 10%, transparent);
@@ -143,9 +143,9 @@
 }
 .rt-topbar__brand {
   font-family: var(--tenant-font-display);
-  font-weight: 800;
+  font-weight: 500;
   font-size: 20px;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
   text-transform: uppercase;
   color: var(--tenant-text);
   text-decoration: none;
@@ -172,9 +172,8 @@
 .rt-topbar__nav a {
   color: var(--tenant-text);
   text-decoration: none;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  font-size: 15px;
+  letter-spacing: 0.01em;
   opacity: 0.7;
   transition: opacity 0.15s;
 }
