@@ -370,7 +370,7 @@ function Editor({ slug, name }: { slug: string; name: string }) {
   const { hasModule } = useWorkspace();
   const [config, setConfig] = useState<SiteConfig | null>(null);
   const [saving, setSaving] = useState(false);
-  const [savedAt, setSavedAt] = useState<number | null>(null);
+  const [dirty, setDirty] = useState(false); // hay cambios sin guardar
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -380,6 +380,7 @@ function Editor({ slug, name }: { slug: string; name: string }) {
       // el editor siempre trabaje con un array concreto y el primer guardado
       // la persista.
       setConfig({ ...loaded, sections: deriveEditorSections(loaded, hasModule) });
+      setDirty(false);
     } catch {
       setError("No se pudo cargar la configuración.");
     }
@@ -391,7 +392,7 @@ function Editor({ slug, name }: { slug: string; name: string }) {
 
   function set<K extends keyof SiteConfig>(key: K, value: SiteConfig[K]) {
     setConfig((c) => ({ ...(c ?? {}), [key]: value }));
-    setSavedAt(null);
+    setDirty(true);
   }
 
   const sections = config?.sections ?? [];
@@ -446,7 +447,7 @@ function Editor({ slug, name }: { slug: string; name: string }) {
       const res = await api.site.update(slug, clean);
       const saved = res.siteConfig ?? {};
       setConfig({ ...saved, sections: deriveEditorSections(saved, hasModule) });
-      setSavedAt(Date.now());
+      setDirty(false);
     } catch {
       setError("No se pudo guardar. Revisa los campos.");
     } finally {
@@ -462,61 +463,39 @@ function Editor({ slug, name }: { slug: string; name: string }) {
 
   return (
     <div style={{ display: "grid", gap: "var(--ui-sp-5)" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-        <div>
-          <h1 className="du-h1">Micrositio</h1>
-          <p className="du-muted" style={{ marginTop: 4 }}>
-            El contenido de la web pública de {name}. Se publica en unos segundos.
+      {/* Barra de acción sticky: guardar siempre a la vista */}
+      <div className="mst-bar">
+        <div style={{ minWidth: 0 }}>
+          <h1 className="du-h1" style={{ fontSize: 20 }}>
+            Micrositio
+          </h1>
+          <p className="du-muted" style={{ fontSize: 13, marginTop: 2 }}>
+            La web pública de {name}. Se publica en unos segundos.
           </p>
         </div>
-        <ButtonLink href={previewUrl} target="_blank" rel="noreferrer" variant="outline" size="sm">
-          <ExternalLink size={15} />
-          Ver micrositio
-        </ButtonLink>
+        <div className="mst-bar__actions">
+          <span
+            className="du-muted"
+            style={{ fontSize: 13, color: dirty ? "var(--ui-warning)" : undefined }}
+          >
+            {saving ? "Guardando…" : dirty ? "Cambios sin guardar" : "Todo guardado ✓"}
+          </span>
+          <ButtonLink href={previewUrl} target="_blank" rel="noreferrer" variant="outline" size="sm">
+            <ExternalLink size={15} />
+            Ver
+          </ButtonLink>
+          <Button onClick={() => void save()} disabled={saving || !dirty}>
+            {saving ? "Guardando…" : "Guardar cambios"}
+          </Button>
+        </div>
       </div>
 
       {error ? <p className="du-alert">{error}</p> : null}
 
-      <div>
-        <h2 className="du-h2" style={{ marginBottom: 4 }}>
-          Secciones de la web
-        </h2>
-        <p className="du-muted" style={{ fontSize: 13, marginBottom: "var(--ui-sp-4)" }}>
-          Ordena, muestra u oculta las secciones de tu web y edita su contenido.
-        </p>
-
-        <div style={{ display: "grid", gap: "var(--ui-sp-3)" }}>
-          {sections.map((section, i) => (
-            <SectionCard
-              key={section.id}
-              slug={slug}
-              section={section}
-              index={i}
-              total={sections.length}
-              onPatch={patchSection}
-              onToggle={toggleSection}
-              onMove={moveSection}
-              onRemove={removeSection}
-            />
-          ))}
-        </div>
-
-        {addableTypes.length > 0 ? (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--ui-sp-2)", marginTop: "var(--ui-sp-3)" }}>
-            {addableTypes.map((m) => (
-              <Button key={m.type} variant="outline" size="sm" onClick={() => addSection(m.type)}>
-                <Plus size={15} />
-                {m.label}
-              </Button>
-            ))}
-          </div>
-        ) : null}
-      </div>
-
+      {/* 1 · Cabecera */}
       <Card>
-        <h2 className="du-h3" style={{ marginBottom: "var(--ui-sp-4)" }}>
-          Cabecera
-        </h2>
+        <h2 className="mst-group__title">Cabecera</h2>
+        <p className="mst-group__desc">El header de tu web: estilo, marca y tamaño del logo.</p>
         <div
           style={{
             display: "grid",
@@ -561,133 +540,165 @@ function Editor({ slug, name }: { slug: string; name: string }) {
             </Select>
           </div>
         </div>
-        <p className="du-muted" style={{ fontSize: 12, marginTop: "var(--ui-sp-2)" }}>
+        <p className="du-muted" style={{ fontSize: 12, marginTop: "var(--ui-sp-3)" }}>
           El logo se sube en Ajustes. Si eliges «Logo» y aún no lo has subido, se
           muestra el nombre.
         </p>
       </Card>
 
-      <Card>
-        <h2 className="du-h3" style={{ marginBottom: "var(--ui-sp-4)" }}>
-          Sobre la inmobiliaria
-        </h2>
-        <Textarea
-          placeholder="Cuenta quiénes sois en un par de frases."
-          value={config.about ?? ""}
-          onChange={(e) => set("about", e.target.value)}
-        />
-      </Card>
-
-      <Card>
-        <h2 className="du-h3" style={{ marginBottom: "var(--ui-sp-4)" }}>
-          Contacto y pie de página
-        </h2>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-            gap: "var(--ui-sp-4)",
-          }}
-        >
-          <div>
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="hola@inmobiliaria.com"
-              value={config.contactEmail ?? ""}
-              onChange={(e) => set("contactEmail", e.target.value)}
+      {/* 2 · Secciones del cuerpo */}
+      <div>
+        <h2 className="mst-group__title">Secciones de la web</h2>
+        <p className="mst-group__desc">
+          Ordena, muestra u oculta las secciones del cuerpo y edita su contenido.
+        </p>
+        <div style={{ display: "grid", gap: "var(--ui-sp-3)" }}>
+          {sections.map((section, i) => (
+            <SectionCard
+              key={section.id}
+              slug={slug}
+              section={section}
+              index={i}
+              total={sections.length}
+              onPatch={patchSection}
+              onToggle={toggleSection}
+              onMove={moveSection}
+              onRemove={removeSection}
             />
-          </div>
-          <div>
-            <Label htmlFor="phone">Teléfono</Label>
-            <Input
-              id="phone"
-              placeholder="+34 900 000 000"
-              value={config.contactPhone ?? ""}
-              onChange={(e) => set("contactPhone", e.target.value)}
-            />
-          </div>
-          <div>
-            <Label htmlFor="footer-address">Dirección (pie de página)</Label>
-            <Input
-              id="footer-address"
-              placeholder="Gran Vía 12, 48001 Bilbao"
-              value={config.footerAddress ?? ""}
-              onChange={(e) => set("footerAddress", e.target.value)}
-            />
-          </div>
-          <div>
-            <Label htmlFor="footer-schedule">Horario (pie de página)</Label>
-            <Input
-              id="footer-schedule"
-              placeholder="L–V 9:30–19:00 · S 10:00–13:30"
-              value={config.footerSchedule ?? ""}
-              onChange={(e) => set("footerSchedule", e.target.value)}
-            />
-          </div>
+          ))}
         </div>
+        {addableTypes.length > 0 ? (
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "var(--ui-sp-2)",
+              marginTop: "var(--ui-sp-3)",
+            }}
+          >
+            {addableTypes.map((m) => (
+              <Button key={m.type} variant="outline" size="sm" onClick={() => addSection(m.type)}>
+                <Plus size={15} />
+                {m.label}
+              </Button>
+            ))}
+          </div>
+        ) : null}
+      </div>
 
-        <div style={{ marginTop: "var(--ui-sp-5)" }}>
-          <Label>Redes y enlaces</Label>
-          <div style={{ display: "grid", gap: "var(--ui-sp-3)", marginTop: "var(--ui-sp-2)" }}>
-            {social.map((s, i) => (
-              <div key={i} style={{ display: "flex", gap: "var(--ui-sp-2)" }}>
-                <Input
-                  placeholder="Instagram"
-                  value={s.label}
-                  onChange={(e) =>
-                    set(
-                      "social",
-                      social.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)),
-                    )
-                  }
-                  style={{ maxWidth: 180 }}
-                />
-                <Input
-                  placeholder="https://instagram.com/…"
-                  value={s.url}
-                  onChange={(e) =>
-                    set(
-                      "social",
-                      social.map((x, j) => (j === i ? { ...x, url: e.target.value } : x)),
-                    )
-                  }
-                />
+      {/* 3 · Pie de página y contacto */}
+      <Card>
+        <h2 className="mst-group__title">Pie de página y contacto</h2>
+        <p className="mst-group__desc">
+          Lo que aparece en el pie de la web: descripción, datos de contacto y redes.
+        </p>
+        <div style={{ display: "grid", gap: "var(--ui-sp-5)" }}>
+          <div>
+            <Label htmlFor="about">Descripción de la inmobiliaria</Label>
+            <Textarea
+              id="about"
+              placeholder="Cuenta quiénes sois en un par de frases."
+              value={config.about ?? ""}
+              onChange={(e) => set("about", e.target.value)}
+            />
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+              gap: "var(--ui-sp-4)",
+            }}
+          >
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="hola@inmobiliaria.com"
+                value={config.contactEmail ?? ""}
+                onChange={(e) => set("contactEmail", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="phone">Teléfono</Label>
+              <Input
+                id="phone"
+                placeholder="+34 900 000 000"
+                value={config.contactPhone ?? ""}
+                onChange={(e) => set("contactPhone", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="footer-address">Dirección</Label>
+              <Input
+                id="footer-address"
+                placeholder="Gran Vía 12, 48001 Bilbao"
+                value={config.footerAddress ?? ""}
+                onChange={(e) => set("footerAddress", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="footer-schedule">Horario</Label>
+              <Input
+                id="footer-schedule"
+                placeholder="L–V 9:30–19:00 · S 10:00–13:30"
+                value={config.footerSchedule ?? ""}
+                onChange={(e) => set("footerSchedule", e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label>Redes y enlaces</Label>
+            <div style={{ display: "grid", gap: "var(--ui-sp-3)", marginTop: "var(--ui-sp-2)" }}>
+              {social.map((s, i) => (
+                <div key={i} style={{ display: "flex", gap: "var(--ui-sp-2)" }}>
+                  <Input
+                    placeholder="Instagram"
+                    value={s.label}
+                    onChange={(e) =>
+                      set(
+                        "social",
+                        social.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)),
+                      )
+                    }
+                    style={{ maxWidth: 180 }}
+                  />
+                  <Input
+                    placeholder="https://instagram.com/…"
+                    value={s.url}
+                    onChange={(e) =>
+                      set(
+                        "social",
+                        social.map((x, j) => (j === i ? { ...x, url: e.target.value } : x)),
+                      )
+                    }
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => set("social", social.filter((_, j) => j !== i))}
+                    aria-label="Quitar enlace"
+                  >
+                    <Trash2 size={15} />
+                  </Button>
+                </div>
+              ))}
+              <div>
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
-                  onClick={() => set("social", social.filter((_, j) => j !== i))}
-                  aria-label="Quitar enlace"
+                  onClick={() => set("social", [...social, { label: "", url: "" } as SocialLink])}
                 >
-                  <Trash2 size={15} />
+                  <Plus size={15} />
+                  Añadir enlace
                 </Button>
               </div>
-            ))}
-            <div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => set("social", [...social, { label: "", url: "" } as SocialLink])}
-              >
-                <Plus size={15} />
-                Añadir enlace
-              </Button>
             </div>
           </div>
         </div>
       </Card>
-
-      <div style={{ display: "flex", alignItems: "center", gap: "var(--ui-sp-3)" }}>
-        <Button onClick={() => void save()} disabled={saving}>
-          {saving ? "Guardando…" : "Guardar cambios"}
-        </Button>
-        {savedAt ? (
-          <span className="du-muted" style={{ fontSize: 13 }}>
-            Guardado ✓
-          </span>
-        ) : null}
-      </div>
     </div>
   );
 }

@@ -111,6 +111,40 @@
     border-color 0.15s,
     box-shadow 0.15s;
 }
+
+/* Barra de acción sticky (editor del micrositio): título + guardar siempre a la
+   vista. Se pega al top del viewport al hacer scroll; fondo = bg del contenido
+   para que las tarjetas pasen limpio por debajo. */
+.mst-bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-sp-4);
+  padding: var(--ui-sp-4) 0;
+  background: var(--ui-bg);
+  border-bottom: 1px solid var(--ui-border);
+}
+.mst-bar__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-sp-3);
+  flex-shrink: 0;
+}
+/* Encabezado de grupo del editor (Cabecera / Secciones / Pie de página) */
+.mst-group__title {
+  font-family: var(--ui-font-display);
+  font-weight: 800;
+  font-size: 17px;
+  margin: 0;
+}
+.mst-group__desc {
+  color: var(--ui-muted);
+  font-size: 13px;
+  margin: 2px 0 var(--ui-sp-4);
+}
 .dash-tile:hover {
   border-color: var(--ui-border-strong);
   box-shadow: var(--ui-shadow);
