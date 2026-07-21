@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Badge, Button, Card, Input, Label, Textarea } from "@rep/ui";
-import { Breadcrumbs } from "@/components/breadcrumbs";
+import { useSetBreadcrumbs } from "@/contexts/breadcrumbs-context";
 import { useRequireModule, useWorkspace } from "@/contexts/workspace-context";
 import {
   api,
@@ -101,6 +101,18 @@ function RentalDetailInner({ slug, rentalId }: { slug: string; rentalId: string 
     void load();
   }, [load]);
 
+  useSetBreadcrumbs(
+    detail
+      ? [
+          { label: "Alquileres", href: "/alquileres" },
+          ...(detail.room && detail.property
+            ? [{ label: detail.property.title, href: `/alquileres/propiedad/${detail.property.id}` }]
+            : []),
+          { label: detail.room ? detail.room.name : (detail.property?.title ?? "Contrato") },
+        ]
+      : null,
+  );
+
   if (!detail) {
     return error ? <p className="du-alert">{error}</p> : <p className="du-muted">Cargando…</p>;
   }
@@ -168,25 +180,14 @@ function RentalDetailInner({ slug, rentalId }: { slug: string; rentalId: string 
 
   return (
     <div style={{ display: "grid", gap: "var(--ui-sp-5)" }}>
-      <div>
-        <Breadcrumbs
-          items={[
-            { label: "Alquileres", href: "/alquileres" },
-            ...(detail.room && property
-              ? [{ label: property.title, href: `/alquileres/propiedad/${property.id}` }]
-              : []),
-            { label: detail.room ? detail.room.name : (property?.title ?? "Contrato") },
-          ]}
-        />
-        <div style={{ display: "flex", alignItems: "center", gap: "var(--ui-sp-3)", flexWrap: "wrap" }}>
-          <h1 className="du-h1" style={{ margin: 0 }}>
-            {property ? property.title : "Contrato"}
-          </h1>
-          {detail.room ? <Badge variant="muted">{detail.room.name}</Badge> : null}
-          <Badge variant={isActive ? "success" : "default"}>
-            {isActive ? "Activo" : "Finalizado"}
-          </Badge>
-        </div>
+      <div style={{ display: "flex", alignItems: "center", gap: "var(--ui-sp-3)", flexWrap: "wrap" }}>
+        <h1 className="du-h1" style={{ margin: 0 }}>
+          {property ? property.title : "Contrato"}
+        </h1>
+        {detail.room ? <Badge variant="muted">{detail.room.name}</Badge> : null}
+        <Badge variant={isActive ? "success" : "default"}>
+          {isActive ? "Activo" : "Finalizado"}
+        </Badge>
       </div>
 
       {error ? <p className="du-alert">{error}</p> : null}

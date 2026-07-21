@@ -5,7 +5,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { Select } from "@rep/ui";
+import { Breadcrumbs, type Crumb } from "@/components/breadcrumbs";
 import { useAuth } from "@/contexts/auth-context";
+import { useBreadcrumbs } from "@/contexts/breadcrumbs-context";
 import { useWorkspace } from "@/contexts/workspace-context";
 import { MODULE_SECTIONS } from "@/lib/modules";
 import { routes } from "@/lib/routes";
@@ -24,6 +26,11 @@ export function DashboardShell({ children }: { children: ReactNode }) {
     href === routes.home ? pathname === href : pathname.startsWith(href);
 
   const sections = MODULE_SECTIONS.filter((s) => hasModule(s.code));
+
+  // Migas: las que registre la página de detalle, o el nivel de sección derivado
+  // de la URL para los listados (Inicio se antepone dentro de <Breadcrumbs>).
+  const pageCrumbs = useBreadcrumbs();
+  const crumbs: Crumb[] = pageCrumbs ?? deriveSectionCrumb(pathname);
 
   // Superadmin PURO (sin membership de ningún tenant): Inicio (rejilla de
   // módulos de un tenant) y Ajustes (marca/logo de un tenant) no significan
@@ -95,7 +102,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
 
       <div className="dash-main">
         <header className="dash-header">
-          <span />
+          <Breadcrumbs items={crumbs} />
           {memberships.length > 1 ? (
             <Select
               value={selected?.slug ?? ""}
@@ -115,4 +122,19 @@ export function DashboardShell({ children }: { children: ReactNode }) {
       </div>
     </div>
   );
+}
+
+// Nivel de sección para los listados (los detalles registran su propia ruta).
+// "Inicio" lo antepone <Breadcrumbs>, así que en la home devolvemos [].
+function deriveSectionCrumb(pathname: string): Crumb[] {
+  if (pathname === routes.home) return [];
+  const tops: Array<{ label: string; href: string }> = [
+    ...MODULE_SECTIONS.map((s) => ({ label: s.label, href: s.href })),
+    { label: "Ajustes", href: routes.ajustes },
+    { label: "Administración", href: routes.admin },
+  ];
+  const match =
+    tops.find((s) => pathname === s.href || pathname.startsWith(`${s.href}/`)) ??
+    tops.find((s) => s.href !== "/" && pathname.startsWith(s.href));
+  return match ? [{ label: match.label }] : [];
 }

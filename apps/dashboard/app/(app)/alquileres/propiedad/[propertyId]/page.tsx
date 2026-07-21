@@ -4,7 +4,7 @@ import { Check, DoorOpen } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Badge, ButtonLink, Card } from "@rep/ui";
-import { Breadcrumbs } from "@/components/breadcrumbs";
+import { useSetBreadcrumbs } from "@/contexts/breadcrumbs-context";
 import { useRequireModule, useWorkspace } from "@/contexts/workspace-context";
 import { api, type Property, type Rental } from "@/lib/api";
 
@@ -41,6 +41,11 @@ function PropertyRentalsInner({ slug, propertyId }: { slug: string; propertyId: 
     void load();
   }, [load]);
 
+  useSetBreadcrumbs([
+    { label: "Alquileres", href: "/alquileres" },
+    { label: property?.title ?? "Inmueble" },
+  ]);
+
   async function togglePayment(r: Rental, period: string) {
     setError(null);
     const next = paymentFor(r, period)?.status === "paid" ? "pending" : "paid";
@@ -68,19 +73,14 @@ function PropertyRentalsInner({ slug, propertyId }: { slug: string; propertyId: 
 
   return (
     <div style={{ display: "grid", gap: "var(--ui-sp-5)" }}>
-      <div>
-        <Breadcrumbs
-          items={[{ label: "Alquileres", href: "/alquileres" }, { label: property?.title ?? "Inmueble" }]}
-        />
-        <div style={{ display: "flex", alignItems: "center", gap: "var(--ui-sp-3)", flexWrap: "wrap" }}>
-          <h1 className="du-h1" style={{ margin: 0 }}>
-            {property?.title ?? "Inmueble"}
-          </h1>
-          <Badge variant="muted">
-            <DoorOpen size={11} style={{ verticalAlign: "-1px", marginRight: 3 }} />
-            Por habitaciones
-          </Badge>
-        </div>
+      <div style={{ display: "flex", alignItems: "center", gap: "var(--ui-sp-3)", flexWrap: "wrap" }}>
+        <h1 className="du-h1" style={{ margin: 0 }}>
+          {property?.title ?? "Inmueble"}
+        </h1>
+        <Badge variant="muted">
+          <DoorOpen size={11} style={{ verticalAlign: "-1px", marginRight: 3 }} />
+          Por habitaciones
+        </Badge>
       </div>
 
       {error ? <p className="du-alert">{error}</p> : null}

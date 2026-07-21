@@ -4,7 +4,7 @@ import { Link2 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Badge, Button, Card, Input, Label, Select, Textarea } from "@rep/ui";
-import { Breadcrumbs } from "@/components/breadcrumbs";
+import { useSetBreadcrumbs } from "@/contexts/breadcrumbs-context";
 import { useRequireModule, useWorkspace } from "@/contexts/workspace-context";
 import { api, ApiError, type ClientKind, type ClientProfile, type ClientStage } from "@/lib/api";
 import { TENANT_SITE_URL } from "@/lib/config";
@@ -46,6 +46,10 @@ function ProfileInner({ slug, clientId }: { slug: string; clientId: string }) {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useSetBreadcrumbs(
+    profile ? [{ label: "Clientes", href: "/clientes" }, { label: profile.client.name }] : null,
+  );
 
   if (!profile) {
     return error ? <p className="du-alert">{error}</p> : <p className="du-muted">Cargando…</p>;
@@ -98,14 +102,11 @@ function ProfileInner({ slug, clientId }: { slug: string; clientId: string }) {
 
   return (
     <div style={{ display: "grid", gap: "var(--ui-sp-5)" }}>
-      <div>
-        <Breadcrumbs items={[{ label: "Clientes", href: "/clientes" }, { label: c.name }]} />
-        <div style={{ display: "flex", alignItems: "center", gap: "var(--ui-sp-3)", flexWrap: "wrap" }}>
-          <h1 className="du-h1" style={{ margin: 0 }}>
-            {c.name}
-          </h1>
-          <Badge variant={c.stage === "active" ? "success" : "muted"}>{STAGE_LABELS[c.stage]}</Badge>
-        </div>
+      <div style={{ display: "flex", alignItems: "center", gap: "var(--ui-sp-3)", flexWrap: "wrap" }}>
+        <h1 className="du-h1" style={{ margin: 0 }}>
+          {c.name}
+        </h1>
+        <Badge variant={c.stage === "active" ? "success" : "muted"}>{STAGE_LABELS[c.stage]}</Badge>
       </div>
 
       {error ? <p className="du-alert">{error}</p> : null}

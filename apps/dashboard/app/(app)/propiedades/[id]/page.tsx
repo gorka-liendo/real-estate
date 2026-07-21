@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Badge, Button, ButtonLink, Card, Label } from "@rep/ui";
-import { Breadcrumbs } from "@/components/breadcrumbs";
+import { useSetBreadcrumbs } from "@/contexts/breadcrumbs-context";
 import { useRequireModule, useWorkspace } from "@/contexts/workspace-context";
 import { api, ApiError, type Client, type Invoice, type Property, type Rental } from "@/lib/api";
 import { TENANT_SITE_URL } from "@/lib/config";
@@ -67,6 +67,12 @@ function PropertyDetailInner({ slug, id }: { slug: string; id: string }) {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useSetBreadcrumbs(
+    property
+      ? [{ label: "Propiedades", href: "/propiedades" }, { label: property.title }]
+      : null,
+  );
 
   async function setStatus(status: Property["status"]) {
     if (!property) return;
@@ -146,14 +152,12 @@ function PropertyDetailInner({ slug, id }: { slug: string; id: string }) {
 
   return (
     <div style={{ display: "grid", gap: "var(--ui-sp-5)" }}>
-      <div>
-        <Breadcrumbs items={[{ label: "Propiedades", href: "/propiedades" }, { label: p.title }]} />
-        <div style={{ display: "flex", alignItems: "center", gap: "var(--ui-sp-3)", flexWrap: "wrap" }}>
-          <h1 className="du-h1" style={{ margin: 0 }}>
-            {p.title}
-          </h1>
-          <Badge variant={STATUS_VARIANT[p.status]}>{STATUS_LABEL[p.status]}</Badge>
-          <div style={{ marginLeft: "auto", display: "flex", gap: "var(--ui-sp-2)", flexWrap: "wrap" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "var(--ui-sp-3)", flexWrap: "wrap" }}>
+        <h1 className="du-h1" style={{ margin: 0 }}>
+          {p.title}
+        </h1>
+        <Badge variant={STATUS_VARIANT[p.status]}>{STATUS_LABEL[p.status]}</Badge>
+        <div style={{ marginLeft: "auto", display: "flex", gap: "var(--ui-sp-2)", flexWrap: "wrap" }}>
             {p.status === "published" ? (
               <a
                 className="du-btn du-btn--ghost du-btn--sm"
@@ -183,7 +187,6 @@ function PropertyDetailInner({ slug, id }: { slug: string; id: string }) {
               <Pencil size={15} />
               Editar
             </Button>
-          </div>
         </div>
       </div>
 

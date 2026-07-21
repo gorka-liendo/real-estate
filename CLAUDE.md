@@ -236,10 +236,13 @@ tenant→auth→membership→`requireModule`. UI de cliente en `apps/dashboard/a
   (Todas/Alquiladas/Libres/En venta/Vendidas) con contadores, derivados de
   operación + estado + contrato activo. Detalle: acción rápida "Marcar como
   vendida" / "Reabrir" (sin entrar a editar).
-- **Navegación**: componente `Breadcrumbs` (`components/breadcrumbs.tsx`, siempre
-  arranca en "Inicio") en las páginas de detalle (propiedad, contrato/piso de
-  alquiler, cuenta de contabilidad, ficha de cliente) — cada nivel es clicable, así
-  el "atrás" es predecible y no depende del historial del navegador.
+- **Navegación (breadcrumbs)**: viven en la **barra superior del shell**
+  (`dash-header`), no dentro de cada página. `components/breadcrumbs.tsx` (antepone
+  "Inicio") + `contexts/breadcrumbs-context.tsx`: los **listados** derivan el nivel de
+  sección de la URL (`deriveSectionCrumb` en el shell); las **páginas de detalle**
+  registran su ruta con el nombre real de la entidad vía `useSetBreadcrumbs([...])`
+  (llamar SIEMPRE antes del return de carga; `null` mientras carga → cae al nivel de
+  sección). Cada nivel es clicable → "atrás" predecible sin depender del navegador.
 - **valuation**: widget "Valora tu piso" (estimación €/m² desde comparables
   publicados del propio tenant) → lead de propietario.
 - **visits** (agenda): `POST /tenant/visits/request` público + gestión privada con

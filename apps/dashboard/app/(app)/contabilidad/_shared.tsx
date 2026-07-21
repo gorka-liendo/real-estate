@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { Fragment, type ReactNode, useEffect, useState } from "react";
 import { Badge, Button, Card, Input, Label, Select, Textarea } from "@rep/ui";
-import { Breadcrumbs } from "@/components/breadcrumbs";
+import { useSetBreadcrumbs } from "@/contexts/breadcrumbs-context";
 import {
   api,
   ApiError,
@@ -907,6 +907,7 @@ export function AccountDetail({
   const [showForm, setShowForm] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const [rooms, setRooms] = useState<PropertyRoom[]>([]);
+  useSetBreadcrumbs([{ label: "Contabilidad", href: "/contabilidad" }, { label: name }]);
 
   // Habitaciones del inmueble (solo en cuentas de inmueble) para el desglose.
   useEffect(() => {
@@ -974,12 +975,9 @@ export function AccountDetail({
 
   return (
     <div style={{ display: "grid", gap: "var(--ui-sp-5)" }}>
-      <div>
-        <Breadcrumbs items={[{ label: "Contabilidad", href: "/contabilidad" }, { label: name }]} />
-        <h1 className="du-h1" style={{ margin: 0 }}>
-          {name}
-        </h1>
-      </div>
+      <h1 className="du-h1" style={{ margin: 0 }}>
+        {name}
+      </h1>
 
       <div
         style={{

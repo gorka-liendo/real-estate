@@ -19,7 +19,7 @@ export function Breadcrumbs({ items }: { items: Crumb[] }) {
         gap: 4,
         flexWrap: "wrap",
         fontSize: 13,
-        marginBottom: "var(--ui-sp-2)",
+        minWidth: 0,
       }}
     >
       {all.map((c, i) => {
