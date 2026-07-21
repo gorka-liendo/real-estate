@@ -553,10 +553,11 @@ function Editor({ slug, name }: { slug: string; name: string }) {
               value={String(config.logoScale ?? 1)}
               onChange={(e) => set("logoScale", Number(e.target.value))}
             >
-              <option value="1">Normal (×1)</option>
-              <option value="1.25">Grande (×1.25)</option>
-              <option value="1.5">Muy grande (×1.5)</option>
-              <option value="2">Enorme (×2)</option>
+              {[1, 1.25, 1.5, 1.75, 2, 2.25, 2.5].map((s) => (
+                <option key={s} value={String(s)}>
+                  {s === 1 ? "Normal (×1)" : `×${s}`}
+                </option>
+              ))}
             </Select>
           </div>
         </div>
