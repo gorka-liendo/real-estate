@@ -155,6 +155,14 @@ export type SiteConfig = {
   sections?: SiteSection[];
 };
 
+// Fuente de datos del editor del micrositio. La cumplen `api.site` (owner) y
+// `api.adminSite` (superadmin) → el mismo <Editor> sirve para ambos.
+export type SiteEditorApi = {
+  get: (slug: string) => Promise<{ siteConfig: SiteConfig }>;
+  update: (slug: string, data: SiteConfig) => Promise<{ siteConfig: SiteConfig }>;
+  uploadMedia: (slug: string, file: File) => Promise<{ url: string; kind: "image" | "video" }>;
+};
+
 export type PropertyOperation = "sale" | "rent";
 export type PropertyKind = "flat" | "house" | "commercial" | "land" | "garage";
 export type PropertyStatus = "draft" | "published" | "archived";
@@ -470,6 +478,31 @@ export const api = {
         method: "POST",
         credentials: "include",
         headers: { "x-tenant-slug": slug },
+        body: fd,
+      });
+      if (!res.ok) {
+        const b = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new ApiError(res.status, b.error ?? `HTTP ${res.status}`);
+      }
+      return (await res.json()) as { url: string; kind: "image" | "video" };
+    },
+  },
+
+  // Edición del micrositio de CUALQUIER tenant por el superadmin (mismo shape
+  // que `site` → el editor acepta ambas fuentes). Endpoints /admin/tenants/:slug/*.
+  adminSite: {
+    get: (slug: string) => request<{ siteConfig: SiteConfig }>(`/admin/tenants/${slug}/site`),
+    update: (slug: string, data: SiteConfig) =>
+      request<{ siteConfig: SiteConfig }>(`/admin/tenants/${slug}/site`, {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      }),
+    uploadMedia: async (slug: string, file: File) => {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch(`${API_URL}/admin/tenants/${slug}/media`, {
+        method: "POST",
+        credentials: "include",
         body: fd,
       });
       if (!res.ok) {

@@ -1,10 +1,18 @@
 "use client";
 
-import { ChevronDown, ChevronUp, ExternalLink, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronUp, ExternalLink, Plus, Trash2 } from "lucide-react";
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { Button, ButtonLink, Card, Input, Label, Select, Switch, Textarea } from "@rep/ui";
 import { useRequireModule, useWorkspace } from "@/contexts/workspace-context";
-import { api, ApiError, type SiteConfig, type SiteSection, type SocialLink } from "@/lib/api";
+import {
+  api,
+  ApiError,
+  type SiteConfig,
+  type SiteEditorApi,
+  type SiteSection,
+  type SocialLink,
+} from "@/lib/api";
 import { TENANT_SITE_URL } from "@/lib/config";
 import {
   deriveEditorSections,
@@ -136,12 +144,12 @@ function SectionListField({
 // Campo de media: sube imagen/vídeo a @rep/storage y guarda la URL. Muestra
 // vista previa (miniatura / vídeo) + subir/quitar.
 function MediaFieldInput({
-  slug,
+  uploadMedia,
   section,
   field,
   onChange,
 }: {
-  slug: string;
+  uploadMedia: (file: File) => Promise<{ url: string; kind: "image" | "video" }>;
   section: SiteSection;
   field: MediaField;
   onChange: (value: string | undefined) => void;
@@ -154,7 +162,7 @@ function MediaFieldInput({
     setBusy(true);
     setErr(null);
     try {
-      const { url: uploaded } = await api.site.uploadMedia(slug, file);
+      const { url: uploaded } = await uploadMedia(file);
       onChange(uploaded);
     } catch (e) {
       setErr(
@@ -230,12 +238,12 @@ function MediaFieldInput({
 }
 
 function SectionFieldInput({
-  slug,
+  uploadMedia,
   section,
   field,
   onChange,
 }: {
-  slug: string;
+  uploadMedia: (file: File) => Promise<{ url: string; kind: "image" | "video" }>;
   section: SiteSection;
   field: SectionField;
   onChange: (key: string, value: unknown) => void;
@@ -252,7 +260,7 @@ function SectionFieldInput({
   if (field.type === "media") {
     return (
       <MediaFieldInput
-        slug={slug}
+        uploadMedia={uploadMedia}
         section={section}
         field={field}
         onChange={(value) => onChange(field.key, value)}
@@ -273,7 +281,7 @@ function SectionFieldInput({
 }
 
 function SectionCard({
-  slug,
+  uploadMedia,
   section,
   index,
   total,
@@ -282,7 +290,7 @@ function SectionCard({
   onMove,
   onRemove,
 }: {
-  slug: string;
+  uploadMedia: (file: File) => Promise<{ url: string; kind: "image" | "video" }>;
   section: SiteSection;
   index: number;
   total: number;
@@ -353,7 +361,7 @@ function SectionCard({
             {meta.fields.map((field) => (
               <SectionFieldInput
                 key={field.key}
-                slug={slug}
+                uploadMedia={uploadMedia}
                 section={section}
                 field={field}
                 onChange={(key, value) => onPatch(section.id, key, value)}
@@ -366,8 +374,20 @@ function SectionCard({
   );
 }
 
-function Editor({ slug, name }: { slug: string; name: string }) {
-  const { hasModule } = useWorkspace();
+function Editor({
+  slug,
+  name,
+  source,
+  hasModule,
+  backHref,
+}: {
+  slug: string;
+  name: string;
+  source: SiteEditorApi;
+  hasModule: (code: string) => boolean;
+  backHref?: string;
+}) {
+  const uploadMedia = (file: File) => source.uploadMedia(slug, file);
   const [config, setConfig] = useState<SiteConfig | null>(null);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false); // hay cambios sin guardar
@@ -375,7 +395,7 @@ function Editor({ slug, name }: { slug: string; name: string }) {
 
   const load = useCallback(async () => {
     try {
-      const loaded = (await api.site.get(slug)).siteConfig ?? {};
+      const loaded = (await source.get(slug)).siteConfig ?? {};
       // Materializa la lista de secciones (persistidas o derivadas) para que
       // el editor siempre trabaje con un array concreto y el primer guardado
       // la persista.
@@ -384,7 +404,7 @@ function Editor({ slug, name }: { slug: string; name: string }) {
     } catch {
       setError("No se pudo cargar la configuración.");
     }
-  }, [slug, hasModule]);
+  }, [slug, source, hasModule]);
 
   useEffect(() => {
     void load();
@@ -444,7 +464,7 @@ function Editor({ slug, name }: { slug: string; name: string }) {
         social: (config.social ?? []).filter((s) => s.label.trim() && s.url.trim()),
         sections,
       };
-      const res = await api.site.update(slug, clean);
+      const res = await source.update(slug, clean);
       const saved = res.siteConfig ?? {};
       setConfig({ ...saved, sections: deriveEditorSections(saved, hasModule) });
       setDirty(false);
@@ -466,8 +486,23 @@ function Editor({ slug, name }: { slug: string; name: string }) {
       {/* Barra de acción sticky: guardar siempre a la vista */}
       <div className="mst-bar">
         <div style={{ minWidth: 0 }}>
-          <h1 className="du-h1" style={{ fontSize: 20 }}>
-            Micrositio
+          {backHref ? (
+            <Link
+              href={backHref}
+              className="du-muted"
+              style={{
+                fontSize: 13,
+                textDecoration: "none",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+              }}
+            >
+              <ArrowLeft size={14} /> Volver a Administración
+            </Link>
+          ) : null}
+          <h1 className="du-h1" style={{ fontSize: 20, marginTop: backHref ? 4 : 0 }}>
+            Micrositio {backHref ? `· ${name}` : ""}
           </h1>
           <p className="du-muted" style={{ fontSize: 13, marginTop: 2 }}>
             La web pública de {name}. Se publica en unos segundos.
@@ -556,7 +591,7 @@ function Editor({ slug, name }: { slug: string; name: string }) {
           {sections.map((section, i) => (
             <SectionCard
               key={section.id}
-              slug={slug}
+              uploadMedia={uploadMedia}
               section={section}
               index={i}
               total={sections.length}
@@ -704,8 +739,15 @@ function Editor({ slug, name }: { slug: string; name: string }) {
 }
 
 export default function MicrositioPage() {
-  const { selected } = useWorkspace();
+  const { selected, hasModule } = useWorkspace();
   const loading = useRequireModule("microsite");
   if (loading || !selected) return <p className="du-muted">Cargando…</p>;
-  return <Editor slug={selected.slug} name={selected.name} />;
+  // El owner edita SU tenant vía /tenant/site.
+  return (
+    <Editor slug={selected.slug} name={selected.name} source={api.site} hasModule={hasModule} />
+  );
 }
+
+// El componente Editor se exporta para la variante de superadmin
+// (app/(app)/admin/tenants/[slug]/micrositio) que lo reusa con api.adminSite.
+export { Editor };

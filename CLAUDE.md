@@ -213,7 +213,12 @@ Detalle fino de cada cambio: historia de git. Aquí, solo lo que hay y dónde.
   "activo/inactivo" al cliente). `useRequireModule` protege cada sección.
 - White-label total: un solo `brand_config.theme` tiñe dashboard + micrositio
   (`data-theme`). Modo oscuro: `data-mode` en `.dash-shell`, persistido en localStorage.
-- Panel `/admin`: alta de inmobiliarias, toggle de módulos (`du-switch`), tema, dominio propio.
+- Panel `/admin`: alta de inmobiliarias, toggle de módulos (`du-switch`), tema,
+  dominio propio, y **editar el micrositio de cualquier tenant** (onboarding):
+  `/admin/tenants/[slug]/micrositio` reusa el `<Editor>` del owner con la fuente
+  `api.adminSite` (endpoints `/admin/tenants/:slug/site` + `/media`, gateados por
+  `requirePlatformAdmin` en vez de membership). El `Editor` es fuente-agnóstico
+  (`SiteEditorApi` inyectable) → mismo componente para owner y superadmin.
 
 ### Módulos
 Todos tenant-scoped, patrón `apps/api/src/modules/<x>/`, guardas

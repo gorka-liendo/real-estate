@@ -9,9 +9,11 @@ import {
   Globe,
   KeyRound,
   Landmark,
+  Pencil,
   Plus,
   Users,
 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Badge, Button, ButtonLink, Card, Input, Label, Select, Switch, THEMES } from "@rep/ui";
@@ -247,6 +249,15 @@ export default function AdminPage() {
                   <option value={t.theme}>{t.theme} (a medida)</option>
                 ) : null}
               </Select>
+              {t.activeModules.includes("microsite") ? (
+                <Link
+                  href={`/admin/tenants/${t.slug}/micrositio`}
+                  className="du-btn du-btn--outline du-btn--sm"
+                >
+                  <Pencil size={14} />
+                  Editar micrositio
+                </Link>
+              ) : null}
               <ButtonLink
                 href={`${TENANT_SITE_URL}/?__tenant=${t.slug}`}
                 target="_blank"
@@ -254,7 +265,7 @@ export default function AdminPage() {
                 size="sm"
               >
                 <ExternalLink size={14} />
-                Micrositio
+                Ver
               </ButtonLink>
             </div>
 

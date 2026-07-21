@@ -11,6 +11,8 @@ import {
 } from "@rep/modules";
 import { authMiddleware, type AuthEnv } from "../../middlewares/auth.middleware.js";
 import { requirePlatformAdmin } from "../../middlewares/admin.middleware.js";
+import { saveSiteMedia } from "../site/site.media.js";
+import { siteConfigSchema } from "../site/site.schema.js";
 
 // Panel de superadmin: gestión de tenants y de sus módulos.
 // El cobro es por factura (offline) — aquí solo se activa/desactiva.
@@ -154,6 +156,38 @@ admin.put("/tenants/:slug/domain", async (c) => {
     .where(eq(tenants.id, tenant.id))
     .returning();
   return c.json({ tenant: tenant.slug, customDomain: row!.customDomain });
+});
+
+// Edición del micrositio de un tenant POR EL SUPERADMIN (onboarding / gestión).
+// El superadmin no es miembro del tenant, así que no puede usar /tenant/site
+// (requiere membership); estas rutas van gateadas por requirePlatformAdmin.
+admin.get("/tenants/:slug/site", async (c) => {
+  const [tenant] = await db.select().from(tenants).where(eq(tenants.slug, c.req.param("slug")));
+  if (!tenant) return c.json({ error: "tenant_not_found" }, 404);
+  return c.json({ siteConfig: tenant.siteConfig });
+});
+
+admin.patch("/tenants/:slug/site", async (c) => {
+  const body = siteConfigSchema.safeParse(await c.req.json().catch(() => null));
+  if (!body.success) return c.json({ error: "invalid_body", issues: body.error.issues }, 400);
+  const [tenant] = await db.select().from(tenants).where(eq(tenants.slug, c.req.param("slug")));
+  if (!tenant) return c.json({ error: "tenant_not_found" }, 404);
+
+  const [row] = await db
+    .update(tenants)
+    .set({ siteConfig: body.data })
+    .where(eq(tenants.id, tenant.id))
+    .returning();
+  return c.json({ siteConfig: row!.siteConfig });
+});
+
+admin.post("/tenants/:slug/media", async (c) => {
+  const [tenant] = await db.select().from(tenants).where(eq(tenants.slug, c.req.param("slug")));
+  if (!tenant) return c.json({ error: "tenant_not_found" }, 404);
+  const body = await c.req.parseBody();
+  const r = await saveSiteMedia(tenant.id, body["file"]);
+  if (!r.ok) return c.json({ error: r.error }, 400);
+  return c.json({ url: r.url, kind: r.kind }, 201);
 });
 
 const toggleSchema = z.object({ active: z.boolean() });

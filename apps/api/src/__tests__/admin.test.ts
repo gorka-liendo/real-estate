@@ -201,3 +201,50 @@ describe("gestión de módulos", () => {
     expect(res.status).toBe(403);
   });
 });
+
+describe("edición del micrositio por el superadmin", () => {
+  function patchSite(cookie: string, body: unknown) {
+    return app.request(`/admin/tenants/${SLUG}/site`, {
+      method: "PATCH",
+      headers: { cookie, "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  }
+
+  it("usuario normal (no superadmin) → 403", async () => {
+    expect((await patchSite(plainCookie, { heroTitle: "X" })).status).toBe(403);
+  });
+
+  it("tenant inexistente → 404", async () => {
+    const res = await app.request("/admin/tenants/no-existe/site", {
+      method: "PATCH",
+      headers: { cookie: adminCookie, "content-type": "application/json" },
+      body: JSON.stringify({ heroTitle: "X" }),
+    });
+    expect(res.status).toBe(404);
+  });
+
+  it("el superadmin edita el site_config de cualquier tenant y persiste", async () => {
+    const res = await patchSite(adminCookie, {
+      headerStyle: "solid",
+      logoScale: 1.5,
+      about: "Editado por el superadmin",
+    });
+    expect(res.status).toBe(200);
+
+    const get = await app.request(`/admin/tenants/${SLUG}/site`, {
+      headers: { cookie: adminCookie },
+    });
+    expect(get.status).toBe(200);
+    const body = (await get.json()) as { siteConfig: Record<string, unknown> };
+    expect(body.siteConfig).toMatchObject({
+      headerStyle: "solid",
+      logoScale: 1.5,
+      about: "Editado por el superadmin",
+    });
+  });
+
+  it("body inválido → 400", async () => {
+    expect((await patchSite(adminCookie, { headerStyle: "nope" })).status).toBe(400);
+  });
+});
