@@ -110,33 +110,51 @@
   padding: 0 var(--tenant-sp-5);
 }
 
-/* ===== topbar ===== */
+/* ===== topbar: barra flotante (pill) sobre el contenido =====
+   Fixed + flota con margen; fondo esmerilado (glass) que se lee sobre el hero
+   oscuro y sobre secciones claras. El overlay móvil se portalea a .rt-root
+   (ver MobileNav) porque el backdrop-filter crea containing block de los fixed.
+   No hace falta clearance global: todo primer bloque (hero sp9 / rt-section
+   sp8) deja espacio de sobra para el ~68px del pill. */
 .rt-topbar {
-  position: sticky;
+  position: fixed;
   top: 0;
-  z-index: 30;
-  background: color-mix(in srgb, var(--tenant-bg) 88%, transparent);
-  backdrop-filter: blur(6px);
-  border-bottom: 1px solid var(--tenant-border);
+  left: 0;
+  right: 0;
+  z-index: 40;
+  padding: var(--tenant-sp-3) var(--tenant-sp-3) 0;
+  pointer-events: none; /* los huecos laterales no bloquean el hero de debajo */
 }
 .rt-topbar__inner {
+  pointer-events: auto;
+  max-width: 1120px;
+  margin: 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--tenant-sp-4) 0;
+  gap: var(--tenant-sp-4);
+  padding: var(--tenant-sp-2) var(--tenant-sp-2) var(--tenant-sp-2) var(--tenant-sp-4);
+  border-radius: var(--tenant-radius);
+  background: color-mix(in srgb, var(--tenant-bg) 68%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tenant-text) 12%, transparent);
+  box-shadow: 0 14px 34px -16px color-mix(in srgb, var(--tenant-scrim) 65%, transparent);
+  backdrop-filter: blur(16px) saturate(1.4);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
 }
 .rt-topbar__brand {
   font-family: var(--tenant-font-display);
   font-weight: 800;
-  font-size: 18px;
+  font-size: 17px;
   letter-spacing: -0.01em;
   text-transform: uppercase;
   color: var(--tenant-text);
   text-decoration: none;
+  white-space: nowrap;
 }
 .rt-topbar__nav {
   display: flex;
-  gap: var(--tenant-sp-5);
+  align-items: center;
+  gap: var(--tenant-sp-4);
 }
 .rt-topbar__nav a {
   color: var(--tenant-text);
@@ -145,24 +163,35 @@
   text-transform: uppercase;
   letter-spacing: 0.06em;
   opacity: 0.7;
+  transition: opacity 0.15s;
 }
 .rt-topbar__nav a:hover {
   opacity: 1;
 }
-/* hamburguesa: oculta en desktop; en ≤640px sustituye al nav inline */
+/* hamburguesa: oculta en desktop; en ≤720px sustituye al nav inline */
 .rt-burger {
   display: none;
-  width: 40px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
   align-items: center;
   justify-content: center;
   background: transparent;
   color: var(--tenant-text);
-  border: 1px solid var(--tenant-border);
-  border-radius: var(--tenant-radius-pill);
+  border: none;
+  border-radius: var(--tenant-radius);
   cursor: pointer;
+  flex-shrink: 0;
 }
-@media (max-width: 640px) {
+.rt-burger:hover {
+  background: color-mix(in srgb, var(--tenant-text) 8%, transparent);
+}
+@media (max-width: 720px) {
+  .rt-topbar {
+    padding: var(--tenant-sp-2) var(--tenant-sp-2) 0;
+  }
+  .rt-topbar__inner {
+    padding: var(--tenant-sp-1) var(--tenant-sp-1) var(--tenant-sp-1) var(--tenant-sp-4);
+  }
   .rt-topbar__nav {
     display: none;
   }
@@ -250,9 +279,11 @@
   height: 100%;
   object-fit: cover;
 }
-/* hero "cover" con media propia: portada a pantalla, texto abajo. */
+/* hero "cover" con media propia: portada a PANTALLA COMPLETA, texto abajo.
+   100svh usa el viewport "pequeño" (sin la barra de URL móvil) para no saltar. */
 .rt-hero--cover {
-  min-height: min(78vh, 760px);
+  min-height: 100vh;
+  min-height: 100svh;
   display: flex;
   align-items: flex-end;
 }

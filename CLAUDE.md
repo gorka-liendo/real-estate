@@ -684,5 +684,19 @@ packages/
       (opacity 0→1) y Ken Burns activos. 113 tests API, typecheck+lint limpios.
       Pendiente posible: recorte/optimización de imágenes, más animaciones por
       sección si se pide.
+- [x] **Micrositio: hero full-screen + header pill flotante** — el hero cover
+      pasa a `100svh` (pantalla completa; svh evita el salto de la barra de URL
+      móvil). El topbar deja de ser barra pegada de ancho completo y pasa a una
+      **pill flotante** (`position:fixed`, `border-radius: --tenant-radius`,
+      fondo glass `backdrop-filter: blur+saturate`, borde y sombra suaves,
+      `pointer-events:none` en el wrapper / `auto` en la pill para no bloquear el
+      hero). Se lee sobre el hero oscuro y sobre secciones claras. SIN clearance
+      global: todo primer bloque (hero sp9=140 / rt-section sp8=96) deja espacio
+      de sobra para el ~68px de la pill. Responsive mejorado: breakpoint del nav
+      subido a 720px, paddings de la pill reducidos en móvil. El overlay móvil
+      (MobileNav) sigue portaleándose a `.rt-root` (el backdrop-filter crea
+      containing block de los fixed). Aplica a las 3 páginas (home/ficha/portal,
+      comparten `rt-topbar`). Verificado E2E a 1440/375/1280: hero a pantalla,
+      pill flotante glass, hamburguesa→overlay OK, ficha sin solape.
 - [ ] **Pendiente retomar**: theming/fuentes por inmobiliaria (ver gotcha de
       next/font arriba) y edición de marca en Ajustes.
