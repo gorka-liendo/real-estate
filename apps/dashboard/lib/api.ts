@@ -262,6 +262,8 @@ export type RentalPayment = {
 export type Rental = {
   id: string;
   propertyId: string;
+  roomId: string | null;
+  roomName: string | null; // nombre de la habitación (null = piso entero)
   renterClientId: string | null;
   renterName: string;
   monthlyRent: number;
@@ -275,12 +277,21 @@ export type Rental = {
 };
 export type RentalInput = {
   propertyId: string;
+  roomId?: string;
   renterClientId?: string;
   renterName: string;
   monthlyRent: number;
   startDate: string;
   notes?: string;
 };
+export type PropertyRoom = {
+  id: string;
+  propertyId: string;
+  name: string;
+  areaM2: number | null;
+  refPrice: number | null;
+};
+export type RoomInput = { propertyId: string; name: string; areaM2?: number; refPrice?: number };
 export type RentalClientRef = {
   id: string;
   name: string;
@@ -296,6 +307,7 @@ export type RentalDetail = {
     city: string | null;
     ownerClientId: string | null;
   } | null;
+  room: { id: string; name: string } | null; // habitación (si el contrato es por habitación)
   tenant: RentalClientRef | null; // inquilino vinculado
   owner: RentalClientRef | null; // propietario del inmueble
 };
@@ -619,6 +631,34 @@ export const api = {
         method: "PUT",
         headers: { "x-tenant-slug": slug },
         body: JSON.stringify({ status }),
+      }),
+  },
+
+  // --- Habitaciones de un inmueble (alquiler por habitaciones) ---
+  rooms: {
+    list: (slug: string, propertyId: string) =>
+      request<{ rooms: PropertyRoom[] }>(`/tenant/rooms?propertyId=${propertyId}`, {
+        headers: { "x-tenant-slug": slug },
+      }),
+
+    create: (slug: string, data: RoomInput) =>
+      request<{ room: PropertyRoom }>("/tenant/rooms", {
+        method: "POST",
+        headers: { "x-tenant-slug": slug },
+        body: JSON.stringify(data),
+      }),
+
+    update: (slug: string, id: string, data: Partial<Omit<RoomInput, "propertyId">>) =>
+      request<{ room: PropertyRoom }>(`/tenant/rooms/${id}`, {
+        method: "PATCH",
+        headers: { "x-tenant-slug": slug },
+        body: JSON.stringify(data),
+      }),
+
+    remove: (slug: string, id: string) =>
+      request<{ ok: true }>(`/tenant/rooms/${id}`, {
+        method: "DELETE",
+        headers: { "x-tenant-slug": slug },
       }),
   },
 

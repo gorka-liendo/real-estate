@@ -244,11 +244,21 @@ tenant→auth→membership→`requireModule`. UI de cliente en `apps/dashboard/a
 - **rentals**: contratos + `rental_payments` + rendimiento en el portal. Listado
   `/alquileres` **por tarjetas** (foto del inmueble, renta, cobro del mes en un clic,
   mini-historial de 4 meses + tira de stats) con sección "Disponibles para alquilar"
-  (inmuebles `operation=rent` sin contrato activo → "Crear contrato" preselecciona el
-  inmueble). Página de gestión por contrato `/alquileres/[id]`
+  (inmuebles `operation=rent` sin contrato de piso entero activo → "Crear contrato"
+  preselecciona el inmueble). Página de gestión por contrato `/alquileres/[id]`
   (`GET /tenant/rentals/:id` → `getRentalDetail`): inquilino y propietario vinculados a
   sus clientes del CRM, historial de cobros mes a mes (desde el inicio del contrato),
   edición de renta/notas y finalización.
+- **Alquiler por habitaciones**: tabla `property_rooms` (habitaciones de un inmueble)
+  + `rentals.room_id` (NULL = piso entero). Un piso puede tener VARIOS contratos
+  activos, uno por habitación. Guard en `createRental`: piso entero ⇄ incompatible con
+  cualquier activo; por habitación ⇄ incompatible con piso entero activo o con la misma
+  habitación ya ocupada (`room_occupied`/`active_rental_exists`, 409). CRUD de
+  habitaciones en `/tenant/rooms` (`rooms.routes/service/schema`, gate `rentals`); no se
+  borra una habitación con contrato activo. Alta de contrato: selector "Piso entero /
+  Por habitación" con creación inline de habitaciones. El portal **agrega el inmueble**:
+  total (renta/cobrado) + **desglose por habitación** (`PortalRental.rooms[]`, `byRoom`)
+  tanto en la lista como en el detalle; `relevantRentalsOf` toma todos los activos.
 - **accounting**: `invoices` (`direction` income/expense, IVA en bps, pagos
   parciales, PDF de `income` con pdfkit), páginas de cuenta por inmueble/cliente.
   Absorbió el antiguo `property_expenses`. UI: `SummaryCard` con icono+acento;

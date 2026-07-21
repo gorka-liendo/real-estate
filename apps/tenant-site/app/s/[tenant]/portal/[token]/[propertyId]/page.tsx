@@ -98,7 +98,7 @@ export default async function PortalPropertyDetail({ params }: Params) {
     <div>
       <div className="rt-detail__facts" style={{ borderTop: "none", paddingTop: 0 }}>
         <div>
-          <div className="rt-detail__fact-k">Renta</div>
+          <div className="rt-detail__fact-k">{rental.byRoom ? "Renta total" : "Renta"}</div>
           <div className="rt-detail__fact-v">{eur(rental.monthlyRent)}/mes</div>
         </div>
         <div>
@@ -107,39 +107,67 @@ export default async function PortalPropertyDetail({ params }: Params) {
             {new Date(rental.since).toLocaleDateString("es-ES", { month: "short", year: "numeric" })}
           </div>
         </div>
+        {rental.byRoom ? (
+          <div>
+            <div className="rt-detail__fact-k">Habitaciones</div>
+            <div className="rt-detail__fact-v">{rental.rooms.length}</div>
+          </div>
+        ) : null}
       </div>
-      {rental.payments.length === 0 ? (
-        <p style={{ color: "var(--tenant-muted)" }}>Aún no hay cobros registrados.</p>
-      ) : (
-        <div className="rt-table-scroll"><table className="rt-table">
-          <thead>
-            <tr>
-              <th>Mes</th>
-              <th>Importe</th>
-              <th>Estado</th>
-              <th>Pagado el</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rental.payments.map((pay) => (
-              <tr key={pay.period}>
-                <td style={{ textTransform: "capitalize" }}>{periodLabel(pay.period)}</td>
-                <td>{eur(pay.amount)}</td>
-                <td>
-                  <span
-                    className={`rt-portal__chip${pay.status === "paid" ? " rt-portal__chip--live" : ""}`}
-                  >
-                    {pay.status === "paid" ? "Cobrado" : "Pendiente"}
-                  </span>
-                </td>
-                <td style={{ color: "var(--tenant-muted)" }}>
-                  {pay.paidAt ? fmtDate(pay.paidAt) : "—"}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table></div>
-      )}
+
+      {rental.rooms.map((room, i) => (
+        <div key={room.label ?? `room-${i}`} style={{ marginTop: rental.byRoom ? "var(--tenant-sp-5)" : 0 }}>
+          {rental.byRoom ? (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "baseline",
+                justifyContent: "space-between",
+                gap: "var(--tenant-sp-3)",
+                marginBottom: "var(--tenant-sp-2)",
+              }}
+            >
+              <strong>{room.label ?? "Piso entero"}</strong>
+              <span style={{ color: "var(--tenant-muted)" }}>
+                {eur(room.monthlyRent)}/mes · cobrado {eurCents(room.collectedThisYearCents)}
+                {room.status === "ended" ? " · finalizado" : ""}
+              </span>
+            </div>
+          ) : null}
+          {room.payments.length === 0 ? (
+            <p style={{ color: "var(--tenant-muted)" }}>Aún no hay cobros registrados.</p>
+          ) : (
+            <div className="rt-table-scroll"><table className="rt-table">
+              <thead>
+                <tr>
+                  <th>Mes</th>
+                  <th>Importe</th>
+                  <th>Estado</th>
+                  <th>Pagado el</th>
+                </tr>
+              </thead>
+              <tbody>
+                {room.payments.map((pay) => (
+                  <tr key={pay.period}>
+                    <td style={{ textTransform: "capitalize" }}>{periodLabel(pay.period)}</td>
+                    <td>{eur(pay.amount)}</td>
+                    <td>
+                      <span
+                        className={`rt-portal__chip${pay.status === "paid" ? " rt-portal__chip--live" : ""}`}
+                      >
+                        {pay.status === "paid" ? "Cobrado" : "Pendiente"}
+                      </span>
+                    </td>
+                    <td style={{ color: "var(--tenant-muted)" }}>
+                      {pay.paidAt ? fmtDate(pay.paidAt) : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table></div>
+          )}
+        </div>
+      ))}
     </div>
   ) : (
     <p style={{ color: "var(--tenant-muted)" }}>Este inmueble no tiene contrato de alquiler.</p>

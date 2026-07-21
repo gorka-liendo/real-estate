@@ -256,12 +256,19 @@ export async function submitVisitRequest(
   if (!res.ok) throw new Error(`visit_request_failed_${res.status}`);
 }
 
-export type PortalRental = {
+export type PortalRoomLine = {
+  label: string | null; // nombre de la habitación; null = piso entero
   monthlyRent: number;
-  since: string;
   active: boolean;
   collectedThisYear: number;
-  months: Array<{ period: string; status: "pending" | "paid"; amount: number }>;
+  pendingMonths: number;
+};
+export type PortalRental = {
+  monthlyRent: number;
+  active: boolean;
+  byRoom: boolean;
+  collectedThisYear: number;
+  rooms: PortalRoomLine[];
 };
 export type PortalExpense = {
   date: string;
@@ -333,9 +340,16 @@ export type PortalPropertyDetail = {
   rental: {
     monthlyRent: number;
     since: string;
-    status: "active" | "ended";
+    active: boolean;
+    byRoom: boolean;
     collectedThisYearCents: number;
-    payments: PortalPaymentRow[];
+    rooms: Array<{
+      label: string | null;
+      monthlyRent: number;
+      status: "active" | "ended";
+      collectedThisYearCents: number;
+      payments: PortalPaymentRow[];
+    }>;
   } | null;
   expenses: PortalExpense[];
   expensesByCategory: Array<{ category: string; totalCents: number }>;

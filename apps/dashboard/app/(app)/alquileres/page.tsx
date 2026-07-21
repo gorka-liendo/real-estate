@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Home, ImageIcon, KeyRound, MapPin, Paperclip, Plus, Trash2 } from "lucide-react";
+import { Check, DoorOpen, Home, ImageIcon, KeyRound, MapPin, Paperclip, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Badge, Button, ButtonLink, Card, Input, Label, Select } from "@rep/ui";
@@ -12,6 +12,7 @@ import {
   type Invoice,
   type InvoiceCategory,
   type Property,
+  type PropertyRoom,
   type Rental,
 } from "@/lib/api";
 import { INVOICE_CATEGORY_LABELS } from "@/lib/invoice-labels";
@@ -82,9 +83,13 @@ function AlquileresInner({ slug }: { slug: string }) {
   const activeRentals = (items ?? []).filter((r) => r.status === "active");
 
   // Inmuebles en alquiler sin contrato activo → disponibles para crear uno.
-  const rentedPropIds = new Set(activeRentals.map((r) => r.propertyId));
+  // Un piso deja de estar "disponible" solo si tiene un contrato de PISO ENTERO
+  // activo. Si se alquila por habitaciones, sigue disponible para más habitaciones.
+  const wholeRentedPropIds = new Set(
+    activeRentals.filter((r) => r.roomId == null).map((r) => r.propertyId),
+  );
   const availableProps = propsList.filter(
-    (p) => p.operation === "rent" && !rentedPropIds.has(p.id),
+    (p) => p.operation === "rent" && !wholeRentedPropIds.has(p.id),
   );
 
   // Resumen del mes en curso.
@@ -330,12 +335,20 @@ function RentalCard({
 
       <div style={{ padding: "var(--ui-sp-4)", display: "grid", gap: "var(--ui-sp-3)", flex: 1 }}>
         <div>
-          <Link
-            href={`/alquileres/${rental.id}`}
-            style={{ color: "inherit", textDecoration: "none", fontWeight: 600, fontSize: 16 }}
-          >
-            {title}
-          </Link>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+            <Link
+              href={`/alquileres/${rental.id}`}
+              style={{ color: "inherit", textDecoration: "none", fontWeight: 600, fontSize: 16 }}
+            >
+              {title}
+            </Link>
+            {rental.roomName ? (
+              <Badge variant="muted">
+                <DoorOpen size={11} style={{ verticalAlign: "-1px", marginRight: 3 }} />
+                {rental.roomName}
+              </Badge>
+            ) : null}
+          </div>
           <div className="du-muted" style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 4, marginTop: 2 }}>
             {property?.city ? (
               <>
@@ -669,6 +682,11 @@ function NewRentalForm({
   onCancel: () => void;
 }) {
   const [propertyId, setPropertyId] = useState(initialPropertyId);
+  const [mode, setMode] = useState<"whole" | "room">("whole");
+  const [rooms, setRooms] = useState<PropertyRoom[]>([]);
+  const [roomId, setRoomId] = useState("");
+  const [newRoomName, setNewRoomName] = useState("");
+  const [addingRoom, setAddingRoom] = useState(false);
   const [renterClientId, setRenterClientId] = useState("");
   const [renterName, setRenterName] = useState("");
   const [monthlyRent, setMonthlyRent] = useState("");
@@ -676,13 +694,48 @@ function NewRentalForm({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Cargar las habitaciones del inmueble seleccionado.
+  useEffect(() => {
+    if (!propertyId) {
+      setRooms([]);
+      return;
+    }
+    void api.rooms
+      .list(slug, propertyId)
+      .then((r) => setRooms(r.rooms))
+      .catch(() => setRooms([]));
+    setRoomId("");
+  }, [slug, propertyId]);
+
+  async function addRoom() {
+    const name = newRoomName.trim();
+    if (!name) return;
+    setAddingRoom(true);
+    setError(null);
+    try {
+      const { room } = await api.rooms.create(slug, { propertyId, name });
+      setRooms((prev) => [...prev, room].sort((a, b) => a.name.localeCompare(b.name, "es")));
+      setRoomId(room.id);
+      setNewRoomName("");
+    } catch {
+      setError("No se pudo crear la habitación.");
+    } finally {
+      setAddingRoom(false);
+    }
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (mode === "room" && !roomId) {
+      setError("Elige o crea una habitación.");
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
       await api.rentals.create(slug, {
         propertyId,
+        roomId: mode === "room" ? roomId : undefined,
         renterClientId: renterClientId || undefined,
         renterName,
         monthlyRent: Number(monthlyRent),
@@ -690,10 +743,13 @@ function NewRentalForm({
       });
       onCreated();
     } catch (err) {
+      const code = err instanceof ApiError ? err.message : "";
       setError(
-        err instanceof ApiError && err.status === 409
-          ? "Ese inmueble ya tiene un contrato activo. Finalízalo antes de abrir otro."
-          : "No se pudo crear el contrato. Revisa los datos.",
+        code === "room_occupied"
+          ? "Esa habitación ya tiene un contrato activo."
+          : code === "active_rental_exists"
+            ? "Ese inmueble ya tiene un contrato activo. Finalízalo o alquila por habitaciones."
+            : "No se pudo crear el contrato. Revisa los datos.",
       );
     } finally {
       setSubmitting(false);
@@ -719,6 +775,17 @@ function NewRentalForm({
                   {p.title}
                 </option>
               ))}
+            </Select>
+          </div>
+          <div>
+            <Label htmlFor="r-mode">Tipo de alquiler</Label>
+            <Select
+              id="r-mode"
+              value={mode}
+              onChange={(e) => setMode(e.target.value as "whole" | "room")}
+            >
+              <option value="whole">Piso entero</option>
+              <option value="room">Por habitación</option>
             </Select>
           </div>
           <div>
@@ -760,6 +827,58 @@ function NewRentalForm({
             <Input id="r-start" type="date" required value={startDate} onChange={(e) => setStartDate(e.target.value)} />
           </div>
         </div>
+
+        {/* Selector de habitación (solo en modo "por habitación") */}
+        {mode === "room" && propertyId ? (
+          <div
+            style={{
+              display: "grid",
+              gap: "var(--ui-sp-3)",
+              padding: "var(--ui-sp-4)",
+              background: "var(--ui-hover)",
+              borderRadius: "var(--ui-radius)",
+            }}
+          >
+            {rooms.length > 0 ? (
+              <div style={{ maxWidth: 320 }}>
+                <Label htmlFor="r-room">Habitación</Label>
+                <Select id="r-room" value={roomId} onChange={(e) => setRoomId(e.target.value)}>
+                  <option value="">Elegir habitación…</option>
+                  {rooms.map((rm) => (
+                    <option key={rm.id} value={rm.id}>
+                      {rm.name}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            ) : (
+              <p className="du-muted" style={{ margin: 0 }}>
+                Este inmueble aún no tiene habitaciones. Añade la primera:
+              </p>
+            )}
+            <div style={{ display: "flex", gap: "var(--ui-sp-2)", alignItems: "flex-end" }}>
+              <div style={{ flex: 1, maxWidth: 260 }}>
+                <Label htmlFor="r-newroom">Nueva habitación</Label>
+                <Input
+                  id="r-newroom"
+                  placeholder="Habitación 1"
+                  value={newRoomName}
+                  onChange={(e) => setNewRoomName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      void addRoom();
+                    }
+                  }}
+                />
+              </div>
+              <Button type="button" variant="outline" size="sm" onClick={() => void addRoom()} disabled={addingRoom || !newRoomName.trim()}>
+                <Plus size={15} />
+                Añadir
+              </Button>
+            </div>
+          </div>
+        ) : null}
 
         {error ? <p className="du-alert">{error}</p> : null}
 

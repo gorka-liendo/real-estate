@@ -169,6 +169,35 @@ export default async function OwnerPortal({ params }: Params) {
                       </div>
                     </div>
 
+                    {/* desglose por habitación (si el piso se alquila por habitaciones) */}
+                    {p.rental?.byRoom ? (
+                      <div style={{ display: "grid", gap: "var(--tenant-sp-2)", marginBottom: "var(--tenant-sp-4)" }}>
+                        {p.rental.rooms.map((room, i) => (
+                          <div
+                            key={room.label ?? `room-${i}`}
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              gap: "var(--tenant-sp-3)",
+                              paddingTop: "var(--tenant-sp-2)",
+                              borderTop: "1px solid var(--tenant-border, rgba(0,0,0,0.1))",
+                              fontSize: 14,
+                            }}
+                          >
+                            <span>{room.label ?? "Piso entero"}</span>
+                            <span style={{ color: "var(--tenant-muted)" }}>
+                              {new Intl.NumberFormat("es-ES").format(room.monthlyRent)} €/mes
+                              {room.pendingMonths > 0
+                                ? ` · ${room.pendingMonths} mes${room.pendingMonths === 1 ? "" : "es"} pdte.`
+                                : room.active
+                                  ? " · al día"
+                                  : " · finalizado"}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
+
                     <a className="rt-btn" href={`/portal/${token}/${p.id}`}>
                       Ver detalle completo
                     </a>

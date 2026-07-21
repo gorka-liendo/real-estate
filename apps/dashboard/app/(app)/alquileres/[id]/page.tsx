@@ -175,6 +175,7 @@ function RentalDetailInner({ slug, rentalId }: { slug: string; rentalId: string 
         <h1 className="du-h1" style={{ margin: 0 }}>
           {property ? property.title : "Contrato"}
         </h1>
+        {detail.room ? <Badge variant="muted">{detail.room.name}</Badge> : null}
         <Badge variant={isActive ? "success" : "default"}>
           {isActive ? "Activo" : "Finalizado"}
         </Badge>
