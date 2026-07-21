@@ -265,6 +265,11 @@ tenant→auth→membership→`requireModule`. UI de cliente en `apps/dashboard/a
   los movimientos son una **lista** (no tabla) con indicador de dirección
   (verde entra / rojo sale), concepto + metadatos en una línea, importe con signo
   y estado; `InvoiceTable` compartido por la página principal y las cuentas.
+  **Por habitación**: `invoices.room_id` (opcional) imputa gasto/factura a una
+  habitación; validado contra su inmueble (`invalid_room`). Los formularios muestran
+  `RoomPicker` (aparece si el inmueble tiene habitaciones); la cuenta de inmueble
+  añade un desglose "Por habitación" y la habitación sale en los metadatos del
+  movimiento. Filtro `?roomId=` en el listado.
 - **microsite**: ver abajo. Bloqueado por alta externa: **whatsapp_bot** (Meta).
 
 ### Micrositio (`tenant-site` + `@rep/ui-tenant`)

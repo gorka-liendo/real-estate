@@ -346,6 +346,7 @@ export type Invoice = {
   direction: InvoiceDirection;
   status: InvoiceStatus;
   propertyId: string | null;
+  roomId: string | null;
   clientId: string | null;
   rentalId: string | null;
   vendorName: string | null;
@@ -371,6 +372,7 @@ export type Invoice = {
 
 export type CreateExpenseInput = {
   propertyId?: string;
+  roomId?: string;
   clientId?: string;
   vendorName?: string;
   category: InvoiceCategory;
@@ -385,6 +387,7 @@ export type CreateExpenseInput = {
 
 export type CreateIncomeInput = {
   propertyId?: string;
+  roomId?: string;
   clientId?: string;
   rentalId?: string;
   category?: InvoiceCategory;
@@ -399,6 +402,7 @@ export type CreateIncomeInput = {
 export type InvoiceListFilters = {
   direction?: InvoiceDirection;
   propertyId?: string;
+  roomId?: string;
   clientId?: string;
   status?: InvoiceStatus;
 };
@@ -407,6 +411,7 @@ export type InvoiceListFilters = {
 // backend lo bloquea con 400 has_payments); null limpia el vínculo.
 export type UpdateInvoiceInput = {
   propertyId?: string | null;
+  roomId?: string | null;
   clientId?: string | null;
   rentalId?: string | null;
   vendorName?: string | null;
@@ -682,6 +687,7 @@ export const api = {
     createExpense: async (slug: string, data: CreateExpenseInput) => {
       const fd = new FormData();
       if (data.propertyId) fd.append("propertyId", data.propertyId);
+      if (data.roomId) fd.append("roomId", data.roomId);
       if (data.clientId) fd.append("clientId", data.clientId);
       if (data.vendorName) fd.append("vendorName", data.vendorName);
       fd.append("category", data.category);

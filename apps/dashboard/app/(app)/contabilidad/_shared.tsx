@@ -10,7 +10,7 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
-import { Fragment, type ReactNode, useState } from "react";
+import { Fragment, type ReactNode, useEffect, useState } from "react";
 import { Badge, Button, ButtonLink, Card, Input, Label, Select, Textarea } from "@rep/ui";
 import {
   api,
@@ -24,6 +24,7 @@ import {
   type InvoicePaymentMethod,
   type InvoiceStatus,
   type Property,
+  type PropertyRoom,
 } from "@/lib/api";
 import { INVOICE_CATEGORY_LABELS } from "@/lib/invoice-labels";
 
@@ -172,6 +173,57 @@ export function EntityPicker({
   );
 }
 
+// Selector de habitación para imputar la factura/gasto a una habitación concreta.
+// Solo aparece si el inmueble seleccionado tiene habitaciones.
+export function RoomPicker({
+  slug,
+  propertyId,
+  roomId,
+  setRoomId,
+}: {
+  slug: string;
+  propertyId: string;
+  roomId: string;
+  setRoomId: (v: string) => void;
+}) {
+  const [rooms, setRooms] = useState<PropertyRoom[]>([]);
+  useEffect(() => {
+    if (!propertyId) {
+      setRooms([]);
+      return;
+    }
+    let alive = true;
+    void api.rooms
+      .list(slug, propertyId)
+      .then((r) => {
+        if (alive) setRooms(r.rooms);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [slug, propertyId]);
+  // Si la habitación elegida ya no pertenece al inmueble, límpiala.
+  useEffect(() => {
+    if (roomId && rooms.length > 0 && !rooms.some((r) => r.id === roomId)) setRoomId("");
+  }, [rooms, roomId, setRoomId]);
+
+  if (rooms.length === 0) return null;
+  return (
+    <div>
+      <Label htmlFor="inv-room">Habitación (opcional)</Label>
+      <Select id="inv-room" value={roomId} onChange={(e) => setRoomId(e.target.value)}>
+        <option value="">— Todo el inmueble —</option>
+        {rooms.map((rm) => (
+          <option key={rm.id} value={rm.id}>
+            {rm.name}
+          </option>
+        ))}
+      </Select>
+    </div>
+  );
+}
+
 export function ExpenseForm({
   slug,
   propsList,
@@ -194,6 +246,7 @@ export function ExpenseForm({
   const isEdit = initial != null;
   const locked = isEdit && initial.paidCents > 0;
   const [propertyId, setPropertyId] = useState(initial?.propertyId ?? presetPropertyId ?? "");
+  const [roomId, setRoomId] = useState(initial?.roomId ?? "");
   const [clientId, setClientId] = useState(initial?.clientId ?? presetClientId ?? "");
   const [vendorName, setVendorName] = useState(initial?.vendorName ?? "");
   const [category, setCategory] = useState<InvoiceCategory>(initial?.category ?? "other");
@@ -216,6 +269,7 @@ export function ExpenseForm({
       if (isEdit) {
         const { invoice } = await api.invoices.update(slug, initial.id, {
           propertyId: propertyId || null,
+          roomId: propertyId ? roomId || null : null,
           clientId: clientId || null,
           vendorName: vendorName || null,
           category,
@@ -229,6 +283,7 @@ export function ExpenseForm({
       } else {
         const input: CreateExpenseInput = {
           propertyId: propertyId || undefined,
+          roomId: propertyId ? roomId || undefined : undefined,
           clientId: clientId || undefined,
           vendorName: vendorName || undefined,
           category,
@@ -271,6 +326,7 @@ export function ExpenseForm({
             clientId={clientId}
             setClientId={setClientId}
           />
+          <RoomPicker slug={slug} propertyId={propertyId} roomId={roomId} setRoomId={setRoomId} />
           <div>
             <Label htmlFor="ex-vendor">Proveedor</Label>
             <Input id="ex-vendor" value={vendorName} onChange={(e) => setVendorName(e.target.value)} />
@@ -389,6 +445,7 @@ export function IncomeForm({
   const isEdit = initial != null;
   const locked = isEdit && initial.paidCents > 0;
   const [propertyId, setPropertyId] = useState(initial?.propertyId ?? presetPropertyId ?? "");
+  const [roomId, setRoomId] = useState(initial?.roomId ?? "");
   const [clientId, setClientId] = useState(initial?.clientId ?? presetClientId ?? "");
   const [category, setCategory] = useState<InvoiceCategory>(initial?.category ?? "management_fee");
   const [concept, setConcept] = useState(initial?.concept ?? "");
@@ -413,6 +470,7 @@ export function IncomeForm({
       if (isEdit) {
         const { invoice } = await api.invoices.update(slug, initial.id, {
           propertyId: propertyId || null,
+          roomId: propertyId ? roomId || null : null,
           clientId: clientId || null,
           category,
           concept,
@@ -427,6 +485,7 @@ export function IncomeForm({
       } else {
         const input: CreateIncomeInput = {
           propertyId: propertyId || undefined,
+          roomId: propertyId ? roomId || undefined : undefined,
           clientId: clientId || undefined,
           category,
           concept,
@@ -466,6 +525,7 @@ export function IncomeForm({
             clientId={clientId}
             setClientId={setClientId}
           />
+          <RoomPicker slug={slug} propertyId={propertyId} roomId={roomId} setRoomId={setRoomId} />
           <div>
             <Label htmlFor="in-cat">Categoría</Label>
             <Select id="in-cat" value={category} onChange={(e) => setCategory(e.target.value as InvoiceCategory)}>
@@ -637,6 +697,7 @@ export function InvoiceTable({
   direction,
   propNameById = {},
   clientNameById = {},
+  roomNameById = {},
   showPropertyColumn = true,
   showClientColumn = true,
   onEdit,
@@ -648,6 +709,7 @@ export function InvoiceTable({
   direction: InvoiceDirection;
   propNameById?: Record<string, string>;
   clientNameById?: Record<string, string>;
+  roomNameById?: Record<string, string>;
   showPropertyColumn?: boolean;
   showClientColumn?: boolean;
   onEdit: (inv: Invoice) => void;
@@ -707,6 +769,7 @@ export function InvoiceTable({
                 isIncome && inv.number ? inv.number : null,
                 INVOICE_CATEGORY_LABELS[inv.category],
                 showPropertyColumn && inv.propertyId ? propNameById[inv.propertyId] : null,
+                inv.roomId ? (roomNameById[inv.roomId] ?? "Habitación") : null,
                 showClientColumn && inv.clientId ? clientNameById[inv.clientId] : null,
               ].filter(Boolean);
 
@@ -843,6 +906,23 @@ export function AccountDetail({
   const [tab, setTab] = useState<"resumen" | InvoiceDirection>("resumen");
   const [showForm, setShowForm] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
+  const [rooms, setRooms] = useState<PropertyRoom[]>([]);
+
+  // Habitaciones del inmueble (solo en cuentas de inmueble) para el desglose.
+  useEffect(() => {
+    if (kind !== "property") return;
+    let alive = true;
+    void api.rooms
+      .list(slug, id)
+      .then((r) => {
+        if (alive) setRooms(r.rooms);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [slug, id, kind]);
+  const roomNameById = Object.fromEntries(rooms.map((r) => [r.id, r.name]));
 
   const active = items.filter((i) => i.status !== "cancelled");
   const facturado = active.filter((i) => i.direction === "income").reduce((a, i) => a + i.totalCents, 0);
@@ -852,6 +932,30 @@ export function AccountDetail({
   const balance = cobrado - gastos;
 
   const recent = [...active].sort((a, b) => b.issueDate.localeCompare(a.issueDate)).slice(0, 6);
+
+  // Desglose por habitación (solo en cuentas de inmueble con habitaciones).
+  const roomBreakdown =
+    kind === "property" && rooms.length > 0
+      ? [
+          ...rooms.map((rm) => ({ id: rm.id, name: rm.name, its: active.filter((i) => i.roomId === rm.id) })),
+          { id: "__none__", name: "Sin habitación", its: active.filter((i) => i.roomId == null) },
+        ]
+          .map((g) => {
+            const inc = g.its.filter((i) => i.direction === "income");
+            const cob = inc.reduce((a, i) => a + i.paidCents, 0);
+            const gas = g.its.filter((i) => i.direction === "expense").reduce((a, i) => a + i.totalCents, 0);
+            return {
+              id: g.id,
+              name: g.name,
+              count: g.its.length,
+              facturado: inc.reduce((a, i) => a + i.totalCents, 0),
+              cobrado: cob,
+              gastos: gas,
+              balance: cob - gas,
+            };
+          })
+          .filter((g) => g.count > 0)
+      : [];
 
   function afterEdit(updated: Invoice) {
     setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
@@ -994,6 +1098,62 @@ export function AccountDetail({
         )
       ) : null}
 
+      {tab === "resumen" && roomBreakdown.length > 0 ? (
+        <div style={{ display: "grid", gap: "var(--ui-sp-3)" }}>
+          <h2 className="du-h3" style={{ margin: 0 }}>
+            Por habitación
+          </h2>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+              gap: "var(--ui-sp-4)",
+            }}
+          >
+            {roomBreakdown.map((r) => (
+              <div
+                key={r.id}
+                style={{
+                  background: "var(--ui-surface)",
+                  border: r.id === "__none__" ? "1px dashed var(--ui-border-strong)" : "1px solid var(--ui-border)",
+                  borderRadius: "var(--ui-radius-lg)",
+                  padding: "var(--ui-sp-4)",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+                  <span style={{ fontWeight: 600 }}>{r.name}</span>
+                  <span className="du-muted" style={{ fontSize: 12 }}>
+                    {r.count} doc{r.count === 1 ? "" : "s"}
+                  </span>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "2px 12px", fontSize: 13, marginTop: "var(--ui-sp-2)" }}>
+                  <span className="du-muted">Cobrado</span>
+                  <span style={{ textAlign: "right" }}>{eurCents(r.cobrado)}</span>
+                  <span className="du-muted">Gastos</span>
+                  <span style={{ textAlign: "right" }}>{eurCents(r.gastos)}</span>
+                </div>
+                <div
+                  style={{
+                    marginTop: "var(--ui-sp-2)",
+                    paddingTop: "var(--ui-sp-2)",
+                    borderTop: "1px solid var(--ui-border)",
+                    display: "flex",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <span className="du-muted" style={{ fontSize: 13 }}>
+                    Balance
+                  </span>
+                  <span style={{ fontWeight: 700, color: r.balance >= 0 ? "var(--ui-success)" : "var(--ui-danger)" }}>
+                    {eurCents(r.balance)}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
       {tab === "resumen" ? (
         <Card padded={false}>
           {recent.length === 0 ? (
@@ -1039,6 +1199,7 @@ export function AccountDetail({
           direction={tab}
           propNameById={propNameById}
           clientNameById={clientNameById}
+          roomNameById={roomNameById}
           showPropertyColumn={kind !== "property"}
           showClientColumn={kind !== "client"}
           onEdit={startEdit}
