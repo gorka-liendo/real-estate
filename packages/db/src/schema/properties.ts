@@ -10,7 +10,12 @@ export const propertyKind = pgEnum("property_kind", [
   "land",
   "garage",
 ]);
-export const propertyStatus = pgEnum("property_status", ["draft", "published", "archived"]);
+export const propertyStatus = pgEnum("property_status", [
+  "draft",
+  "published",
+  "archived",
+  "sold", // vendida (o alquiler cerrado definitivamente) — no aparece en el micrositio
+]);
 
 export type PropertyOperation = (typeof propertyOperation.enumValues)[number];
 export type PropertyKind = (typeof propertyKind.enumValues)[number];

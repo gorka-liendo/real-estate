@@ -26,7 +26,7 @@ export const createPropertySchema = z.object({
   description: z.string().max(4000).optional(),
   operation: z.enum(["sale", "rent"]).default("sale"),
   kind: z.enum(["flat", "house", "commercial", "land", "garage"]).default("flat"),
-  status: z.enum(["draft", "published", "archived"]).default("draft"),
+  status: z.enum(["draft", "published", "archived", "sold"]).default("draft"),
   price: optionalInt,
   bedrooms: optionalInt,
   bathrooms: optionalInt,
@@ -47,7 +47,7 @@ export const createPropertySchema = z.object({
 export const updatePropertySchema = createPropertySchema.partial().extend({
   operation: z.enum(["sale", "rent"]).optional(),
   kind: z.enum(["flat", "house", "commercial", "land", "garage"]).optional(),
-  status: z.enum(["draft", "published", "archived"]).optional(),
+  status: z.enum(["draft", "published", "archived", "sold"]).optional(),
 });
 
 export type CreatePropertyInput = z.infer<typeof createPropertySchema>;
