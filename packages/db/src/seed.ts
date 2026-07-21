@@ -86,9 +86,14 @@ async function main() {
     const [row] = await db
       .insert(tenants)
       .values(t)
+      // IMPORTANTE: en un tenant que YA EXISTE preservamos `brand_config` y
+      // `site_config` — son CONTENIDO EDITABLE del cliente (logo, tema, portada,
+      // secciones…). Solo se aplican los valores del seed al CREAR el tenant.
+      // Si los pisáramos aquí, cada `db:seed` borraría las ediciones del cliente.
+      // (Los MÓDULOS sí son autoritativos: se fijan aparte en `subscriptions`.)
       .onConflictDoUpdate({
         target: tenants.slug,
-        set: { name: t.name, brandConfig: t.brandConfig, siteConfig: t.siteConfig ?? {} },
+        set: { name: t.name },
       })
       .returning();
     seededTenants.push(row!);

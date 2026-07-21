@@ -272,7 +272,10 @@ tenant→auth→membership→`requireModule`. UI de cliente en `apps/dashboard/a
   crea containing block de los `fixed`; fuera de `.rt-root` se pierden fuentes/tema).
 - **dataviz** (gráfico del portal): identidad de serie por MODO DE RELLENO (sólida vs
   hueca), no por color — los temas white-label no garantizan separación cromática.
-- **Seed autoritativo**: deja el estado exacto; re-ejecutar para restaurar tras pruebas.
+- **Seed**: autoritativo SOLO para los MÓDULOS (fija el estado exacto en
+  `subscriptions`). PRESERVA `brand_config` y `site_config` de tenants ya
+  existentes (contenido editable del cliente: logo, tema, portada, secciones) —
+  solo los aplica al CREAR el tenant. Re-ejecutar el seed NO borra ediciones.
 - [ ] Deuda anotada: `isPublicMicrositePath` → sub-app con CORS propio; throttle a
   Redis multi-instancia; helpers `tenantGet/tenantPost` en tenant-site.
 - [ ] Pendiente: deploy (Paso 11); Block 3 dominios (Vercel TLS); theming/fuentes por
