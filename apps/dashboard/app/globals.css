@@ -19,6 +19,16 @@
   background: var(--ui-surface);
   border-right: 1px solid var(--ui-border);
   padding: var(--ui-sp-5) var(--ui-sp-4);
+  /* Fijo a la altura del viewport: si el contenido de la página es más alto,
+     el sidebar NO crece con él (antes se estiraba y el pie —cerrar sesión +
+     modo— se iba al fondo de la página). Sticky + 100vh lo mantiene a la vista
+     con el pie abajo; si la nav no cabe, scrollea dentro del propio sidebar. */
+  position: sticky;
+  top: 0;
+  align-self: start;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden; /* el scroll interno lo lleva la nav; el pie queda pinneado */
 }
 .dash-brand {
   font-family: var(--ui-font-display);
@@ -33,6 +43,12 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
+  /* ocupa el espacio disponible y scrollea si hay muchas secciones, dejando
+     el pie (cerrar sesión + modo) siempre visible abajo. min-height:0 permite
+     que un hijo flex encoja y active su propio scroll. */
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 .dash-nav__item {
   display: flex;
@@ -55,8 +71,9 @@
   color: var(--ui-text);
 }
 .dash-sidebar__foot {
-  margin-top: auto;
+  flex-shrink: 0; /* siempre visible: la nav (flex:1) lo empuja abajo */
   padding-top: var(--ui-sp-4);
+  margin-top: var(--ui-sp-3);
   border-top: 1px solid var(--ui-border);
 }
 .dash-user {
