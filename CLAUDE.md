@@ -706,5 +706,10 @@ packages/
       hero cover CENTRADO verticalmente (`align-items: center` + padding sp8
       simétrico) en vez de pegado abajo — quedaba muy bajo con 100svh. Verificado
       a 1440/390.
+      **Refinamiento 2 (feedback)**: (1) header/logo MÁS GRANDES — logo 34→46px
+      (móvil 28→36), marca 18→20px, padding vertical de la pill sp3→sp4. (2) Opción
+      en el editor Micrositio: nuevo `site_config.headerBrand` (`"logo"|"text"`,
+      default logo con fallback al nombre) → tarjeta "Cabecera" con selector;
+      `TopbarBrand` recibe `mode`. Verificado ambos modos en navegador.
 - [ ] **Pendiente retomar**: theming/fuentes por inmobiliaria (ver gotcha de
       next/font arriba) y edición de marca en Ajustes.

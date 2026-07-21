@@ -105,6 +105,9 @@ export type SiteSection =
 export type SiteSectionType = SiteSection["type"];
 
 export type SiteConfig = {
+  // Cabecera: qué mostrar como marca. "logo" (usa brand_config.logoUrl, con el
+  // nombre de fallback si no hay logo) o "text" (siempre el nombre). Default: logo.
+  headerBrand?: "logo" | "text";
   // Campos planos de hero (legacy / fuente de la derivación retrocompatible).
   template?: "editorial" | "minimal" | "bold";
   heroEyebrow?: string;

@@ -96,6 +96,7 @@ const siteSection = z.discriminatedUnion("type", [
 // Contenido del micrositio (site_config). Todo opcional: el editor manda el objeto
 // completo y los vacíos caen a los defaults de la plantilla.
 export const siteConfigSchema = z.object({
+  headerBrand: z.enum(["logo", "text"]).optional(),
   template: z.enum(["editorial", "minimal", "bold"]).optional(),
   heroEyebrow: z.string().max(80).optional(),
   heroTitle: z.string().max(120).optional(),

@@ -58,6 +58,7 @@ export type SiteSection =
 export type SiteSectionType = SiteSection["type"];
 
 export type SiteConfig = {
+  headerBrand?: "logo" | "text";
   template?: "editorial" | "minimal" | "bold";
   heroEyebrow?: string;
   heroTitle?: string;

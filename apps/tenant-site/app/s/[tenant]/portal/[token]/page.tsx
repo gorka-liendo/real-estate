@@ -37,7 +37,11 @@ export default async function OwnerPortal({ params }: Params) {
     >
       <header className="rt-topbar">
         <div className="rt-wrap rt-topbar__inner">
-          <TopbarBrand name={tenant.name} logoUrl={tenant.brandConfig.logoUrl} />
+          <TopbarBrand
+            name={tenant.name}
+            logoUrl={tenant.brandConfig.logoUrl}
+            mode={tenant.siteConfig?.headerBrand}
+          />
           <span className="rt-eyebrow" style={{ margin: 0 }}>
             Portal del propietario
           </span>

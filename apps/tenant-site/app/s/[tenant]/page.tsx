@@ -83,7 +83,11 @@ export default async function Microsite({ params }: Params) {
       {/* topbar */}
       <header className="rt-topbar">
         <div className="rt-wrap rt-topbar__inner">
-          <TopbarBrand name={tenant.name} logoUrl={tenant.brandConfig.logoUrl} />
+          <TopbarBrand
+            name={tenant.name}
+            logoUrl={tenant.brandConfig.logoUrl}
+            mode={site.headerBrand}
+          />
           <nav className="rt-topbar__nav">
             {navItems.map((item) => (
               <a key={item.href} href={item.href}>

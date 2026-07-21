@@ -59,7 +59,12 @@ export default async function PropertyDetail({ params }: Params) {
     >
       <header className="rt-topbar">
         <div className="rt-wrap rt-topbar__inner">
-          <TopbarBrand name={tenant.name} logoUrl={tenant.brandConfig.logoUrl} href="/" />
+          <TopbarBrand
+            name={tenant.name}
+            logoUrl={tenant.brandConfig.logoUrl}
+            mode={site.headerBrand}
+            href="/"
+          />
           <nav className="rt-topbar__nav">
             <Link href="/#propiedades">Propiedades</Link>
             <Link href="/#contacto">Contacto</Link>

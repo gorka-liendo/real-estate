@@ -515,6 +515,27 @@ function Editor({ slug, name }: { slug: string; name: string }) {
 
       <Card>
         <h2 className="du-h3" style={{ marginBottom: "var(--ui-sp-4)" }}>
+          Cabecera
+        </h2>
+        <div style={{ maxWidth: 360 }}>
+          <Label htmlFor="header-brand">Qué mostrar en la cabecera</Label>
+          <Select
+            id="header-brand"
+            value={config.headerBrand ?? "logo"}
+            onChange={(e) => set("headerBrand", e.target.value as "logo" | "text")}
+          >
+            <option value="logo">Logo (si no hay, el nombre)</option>
+            <option value="text">Nombre de la inmobiliaria</option>
+          </Select>
+        </div>
+        <p className="du-muted" style={{ fontSize: 12, marginTop: "var(--ui-sp-2)" }}>
+          El logo se sube en Ajustes. Si eliges «Logo» y aún no lo has subido, se
+          muestra el nombre.
+        </p>
+      </Card>
+
+      <Card>
+        <h2 className="du-h3" style={{ marginBottom: "var(--ui-sp-4)" }}>
           Sobre la inmobiliaria
         </h2>
         <Textarea
