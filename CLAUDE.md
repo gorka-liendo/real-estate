@@ -664,5 +664,25 @@ packages/
       ya existía en el schema; sin migración. **Doc de referencia:
       `docs/dominios-propios.md`** (arquitectura, config, flujo operativo y plan
       detallado de Block 3 con la API de Vercel).
+- [x] **Micrositio: multimedia del hero + animaciones sutiles** — dar "vida"
+      premium al micrositio, todo self-serve. (A) MEDIA DE FONDO DEL HERO: el
+      hero admite `backgroundImageUrl`/`backgroundVideoUrl` (nuevos campos en
+      `HeroSection`, 4 capas + zod con `mediaUrl` que bloquea esquemas peligrosos).
+      Con media → hero "cover" a pantalla completa (`rt-hero--cover`, reutiliza el
+      tratamiento bold + scrim); el vídeo (`<video>` autoplay/muted/loop/playsInline)
+      manda sobre la imagen (poster/fallback). Subida self-serve:
+      `POST /tenant/site/media` (multipart, imagen ≤10MB / vídeo ≤200MB, a
+      @rep/storage bajo `site/`) → devuelve `{url, kind}`. Editor: nuevo tipo de
+      campo `media` (`MediaFieldInput`: subir/cambiar/quitar + preview), threading
+      de `slug` por SectionCard. (B) ANIMACIONES: `RevealObserver` (cliente,
+      IntersectionObserver) revela `.rt-section`/`.rt-hero` al entrar en viewport
+      (progressive enhancement: marca `data-reveal-on` en `.rt-root` solo con JS →
+      sin JS todo visible) + Ken Burns (zoom lento) en la imagen del hero cover.
+      **Respeta `prefers-reduced-motion`** por dos vías (el JS no activa el gating
+      + `!important` en CSS). Verificado E2E en navegador: subida de imagen →
+      BBDD → hero cover a pantalla completa con texto legible; reveal al scroll
+      (opacity 0→1) y Ken Burns activos. 113 tests API, typecheck+lint limpios.
+      Pendiente posible: recorte/optimización de imágenes, más animaciones por
+      sección si se pide.
 - [ ] **Pendiente retomar**: theming/fuentes por inmobiliaria (ver gotcha de
       next/font arriba) y edición de marca en Ajustes.

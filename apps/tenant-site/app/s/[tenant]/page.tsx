@@ -14,6 +14,7 @@ import {
   visibleSections,
   type SectionContext,
 } from "./sections";
+import { RevealObserver } from "./RevealObserver";
 import { SiteFooter } from "./SiteFooter";
 
 function toListing(p: PublicProperty): Listing {
@@ -92,6 +93,9 @@ export default async function Microsite({ params }: Params) {
           <MobileNav items={navItems} />
         </div>
       </header>
+
+      {/* animaciones de aparición al hacer scroll (progressive enhancement) */}
+      <RevealObserver />
 
       {/* cuerpo del micrositio: secciones ordenadas y activables (motor). */}
       {sections.map((section) => {

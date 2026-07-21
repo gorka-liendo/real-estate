@@ -64,7 +64,7 @@ function HeroBody({
   const bgImage = section.backgroundImageUrl;
   if (bgVideo || bgImage) {
     return (
-      <section className="rt-hero rt-hero--bold rt-hero--cover" data-reveal>
+      <section className="rt-hero rt-hero--bold rt-hero--cover">
         {bgVideo ? (
           <video
             className="rt-hero__bg"
