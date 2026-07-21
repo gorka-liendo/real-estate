@@ -111,10 +111,17 @@ export default async function Microsite({ params }: Params) {
         </div>
       </header>
 
-      {/* cuerpo del micrositio: secciones ordenadas y activables (motor).
-          RevealList anima la aparición sutil de cada sección al hacer scroll. */}
+      {/* La 1ª sección (hero) NO se anima: es el contenido above-fold y el
+          elemento LCP — animarlo lo dejaría invisible hasta que hidrate React y
+          dispararía el LCP. El resto sí, con RevealList (fade-up al scroll). */}
+      {sections[0]
+        ? (() => {
+            const { Body } = SECTION_REGISTRY[sections[0].type];
+            return <Body key={sections[0].id} section={sections[0]} ctx={ctx} />;
+          })()
+        : null}
       <RevealList>
-        {sections.map((section) => {
+        {sections.slice(1).map((section) => {
           const { Body } = SECTION_REGISTRY[section.type];
           return <Body key={section.id} section={section} ctx={ctx} />;
         })}
