@@ -1,10 +1,11 @@
 "use client";
 
-import { ArrowLeft, DoorOpen, ExternalLink, ImageIcon, Pencil, User } from "lucide-react";
+import { ArrowLeft, CheckCircle, DoorOpen, ExternalLink, ImageIcon, Pencil, RotateCcw, User } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Badge, Button, ButtonLink, Card, Label } from "@rep/ui";
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { useRequireModule, useWorkspace } from "@/contexts/workspace-context";
 import { api, ApiError, type Client, type Invoice, type Property, type Rental } from "@/lib/api";
 import { TENANT_SITE_URL } from "@/lib/config";
@@ -66,6 +67,17 @@ function PropertyDetailInner({ slug, id }: { slug: string; id: string }) {
   useEffect(() => {
     void load();
   }, [load]);
+
+  async function setStatus(status: Property["status"]) {
+    if (!property) return;
+    setError(null);
+    try {
+      const { property: updated } = await api.properties.update(slug, property.id, { status });
+      setProperty(updated);
+    } catch {
+      setError("No se pudo actualizar el estado.");
+    }
+  }
 
   if (!property) {
     return error ? <p className="du-alert">{error}</p> : <p className="du-muted">Cargando…</p>;
@@ -134,32 +146,44 @@ function PropertyDetailInner({ slug, id }: { slug: string; id: string }) {
 
   return (
     <div style={{ display: "grid", gap: "var(--ui-sp-5)" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: "var(--ui-sp-3)", flexWrap: "wrap" }}>
-        <ButtonLink href="/propiedades" variant="ghost" size="sm">
-          <ArrowLeft size={15} />
-          Propiedades
-        </ButtonLink>
-        <h1 className="du-h1" style={{ margin: 0 }}>
-          {p.title}
-        </h1>
-        <Badge variant={STATUS_VARIANT[p.status]}>{STATUS_LABEL[p.status]}</Badge>
-        <div style={{ marginLeft: "auto", display: "flex", gap: "var(--ui-sp-2)" }}>
-          {p.status === "published" ? (
-            <a
-              className="du-btn du-btn--ghost du-btn--sm"
-              href={`${TENANT_SITE_URL}/propiedad/${p.id}?__tenant=${slug}`}
-              target="_blank"
-              rel="noreferrer"
-              style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}
-            >
-              <ExternalLink size={15} />
-              Ver en micrositio
-            </a>
-          ) : null}
-          <Button size="sm" onClick={() => setEditing(true)}>
-            <Pencil size={15} />
-            Editar
-          </Button>
+      <div>
+        <Breadcrumbs items={[{ label: "Propiedades", href: "/propiedades" }, { label: p.title }]} />
+        <div style={{ display: "flex", alignItems: "center", gap: "var(--ui-sp-3)", flexWrap: "wrap" }}>
+          <h1 className="du-h1" style={{ margin: 0 }}>
+            {p.title}
+          </h1>
+          <Badge variant={STATUS_VARIANT[p.status]}>{STATUS_LABEL[p.status]}</Badge>
+          <div style={{ marginLeft: "auto", display: "flex", gap: "var(--ui-sp-2)", flexWrap: "wrap" }}>
+            {p.status === "published" ? (
+              <a
+                className="du-btn du-btn--ghost du-btn--sm"
+                href={`${TENANT_SITE_URL}/propiedad/${p.id}?__tenant=${slug}`}
+                target="_blank"
+                rel="noreferrer"
+                style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}
+              >
+                <ExternalLink size={15} />
+                Ver en micrositio
+              </a>
+            ) : null}
+            {/* Acción rápida de venta (solo inmuebles en venta) */}
+            {p.operation === "sale" && p.status !== "sold" ? (
+              <Button variant="outline" size="sm" onClick={() => void setStatus("sold")}>
+                <CheckCircle size={15} />
+                Marcar como vendida
+              </Button>
+            ) : null}
+            {p.status === "sold" ? (
+              <Button variant="outline" size="sm" onClick={() => void setStatus("published")}>
+                <RotateCcw size={15} />
+                Reabrir
+              </Button>
+            ) : null}
+            <Button size="sm" onClick={() => setEditing(true)}>
+              <Pencil size={15} />
+              Editar
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -303,7 +327,7 @@ function PropertyDetailInner({ slug, id }: { slug: string; id: string }) {
               </h2>
               <div style={{ display: "grid", gap: "var(--ui-sp-2)" }}>
                 <Row label="Ingresos" value={eurCents(incomeCents)} />
-                <Row label="Gastos" value={`−${eurCents(expensesCents)}`} />
+                <Row label="Gastos" value={expensesCents > 0 ? `−${eurCents(expensesCents)}` : eurCents(0)} />
                 <div
                   style={{
                     display: "flex",
