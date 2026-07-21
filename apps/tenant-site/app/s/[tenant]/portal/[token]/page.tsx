@@ -36,12 +36,14 @@ export default async function OwnerPortal({ params }: Params) {
       style={{ minHeight: "100vh" }}
     >
       <header className="rt-topbar">
-        <div className="rt-wrap rt-topbar__inner">
-          <TopbarBrand
-            name={tenant.name}
-            logoUrl={tenant.brandConfig.logoUrl}
-            mode={tenant.siteConfig?.headerBrand}
-          />
+        <div className="rt-topbar__inner rt-topbar__inner--split">
+          <div className="rt-topbar__left">
+            <TopbarBrand
+              name={tenant.name}
+              logoUrl={tenant.brandConfig.logoUrl}
+              mode={tenant.siteConfig?.headerBrand}
+            />
+          </div>
           <span className="rt-eyebrow" style={{ margin: 0 }}>
             Portal del propietario
           </span>

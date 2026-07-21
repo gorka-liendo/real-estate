@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import {
   MobileNav,
   OPERATION_LABELS,
+  PillLink,
   PROPERTY_KIND_LABELS,
   type Listing,
 } from "@rep/ui-tenant";
@@ -72,7 +73,10 @@ export default async function Microsite({ params }: Params) {
   const site = tenant.siteConfig ?? {};
   const sections = visibleSections(resolveSections(site), activeModules);
   const ctx: SectionContext = { slug, tenantName: tenant.name, listings, featured };
-  const navItems = [...sectionNavItems(sections), { label: "Contacto", href: "#contacto" }];
+  // Nav centrado = secciones; el contacto va en el CTA de la derecha. El menú
+  // móvil los junta (secciones + contacto).
+  const sectionNav = sectionNavItems(sections);
+  const mobileNavItems = [...sectionNav, { label: "Contacto", href: "#contacto" }];
 
   return (
     <div
@@ -80,22 +84,29 @@ export default async function Microsite({ params }: Params) {
       data-theme={tenant.brandConfig.theme ?? "dwell"}
       style={{ minHeight: "100vh" }}
     >
-      {/* topbar */}
+      {/* topbar: logo · nav centrado · CTA */}
       <header className="rt-topbar">
-        <div className="rt-wrap rt-topbar__inner">
-          <TopbarBrand
-            name={tenant.name}
-            logoUrl={tenant.brandConfig.logoUrl}
-            mode={site.headerBrand}
-          />
+        <div className="rt-topbar__inner">
+          <div className="rt-topbar__left">
+            <TopbarBrand
+              name={tenant.name}
+              logoUrl={tenant.brandConfig.logoUrl}
+              mode={site.headerBrand}
+            />
+          </div>
           <nav className="rt-topbar__nav">
-            {navItems.map((item) => (
+            {sectionNav.map((item) => (
               <a key={item.href} href={item.href}>
                 {item.label}
               </a>
             ))}
           </nav>
-          <MobileNav items={navItems} />
+          <div className="rt-topbar__right">
+            <PillLink href="#contacto" className="rt-topbar__cta">
+              Contacta con nosotros
+            </PillLink>
+            <MobileNav items={mobileNavItems} />
+          </div>
         </div>
       </header>
 

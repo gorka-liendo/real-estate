@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Gallery, MobileNav, OPERATION_LABELS, type GalleryItem } from "@rep/ui-tenant";
+import { Gallery, MobileNav, OPERATION_LABELS, PillLink, type GalleryItem } from "@rep/ui-tenant";
 import { fetchModules, fetchProperty, fetchTenant, type PublicProperty } from "@/lib/tenant";
 import { CONDITION_LABELS, featureLabel, KIND_LABELS } from "@/lib/property-meta";
 import { ContactForm } from "../../ContactForm";
@@ -58,23 +58,29 @@ export default async function PropertyDetail({ params }: Params) {
       style={{ minHeight: "100vh" }}
     >
       <header className="rt-topbar">
-        <div className="rt-wrap rt-topbar__inner">
-          <TopbarBrand
-            name={tenant.name}
-            logoUrl={tenant.brandConfig.logoUrl}
-            mode={site.headerBrand}
-            href="/"
-          />
+        <div className="rt-topbar__inner">
+          <div className="rt-topbar__left">
+            <TopbarBrand
+              name={tenant.name}
+              logoUrl={tenant.brandConfig.logoUrl}
+              mode={site.headerBrand}
+              href="/"
+            />
+          </div>
           <nav className="rt-topbar__nav">
             <Link href="/#propiedades">Propiedades</Link>
-            <Link href="/#contacto">Contacto</Link>
           </nav>
-          <MobileNav
-            items={[
-              { label: "Propiedades", href: "/#propiedades" },
-              { label: "Contacto", href: "/#contacto" },
-            ]}
-          />
+          <div className="rt-topbar__right">
+            <PillLink href="/#contacto" className="rt-topbar__cta">
+              Contacta con nosotros
+            </PillLink>
+            <MobileNav
+              items={[
+                { label: "Propiedades", href: "/#propiedades" },
+                { label: "Contacto", href: "/#contacto" },
+              ]}
+            />
+          </div>
         </div>
       </header>
 
