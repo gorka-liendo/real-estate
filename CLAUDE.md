@@ -231,7 +231,10 @@ tenant→auth→membership→`requireModule`. UI de cliente en `apps/dashboard/a
   con estado de alquiler (libre / piso entero / por habitaciones, enlaza a Alquileres),
   **rentabilidad del año** (ingresos = cobros de alquiler + facturas cobradas; gastos =
   facturas de gasto; neto) y propietario. Editar = `PropertyForm` + `PhotoManager` (en
-  `_shared.tsx`, reusados por listado y detalle).
+  `_shared.tsx`, reusados por listado y detalle). Estado `sold` (Vendida) en el enum
+  `property_status` (no sale en el micrositio). Listado con **filtros de situación**
+  (Todas/Alquiladas/Libres/En venta/Vendidas) con contadores, derivados de
+  operación + estado + contrato activo.
 - **valuation**: widget "Valora tu piso" (estimación €/m² desde comparables
   publicados del propio tenant) → lead de propietario.
 - **visits** (agenda): `POST /tenant/visits/request` público + gestión privada con

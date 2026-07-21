@@ -280,7 +280,7 @@ export type PortalExpense = {
 export type PortalProperty = {
   id: string;
   title: string;
-  status: "draft" | "published" | "archived";
+  status: "draft" | "published" | "archived" | "sold";
   operation: "sale" | "rent";
   price: number | null;
   city: string | null;
@@ -330,7 +330,7 @@ export type PortalPropertyDetail = {
   property: {
     id: string;
     title: string;
-    status: "draft" | "published" | "archived";
+    status: "draft" | "published" | "archived" | "sold";
     operation: "sale" | "rent";
     price: number | null;
     city: string | null;

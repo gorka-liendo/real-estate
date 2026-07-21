@@ -19,6 +19,7 @@ const STATUS_LABEL: Record<PortalProperty["status"], string> = {
   draft: "En preparación",
   published: "Publicado",
   archived: "Archivado",
+  sold: "Vendido",
 };
 
 const eurCents = (c: number) =>

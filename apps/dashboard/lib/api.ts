@@ -173,7 +173,7 @@ export type SiteEditorApi = {
 
 export type PropertyOperation = "sale" | "rent";
 export type PropertyKind = "flat" | "house" | "commercial" | "land" | "garage";
-export type PropertyStatus = "draft" | "published" | "archived";
+export type PropertyStatus = "draft" | "published" | "archived" | "sold";
 export type PropertyCondition = "new" | "good" | "renew";
 export type PropertyDetails = {
   reference?: string;

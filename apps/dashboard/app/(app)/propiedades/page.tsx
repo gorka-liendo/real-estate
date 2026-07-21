@@ -16,11 +16,30 @@ import {
   STATUS_VARIANT,
 } from "./_shared";
 
+type Filter = "todas" | "rented" | "free" | "sale" | "sold";
+
+// Predicado de cada situación (rentedIds = inmuebles con contrato activo).
+function matchesFilter(p: Property, filter: Filter, rented: boolean): boolean {
+  switch (filter) {
+    case "rented":
+      return p.operation === "rent" && rented;
+    case "free":
+      return p.operation === "rent" && !rented && p.status !== "sold";
+    case "sale":
+      return p.operation === "sale" && p.status !== "sold";
+    case "sold":
+      return p.status === "sold";
+    default:
+      return true;
+  }
+}
+
 function PropiedadesInner({ slug }: { slug: string }) {
   const router = useRouter();
   const { hasModule } = useWorkspace();
   const [items, setItems] = useState<Property[] | null>(null);
   const [rentedIds, setRentedIds] = useState<Set<string>>(new Set());
+  const [filter, setFilter] = useState<Filter>("todas");
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
 
@@ -84,22 +103,70 @@ function PropiedadesInner({ slug }: { slug: string }) {
           </div>
         </Card>
       ) : (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-            gap: "var(--ui-sp-4)",
-          }}
-        >
-          {items.map((p) => (
-            <PropertyCard
-              key={p.id}
-              property={p}
-              rented={rentedIds.has(p.id)}
-              onRemove={() => void remove(p.id)}
-            />
-          ))}
-        </div>
+        (() => {
+          const counts: Record<Filter, number> = {
+            todas: items.length,
+            rented: items.filter((p) => matchesFilter(p, "rented", rentedIds.has(p.id))).length,
+            free: items.filter((p) => matchesFilter(p, "free", rentedIds.has(p.id))).length,
+            sale: items.filter((p) => matchesFilter(p, "sale", rentedIds.has(p.id))).length,
+            sold: items.filter((p) => matchesFilter(p, "sold", rentedIds.has(p.id))).length,
+          };
+          const FILTERS: Array<{ id: Filter; label: string }> = [
+            { id: "todas", label: "Todas" },
+            { id: "rented", label: "Alquiladas" },
+            { id: "free", label: "Libres" },
+            { id: "sale", label: "En venta" },
+            { id: "sold", label: "Vendidas" },
+          ];
+          const visible = items.filter((p) => matchesFilter(p, filter, rentedIds.has(p.id)));
+          return (
+            <div style={{ display: "grid", gap: "var(--ui-sp-4)" }}>
+              <div style={{ display: "flex", gap: "var(--ui-sp-2)", flexWrap: "wrap" }}>
+                {FILTERS.map((f) => (
+                  <button
+                    key={f.id}
+                    onClick={() => setFilter(f.id)}
+                    style={{
+                      padding: "var(--ui-sp-2) var(--ui-sp-3)",
+                      borderRadius: 999,
+                      border: "1px solid var(--ui-border)",
+                      background: filter === f.id ? "var(--ui-primary)" : "transparent",
+                      color: filter === f.id ? "var(--ui-on-primary)" : "var(--ui-text)",
+                      cursor: "pointer",
+                      font: "inherit",
+                      fontSize: 13,
+                      fontWeight: 500,
+                    }}
+                  >
+                    {f.label}{" "}
+                    <span style={{ opacity: 0.6 }}>{counts[f.id]}</span>
+                  </button>
+                ))}
+              </div>
+
+              {visible.length === 0 ? (
+                <p className="du-muted">No hay propiedades en esta situación.</p>
+              ) : (
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+                    gap: "var(--ui-sp-4)",
+                  }}
+                >
+                  {visible.map((p) => (
+                    <PropertyCard
+                      key={p.id}
+                      property={p}
+                      rented={rentedIds.has(p.id)}
+                      onRemove={() => void remove(p.id)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })()
       )}
     </div>
   );

@@ -30,11 +30,13 @@ export const STATUS_LABEL: Record<PropertyStatus, string> = {
   draft: "Borrador",
   published: "Publicada",
   archived: "Archivada",
+  sold: "Vendida",
 };
 export const STATUS_VARIANT: Record<PropertyStatus, "muted" | "success" | "default"> = {
   draft: "muted",
   published: "success",
   archived: "default",
+  sold: "default",
 };
 
 export function formatPrice(p: Property): string {
@@ -478,6 +480,7 @@ export function PropertyForm({
               <option value="draft">Borrador</option>
               <option value="published">Publicada</option>
               <option value="archived">Archivada</option>
+              <option value="sold">Vendida</option>
             </Select>
           </div>
         </div>

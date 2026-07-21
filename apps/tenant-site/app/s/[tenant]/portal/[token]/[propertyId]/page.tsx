@@ -19,6 +19,7 @@ const STATUS_LABEL: Record<string, string> = {
   draft: "En preparación",
   published: "Publicado",
   archived: "Archivado",
+  sold: "Vendido",
 };
 const EXPENSE_LABELS: Record<string, string> = {
   water: "Agua",
