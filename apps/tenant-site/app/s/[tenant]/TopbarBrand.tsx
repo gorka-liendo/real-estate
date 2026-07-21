@@ -1,8 +1,9 @@
 import Link from "next/link";
 
-// Marca del header. `mode` (site_config.headerBrand): "text" → siempre el
-// nombre; "logo"/undefined → el logo del tenant (brand_config.logoUrl) con el
-// nombre como fallback si no hay logo. Opcionalmente enlazable (ficha/portal → home).
+// Marca del header, envuelta en su propio "chip" flotante (glass). `mode`
+// (site_config.headerBrand): "text" → siempre el nombre; "logo"/undefined → el
+// logo del tenant (brand_config.logoUrl) con el nombre como fallback si no hay
+// logo. Opcionalmente enlazable (ficha/portal → home).
 export function TopbarBrand({
   name,
   logoUrl,
@@ -15,7 +16,7 @@ export function TopbarBrand({
   href?: string;
 }) {
   const useLogo = mode !== "text" && Boolean(logoUrl);
-  const content = useLogo ? (
+  const inner = useLogo ? (
     // eslint-disable-next-line @next/next/no-img-element
     <img className="rt-topbar__logo" src={logoUrl} alt={name} />
   ) : (
@@ -23,10 +24,10 @@ export function TopbarBrand({
   );
 
   return href ? (
-    <Link href={href} className="rt-topbar__brandlink" aria-label={name}>
-      {content}
+    <Link href={href} className="rt-topbar__chip" aria-label={name}>
+      {inner}
     </Link>
   ) : (
-    content
+    <span className="rt-topbar__chip">{inner}</span>
   );
 }
