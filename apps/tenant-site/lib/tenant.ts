@@ -65,8 +65,15 @@ export type SiteSection =
   | SplitSection;
 export type SiteSectionType = SiteSection["type"];
 
+// Clase del <header> según el estilo elegido (floating = sin modificador).
+export function topbarClass(style?: "floating" | "solid" | "transparent"): string {
+  if (style === "solid") return "rt-topbar rt-topbar--solid";
+  if (style === "transparent") return "rt-topbar rt-topbar--transparent";
+  return "rt-topbar";
+}
+
 export type SiteConfig = {
-  headerStyle?: "floating" | "solid";
+  headerStyle?: "floating" | "solid" | "transparent";
   headerBrand?: "logo" | "text";
   logoScale?: number;
   template?: "editorial" | "minimal" | "bold";

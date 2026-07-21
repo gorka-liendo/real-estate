@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import type { CSSProperties } from "react";
 import { OPERATION_LABELS } from "@rep/ui-tenant";
-import { fetchPortal, fetchTenant, type PortalProperty } from "@/lib/tenant";
+import { fetchPortal, fetchTenant, topbarClass, type PortalProperty } from "@/lib/tenant";
+import { HeaderScroll } from "../../HeaderScroll";
 import { SiteFooter } from "../../SiteFooter";
 import { TopbarBrand } from "../../TopbarBrand";
 
@@ -41,9 +42,8 @@ export default async function OwnerPortal({ params }: Params) {
         } as CSSProperties
       }
     >
-      <header
-        className={`rt-topbar${tenant.siteConfig?.headerStyle === "solid" ? " rt-topbar--solid" : ""}`}
-      >
+      <header className={topbarClass(tenant.siteConfig?.headerStyle)}>
+        <HeaderScroll />
         <div className="rt-topbar__inner rt-topbar__inner--split">
           <div className="rt-topbar__left">
             <TopbarBrand

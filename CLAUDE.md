@@ -263,7 +263,10 @@ tenant→auth→membership→`requireModule`. UI de cliente en `apps/dashboard/a
   (`backgroundImageUrl`/`backgroundVideoUrl` → hero "cover" `100svh`, vídeo manda).
   Header (`rt-topbar`, layout grid 3 zonas: logo · nav centrado · CTA a #contacto)
   con opciones editables en `site_config`: `headerStyle` ("floating" pastilla
-  glass fixed / "solid" barra sólida clásica `rt-topbar--solid`), `headerBrand`
+  glass fixed / "solid" barra sólida glass / "transparent" transparente sobre el
+  hero, logo izq · nav der, que pasa a cristal + texto oscuro al hacer scroll vía
+  `HeaderScroll` cliente que marca `.is-scrolled`; en páginas sin hero fuerza el
+  sólido), `headerBrand`
   ("logo"/"text", `TopbarBrand`), `logoScale` (×1–×2, vía `--rt-logo-scale` en
   `.rt-root`). **Navbar dinámico**: cada sección con ancla define si sale en el
   menú vía `section.navLabel` (control "Mostrar en el menú" + etiqueta por sección

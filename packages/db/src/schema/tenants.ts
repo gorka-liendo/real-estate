@@ -119,9 +119,10 @@ export type SiteSection =
 export type SiteSectionType = SiteSection["type"];
 
 export type SiteConfig = {
-  // Cabecera: estilo del header. "floating" (pastilla glass flotante sobre el
-  // hero) o "solid" (barra sólida a ancho completo, clásica). Default: floating.
-  headerStyle?: "floating" | "solid";
+  // Cabecera: estilo del header. "floating" (pastilla glass flotante), "solid"
+  // (barra sólida glass a ancho completo) o "transparent" (transparente sobre el
+  // hero, logo izq · nav der, que pasa a cristal al hacer scroll). Default: floating.
+  headerStyle?: "floating" | "solid" | "transparent";
   // Qué mostrar como marca. "logo" (usa brand_config.logoUrl, con el nombre de
   // fallback si no hay logo) o "text" (siempre el nombre). Default: logo.
   headerBrand?: "logo" | "text";

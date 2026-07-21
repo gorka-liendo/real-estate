@@ -8,7 +8,13 @@ import {
   PROPERTY_KIND_LABELS,
   type Listing,
 } from "@rep/ui-tenant";
-import { fetchListings, fetchModules, fetchTenant, type PublicProperty } from "@/lib/tenant";
+import {
+  fetchListings,
+  fetchModules,
+  fetchTenant,
+  topbarClass,
+  type PublicProperty,
+} from "@/lib/tenant";
 import {
   resolveSections,
   SECTION_REGISTRY,
@@ -16,6 +22,7 @@ import {
   visibleSections,
   type SectionContext,
 } from "./sections";
+import { HeaderScroll } from "./HeaderScroll";
 import { RevealList } from "./RevealList";
 import { SiteFooter } from "./SiteFooter";
 import { TopbarBrand } from "./TopbarBrand";
@@ -85,8 +92,8 @@ export default async function Microsite({ params }: Params) {
       data-theme={tenant.brandConfig.theme ?? "dwell"}
       style={{ minHeight: "100vh", "--rt-logo-scale": site.logoScale ?? 1 } as CSSProperties}
     >
-      {/* topbar: logo · nav centrado · CTA (flotante o barra sólida) */}
-      <header className={`rt-topbar${site.headerStyle === "solid" ? " rt-topbar--solid" : ""}`}>
+      {/* topbar: logo · nav centrado · CTA (flotante / sólido / transparente) */}
+      <header className={topbarClass(site.headerStyle)}>
         <div className="rt-topbar__inner">
           <div className="rt-topbar__left">
             <TopbarBrand
@@ -110,6 +117,7 @@ export default async function Microsite({ params }: Params) {
           </div>
         </div>
       </header>
+      <HeaderScroll />
 
       {/* La 1ª sección (hero) NO se anima: es el contenido above-fold y el
           elemento LCP — animarlo lo dejaría invisible hasta que hidrate React y

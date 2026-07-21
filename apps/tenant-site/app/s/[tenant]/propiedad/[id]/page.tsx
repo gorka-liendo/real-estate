@@ -3,9 +3,16 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { CSSProperties } from "react";
 import { Gallery, MobileNav, OPERATION_LABELS, PillLink, type GalleryItem } from "@rep/ui-tenant";
-import { fetchModules, fetchProperty, fetchTenant, type PublicProperty } from "@/lib/tenant";
+import {
+  fetchModules,
+  fetchProperty,
+  fetchTenant,
+  topbarClass,
+  type PublicProperty,
+} from "@/lib/tenant";
 import { CONDITION_LABELS, featureLabel, KIND_LABELS } from "@/lib/property-meta";
 import { ContactForm } from "../../ContactForm";
+import { HeaderScroll } from "../../HeaderScroll";
 import { SiteFooter } from "../../SiteFooter";
 import { TopbarBrand } from "../../TopbarBrand";
 import { VisitWidget } from "../../VisitWidget";
@@ -58,7 +65,7 @@ export default async function PropertyDetail({ params }: Params) {
       data-theme={tenant.brandConfig.theme ?? "dwell"}
       style={{ minHeight: "100vh", "--rt-logo-scale": site.logoScale ?? 1 } as CSSProperties}
     >
-      <header className={`rt-topbar${site.headerStyle === "solid" ? " rt-topbar--solid" : ""}`}>
+      <header className={topbarClass(site.headerStyle)}>
         <div className="rt-topbar__inner">
           <div className="rt-topbar__left">
             <TopbarBrand
@@ -84,6 +91,7 @@ export default async function PropertyDetail({ params }: Params) {
           </div>
         </div>
       </header>
+      <HeaderScroll />
 
       <section className="rt-section" style={{ borderTop: "none" }}>
         <div className="rt-wrap">

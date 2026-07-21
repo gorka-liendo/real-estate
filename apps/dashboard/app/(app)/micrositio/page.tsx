@@ -586,10 +586,15 @@ function Editor({
             <Select
               id="header-style"
               value={config.headerStyle ?? "floating"}
-              onChange={(e) => set("headerStyle", e.target.value as "floating" | "solid")}
+              onChange={(e) =>
+                set("headerStyle", e.target.value as "floating" | "solid" | "transparent")
+              }
             >
               <option value="floating">Flotante — pastilla sobre la portada</option>
               <option value="solid">Barra sólida — clásica, a ancho completo</option>
+              <option value="transparent">
+                Transparente — logo izq · menú der, se vuelve cristal al bajar
+              </option>
             </Select>
           </div>
           <div>

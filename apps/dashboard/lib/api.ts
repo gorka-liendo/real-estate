@@ -143,7 +143,7 @@ export type SiteSection =
 export type SiteSectionType = SiteSection["type"];
 
 export type SiteConfig = {
-  headerStyle?: "floating" | "solid";
+  headerStyle?: "floating" | "solid" | "transparent";
   headerBrand?: "logo" | "text";
   logoScale?: number;
   // Campos planos de hero: legacy / fuente de la derivación retrocompatible.
