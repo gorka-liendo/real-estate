@@ -101,10 +101,21 @@ function AlquileresInner({ slug }: { slug: string }) {
     (r) => paymentFor(r, currentPeriod)?.status !== "paid",
   ).length;
 
-  // Contratos ordenados: activos primero, luego finalizados.
-  const sorted = [...(items ?? [])].sort((a, b) => {
-    if (a.status !== b.status) return a.status === "active" ? -1 : 1;
-    return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
+  // UNA tarjeta por INMUEBLE (aunque tenga varias habitaciones alquiladas).
+  const groupsMap = new Map<string, Rental[]>();
+  for (const r of items ?? []) {
+    const arr = groupsMap.get(r.propertyId) ?? [];
+    arr.push(r);
+    groupsMap.set(r.propertyId, arr);
+  }
+  const propertyGroups = [...groupsMap.entries()].map(([pid, rentals]) => ({ pid, rentals }));
+  // Orden: inmuebles con algún contrato activo primero, luego por el más reciente.
+  propertyGroups.sort((a, b) => {
+    const aActive = a.rentals.some((r) => r.status === "active");
+    const bActive = b.rentals.some((r) => r.status === "active");
+    if (aActive !== bActive) return aActive ? -1 : 1;
+    const recent = (rs: Rental[]) => Math.max(...rs.map((r) => new Date(r.startDate).getTime()));
+    return recent(b.rentals) - recent(a.rentals);
   });
 
   return (
@@ -178,15 +189,33 @@ function AlquileresInner({ slug }: { slug: string }) {
             gap: "var(--ui-sp-4)",
           }}
         >
-          {sorted.map((r) => (
-            <RentalCard
-              key={r.id}
-              rental={r}
-              property={propsById[r.propertyId]}
-              currentPeriod={currentPeriod}
-              onTogglePayment={(period) => void togglePayment(r, period)}
-            />
-          ))}
+          {propertyGroups.map(({ pid, rentals }) => {
+            // Si el inmueble tiene contratos por habitación → tarjeta agregada.
+            if (rentals.some((r) => r.roomId)) {
+              return (
+                <PropertyRoomsCard
+                  key={pid}
+                  propertyId={pid}
+                  property={propsById[pid]}
+                  rentals={rentals}
+                  currentPeriod={currentPeriod}
+                />
+              );
+            }
+            // Piso entero: la tarjeta del contrato representativo (activo o el más reciente).
+            const rep =
+              rentals.find((r) => r.status === "active") ??
+              [...rentals].sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())[0]!;
+            return (
+              <RentalCard
+                key={pid}
+                rental={rep}
+                property={propsById[pid]}
+                currentPeriod={currentPeriod}
+                onTogglePayment={(period) => void togglePayment(rep, period)}
+              />
+            );
+          })}
         </div>
       )}
 
@@ -429,6 +458,117 @@ function RentalCard({
       <div style={{ borderTop: "1px solid var(--ui-border)", padding: "var(--ui-sp-2) var(--ui-sp-3)" }}>
         <ButtonLink href={`/alquileres/${rental.id}`} variant="ghost" size="sm">
           Gestionar contrato →
+        </ButtonLink>
+      </div>
+    </div>
+  );
+}
+
+// Tarjeta AGREGADA de un inmueble alquilado por habitaciones: una sola tarjeta
+// por piso, con el total y el nº de habitaciones ocupadas. Al pinchar, la vista
+// del piso con el detalle de cada habitación.
+function PropertyRoomsCard({
+  propertyId,
+  property,
+  rentals,
+  currentPeriod,
+}: {
+  propertyId: string;
+  property?: Property;
+  rentals: Rental[];
+  currentPeriod: string;
+}) {
+  const active = rentals.filter((r) => r.status === "active");
+  const anyActive = active.length > 0;
+  const totalRent = active.reduce((s, r) => s + r.monthlyRent, 0);
+  const paidThisMonth = active.filter((r) => paymentFor(r, currentPeriod)?.status === "paid").length;
+  const title = property?.title ?? "Inmueble";
+  const href = `/alquileres/propiedad/${propertyId}`;
+
+  return (
+    <div
+      style={{
+        background: "var(--ui-surface)",
+        border: "1px solid var(--ui-border)",
+        borderRadius: "var(--ui-radius-lg)",
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
+        boxShadow: "var(--ui-shadow-sm)",
+      }}
+    >
+      <CardPhoto url={property?.photos[0]}>
+        <OverlayChip>
+          <Badge variant={anyActive ? "success" : "default"}>{anyActive ? "Activo" : "Finalizado"}</Badge>
+        </OverlayChip>
+      </CardPhoto>
+
+      <div style={{ padding: "var(--ui-sp-4)", display: "grid", gap: "var(--ui-sp-3)", flex: 1 }}>
+        <div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+            <Link href={href} style={{ color: "inherit", textDecoration: "none", fontWeight: 600, fontSize: 16 }}>
+              {title}
+            </Link>
+            <Badge variant="muted">
+              <DoorOpen size={11} style={{ verticalAlign: "-1px", marginRight: 3 }} />
+              Por habitaciones
+            </Badge>
+          </div>
+          <div className="du-muted" style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 4, marginTop: 2 }}>
+            {property?.city ? (
+              <>
+                <MapPin size={12} />
+                {property.city}
+                {" · "}
+              </>
+            ) : null}
+            {active.length} habitaci{active.length === 1 ? "ón" : "ones"} alquilada{active.length === 1 ? "" : "s"}
+          </div>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+          <span style={{ fontSize: 22, fontWeight: 600 }}>{eur(totalRent)}</span>
+          <span className="du-muted" style={{ fontSize: 13 }}>
+            /mes en total
+          </span>
+        </div>
+
+        {anyActive ? (
+          <div className="du-muted" style={{ fontSize: 13 }}>
+            {paidThisMonth}/{active.length} cobradas en {periodShort(currentPeriod)}.
+          </div>
+        ) : (
+          <div className="du-muted" style={{ fontSize: 13 }}>
+            Sin contratos activos
+          </div>
+        )}
+
+        {/* Una barra por habitación activa: verde cobrada, gris pendiente */}
+        {anyActive ? (
+          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            {active.map((r) => {
+              const paid = paymentFor(r, currentPeriod)?.status === "paid";
+              return (
+                <span
+                  key={r.id}
+                  title={`${r.roomName ?? "Habitación"}: ${paid ? "cobrada" : "pendiente"} este mes`}
+                  style={{
+                    flex: 1,
+                    height: 5,
+                    borderRadius: 3,
+                    background: paid ? "var(--ui-success)" : "var(--ui-border-strong)",
+                    opacity: paid ? 1 : 0.4,
+                  }}
+                />
+              );
+            })}
+          </div>
+        ) : null}
+      </div>
+
+      <div style={{ borderTop: "1px solid var(--ui-border)", padding: "var(--ui-sp-2) var(--ui-sp-3)" }}>
+        <ButtonLink href={href} variant="ghost" size="sm">
+          Ver piso y habitaciones →
         </ButtonLink>
       </div>
     </div>

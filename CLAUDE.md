@@ -259,6 +259,11 @@ tenant→auth→membership→`requireModule`. UI de cliente en `apps/dashboard/a
   Por habitación" con creación inline de habitaciones. El portal **agrega el inmueble**:
   total (renta/cobrado) + **desglose por habitación** (`PortalRental.rooms[]`, `byRoom`)
   tanto en la lista como en el detalle; `relevantRentalsOf` toma todos los activos.
+  **UI del listado**: UNA tarjeta por inmueble (no una por contrato). Piso entero →
+  `RentalCard` → `/alquileres/[contrato]`. Por habitaciones → `PropertyRoomsCard`
+  agregada (nº habitaciones, renta total, cobradas este mes) → vista del piso
+  `/alquileres/propiedad/[propertyId]`: stats + una tarjeta por habitación
+  (inquilino, renta, cobro del mes, gestionar) + contratos finalizados.
 - **accounting**: `invoices` (`direction` income/expense, IVA en bps, pagos
   parciales, PDF de `income` con pdfkit), páginas de cuenta por inmueble/cliente.
   Absorbió el antiguo `property_expenses`. UI: `SummaryCard` con icono+acento;
