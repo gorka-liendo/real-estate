@@ -2,9 +2,11 @@ import { and, eq, inArray } from "drizzle-orm";
 import {
   clients,
   properties,
+  propertyRooms,
   rentalPayments,
   rentals,
   tenantDb,
+  type PropertyRoom,
   type Rental,
   type RentalPayment,
 } from "@rep/db";
@@ -14,7 +16,7 @@ import type { CreateRentalInput, PaymentInput, UpdateRentalInput } from "./renta
 
 const toDateOnly = (d: Date) => d.toISOString().slice(0, 10);
 
-export type RentalWithPayments = Rental & { payments: RentalPayment[] };
+export type RentalWithPayments = Rental & { payments: RentalPayment[]; roomName: string | null };
 
 export async function listRentals(): Promise<RentalWithPayments[]> {
   const rows = (await tenantDb().select(rentals)) as Rental[];
@@ -23,10 +25,15 @@ export async function listRentals(): Promise<RentalWithPayments[]> {
     rentalPayments,
     inArray(rentalPayments.rentalId, rows.map((r) => r.id)),
   )) as RentalPayment[];
+  const roomIds = rows.map((r) => r.roomId).filter(Boolean) as string[];
+  const rooms = roomIds.length
+    ? ((await tenantDb().select(propertyRooms, inArray(propertyRooms.id, roomIds))) as PropertyRoom[])
+    : [];
   return rows
     .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
     .map((r) => ({
       ...r,
+      roomName: r.roomId ? (rooms.find((x) => x.id === r.roomId)?.name ?? null) : null,
       payments: pays
         .filter((p) => p.rentalId === r.id)
         .sort((a, b) => b.period.localeCompare(a.period)),
@@ -43,6 +50,7 @@ export type RentalDetail = {
     city: string | null;
     ownerClientId: string | null;
   } | null;
+  room: { id: string; name: string } | null; // habitación (si el contrato es por habitación)
   tenant: ClientRef | null; // inquilino (cliente del CRM vinculado)
   owner: ClientRef | null; // propietario del inmueble (owner_client del piso)
 };
@@ -73,10 +81,20 @@ export async function getRentalDetail(id: string): Promise<RentalDetail | null> 
     return c ? { id: c.id, name: c.name, email: c.email, phone: c.phone } : null;
   };
 
+  let room: RentalDetail["room"] = null;
+  if (rental.roomId) {
+    const roomRows = (await tenantDb().select(
+      propertyRooms,
+      eq(propertyRooms.id, rental.roomId),
+    )) as PropertyRoom[];
+    if (roomRows[0]) room = { id: roomRows[0].id, name: roomRows[0].name };
+  }
+
   return {
     rental,
     payments,
     property,
+    room,
     tenant: ref(rental.renterClientId),
     owner: ref(prop?.ownerClientId),
   };
@@ -84,7 +102,15 @@ export async function getRentalDetail(id: string): Promise<RentalDetail | null> 
 
 export type CreateRentalResult =
   | { ok: true; rental: Rental }
-  | { ok: false; error: "property_not_found" | "invalid_renter" | "active_rental_exists" };
+  | {
+      ok: false;
+      error:
+        | "property_not_found"
+        | "invalid_renter"
+        | "invalid_room"
+        | "active_rental_exists" // ya hay un contrato de piso entero activo
+        | "room_occupied"; // esa habitación ya tiene contrato activo
+    };
 
 export async function createRental(input: CreateRentalInput): Promise<CreateRentalResult> {
   const prop = await tenantDb().select(properties, eq(properties.id, input.propertyId));
@@ -95,16 +121,37 @@ export async function createRental(input: CreateRentalInput): Promise<CreateRent
     if (renter.length === 0) return { ok: false, error: "invalid_renter" };
   }
 
-  // Un inmueble solo puede tener UN contrato activo a la vez.
-  const active = await tenantDb().select(
+  // La habitación (si la hay) debe existir y pertenecer a ESTE inmueble.
+  if (input.roomId) {
+    const room = (await tenantDb().select(
+      propertyRooms,
+      eq(propertyRooms.id, input.roomId),
+    )) as PropertyRoom[];
+    if (room.length === 0 || room[0]!.propertyId !== input.propertyId) {
+      return { ok: false, error: "invalid_room" };
+    }
+  }
+
+  // Contratos activos del inmueble. Reglas de convivencia:
+  //  - Piso entero (sin habitación): incompatible con CUALQUIER contrato activo.
+  //  - Por habitación: incompatible con un contrato de piso entero activo, y
+  //    con otro contrato activo de la MISMA habitación.
+  const active = (await tenantDb().select(
     rentals,
     and(eq(rentals.propertyId, input.propertyId), eq(rentals.status, "active")),
-  );
-  if (active.length > 0) return { ok: false, error: "active_rental_exists" };
+  )) as Rental[];
+
+  if (!input.roomId) {
+    if (active.length > 0) return { ok: false, error: "active_rental_exists" };
+  } else {
+    if (active.some((r) => r.roomId == null)) return { ok: false, error: "active_rental_exists" };
+    if (active.some((r) => r.roomId === input.roomId)) return { ok: false, error: "room_occupied" };
+  }
 
   const rows = (await tenantDb()
     .insert(rentals, {
       propertyId: input.propertyId,
+      roomId: input.roomId ?? null,
       renterClientId: input.renterClientId ?? null,
       renterName: input.renterName,
       monthlyRent: input.monthlyRent,

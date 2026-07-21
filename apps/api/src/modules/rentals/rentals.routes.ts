@@ -37,7 +37,8 @@ rentals.post("/", async (c) => {
   if (!body.success) return c.json({ error: "invalid_body", issues: body.error.issues }, 400);
   const result = await service.createRental(body.data);
   if (!result.ok) {
-    return c.json({ error: result.error }, result.error === "active_rental_exists" ? 409 : 400);
+    const conflict = result.error === "active_rental_exists" || result.error === "room_occupied";
+    return c.json({ error: result.error }, conflict ? 409 : 400);
   }
   return c.json({ rental: result.rental }, 201);
 });

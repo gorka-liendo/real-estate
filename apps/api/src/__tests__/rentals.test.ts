@@ -93,6 +93,19 @@ function req(path = "", init: RequestInit = {}) {
   });
 }
 
+function roomsReq(path = "", init: RequestInit = {}) {
+  return app.request(`/tenant/rooms${path}`, {
+    ...init,
+    headers: { "x-tenant-slug": SLUGS[0]!, cookie, "content-type": "application/json", ...init.headers },
+  });
+}
+
+async function createRoom(name: string): Promise<string> {
+  const res = await roomsReq("", { method: "POST", body: JSON.stringify({ propertyId: propId, name }) });
+  expect(res.status).toBe(201);
+  return ((await res.json()) as { room: { id: string } }).room.id;
+}
+
 async function createRental(): Promise<string> {
   const res = await req("", {
     method: "POST",
@@ -168,6 +181,110 @@ describe("Contratos de alquiler", () => {
     await db.update(subscriptions).set({ active: false }).where(eq(subscriptions.tenantId, tenantA.id));
     await invalidateModules(tenantA.id);
     expect((await req("")).status).toBe(403);
+  });
+});
+
+describe("Alquiler por habitaciones", () => {
+  it("crea habitaciones, las lista y admite varios contratos activos (uno por habitación)", async () => {
+    const room1 = await createRoom("Habitación 1");
+    const room2 = await createRoom("Habitación 2");
+
+    const list = (await (await roomsReq(`?propertyId=${propId}`)).json()) as { rooms: unknown[] };
+    expect(list.rooms).toHaveLength(2);
+
+    // dos contratos activos en el MISMO piso, por habitaciones distintas → OK
+    const c1 = await req("", {
+      method: "POST",
+      body: JSON.stringify({ propertyId: propId, roomId: room1, renterName: "Inq 1", monthlyRent: 500, startDate: "2026-01-01" }),
+    });
+    expect(c1.status).toBe(201);
+    const c2 = await req("", {
+      method: "POST",
+      body: JSON.stringify({ propertyId: propId, roomId: room2, renterName: "Inq 2", monthlyRent: 500, startDate: "2026-01-01" }),
+    });
+    expect(c2.status).toBe(201);
+
+    // misma habitación otra vez → 409 room_occupied
+    const dup = await req("", {
+      method: "POST",
+      body: JSON.stringify({ propertyId: propId, roomId: room1, renterName: "Inq 3", monthlyRent: 500, startDate: "2026-02-01" }),
+    });
+    expect(dup.status).toBe(409);
+    expect(((await dup.json()) as { error: string }).error).toBe("room_occupied");
+
+    // piso entero con habitaciones activas → 409
+    const whole = await req("", {
+      method: "POST",
+      body: JSON.stringify({ propertyId: propId, renterName: "Inq 4", monthlyRent: 1200, startDate: "2026-02-01" }),
+    });
+    expect(whole.status).toBe(409);
+  });
+
+  it("rechaza habitación de otro inmueble (400 invalid_room)", async () => {
+    const [otherProp] = await db
+      .insert(properties)
+      .values({ tenantId: tenantA.id, title: "Otro piso", status: "published" })
+      .returning();
+    const foreignRoom = await createRoom("Habitación X"); // pertenece a propId
+    const res = await req("", {
+      method: "POST",
+      body: JSON.stringify({ propertyId: otherProp!.id, roomId: foreignRoom, renterName: "Z", monthlyRent: 400, startDate: "2026-01-01" }),
+    });
+    expect(res.status).toBe(400);
+    expect(((await res.json()) as { error: string }).error).toBe("invalid_room");
+  });
+
+  it("el portal agrega el piso por habitaciones: total + desglose", async () => {
+    const room1 = await createRoom("Habitación 1");
+    const room2 = await createRoom("Habitación 2");
+    const year = new Date().getFullYear();
+    const c1 = ((await (await req("", {
+      method: "POST",
+      body: JSON.stringify({ propertyId: propId, roomId: room1, renterName: "A", monthlyRent: 500, startDate: "2026-01-01" }),
+    })).json()) as { rental: { id: string } }).rental.id;
+    await req("", {
+      method: "POST",
+      body: JSON.stringify({ propertyId: propId, roomId: room2, renterName: "B", monthlyRent: 600, startDate: "2026-01-01" }),
+    });
+    // habitación 1: enero cobrado; habitación 2: nada
+    await req(`/${c1}/payments/${year}-01`, { method: "PUT", body: JSON.stringify({ status: "paid" }) });
+
+    const { token } = (await (await app.request(`/tenant/portal/clients/${ownerId}/token`, {
+      method: "POST",
+      headers: { "x-tenant-slug": SLUGS[0]!, cookie },
+    })).json()) as { token: string };
+
+    const data = (await (await app.request(`/tenant/portal/${token}`, {
+      headers: { "x-tenant-slug": SLUGS[0]! },
+    })).json()) as {
+      properties: Array<{
+        rental: {
+          monthlyRent: number;
+          collectedThisYear: number;
+          byRoom: boolean;
+          rooms: Array<{ label: string | null; monthlyRent: number; collectedThisYear: number }>;
+        } | null;
+      }>;
+    };
+    const r = data.properties[0]!.rental!;
+    expect(r.byRoom).toBe(true);
+    expect(r.monthlyRent).toBe(1100); // 500 + 600
+    expect(r.collectedThisYear).toBe(500); // solo hab 1
+    expect(r.rooms).toHaveLength(2);
+    expect(r.rooms.map((x) => x.label)).toEqual(["Habitación 1", "Habitación 2"]);
+  });
+
+  it("no borra una habitación con contrato activo (409), sí una libre", async () => {
+    const room = await createRoom("Habitación 1");
+    await req("", {
+      method: "POST",
+      body: JSON.stringify({ propertyId: propId, roomId: room, renterName: "Inq", monthlyRent: 500, startDate: "2026-01-01" }),
+    });
+    const blocked = await roomsReq(`/${room}`, { method: "DELETE" });
+    expect(blocked.status).toBe(409);
+
+    const free = await createRoom("Habitación libre");
+    expect((await roomsReq(`/${free}`, { method: "DELETE" })).status).toBe(200);
   });
 });
 
@@ -277,11 +394,18 @@ describe("Cobros mensuales", () => {
     });
     expect(res.status).toBe(200);
     const detail = (await res.json()) as {
-      rental: { payments: Array<{ period: string; status: string }> } | null;
+      rental: {
+        byRoom: boolean;
+        rooms: Array<{ label: string | null; payments: Array<{ period: string; status: string }> }>;
+      } | null;
       monthly: Array<{ incomeCents: number }>;
     };
-    expect(detail.rental!.payments).toHaveLength(4); // registro íntegro, no solo 6 últimos
-    expect(detail.rental!.payments[0]!.period).toBe(`${year}-04`); // desc
+    // piso entero → una sola línea (label null) con el registro íntegro
+    expect(detail.rental!.byRoom).toBe(false);
+    expect(detail.rental!.rooms).toHaveLength(1);
+    expect(detail.rental!.rooms[0]!.label).toBeNull();
+    expect(detail.rental!.rooms[0]!.payments).toHaveLength(4); // registro íntegro, no solo 6 últimos
+    expect(detail.rental!.rooms[0]!.payments[0]!.period).toBe(`${year}-04`); // desc
     expect(detail.monthly).toHaveLength(12);
 
     // inmueble del tenant que NO es del dueño del token → 404
@@ -350,14 +474,18 @@ describe("Cobros mensuales", () => {
         rental: {
           monthlyRent: number;
           collectedThisYear: number;
-          months: Array<{ status: string }>;
+          byRoom: boolean;
+          rooms: Array<{ label: string | null; pendingMonths: number }>;
         } | null;
       }>;
     };
     expect(data.properties[0]!.rental).not.toBeNull();
     expect(data.properties[0]!.rental!.monthlyRent).toBe(1200);
     expect(data.properties[0]!.rental!.collectedThisYear).toBe(2400); // 2 meses cobrados
-    expect(data.properties[0]!.rental!.months).toHaveLength(3);
+    // piso entero → una línea, con 1 mes pendiente
+    expect(data.properties[0]!.rental!.byRoom).toBe(false);
+    expect(data.properties[0]!.rental!.rooms).toHaveLength(1);
+    expect(data.properties[0]!.rental!.rooms[0]!.pendingMonths).toBe(1);
     expect(JSON.stringify(data)).not.toContain("Inquilino Uno"); // privacidad
   });
 });

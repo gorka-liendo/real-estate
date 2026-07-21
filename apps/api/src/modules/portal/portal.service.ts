@@ -4,6 +4,7 @@ import {
   clients,
   invoices,
   properties,
+  propertyRooms,
   rentalPayments,
   rentals,
   tenantDb,
@@ -12,6 +13,7 @@ import {
   type Invoice,
   type InvoiceCategory,
   type Property,
+  type PropertyRoom,
   type Rental,
   type RentalPayment,
   type Visit,
@@ -42,14 +44,22 @@ export async function getOrCreatePortalToken(clientId: string): Promise<PortalTo
 
 // Lo que el propietario ve de cada inmueble suyo. Las visitas van SIN datos
 // personales del visitante (solo fecha y estado) — no son asunto del dueño.
-// Rendimiento del alquiler (si el inmueble tiene contrato activo). Cifras y
-// meses, SIN identidad del inquilino (misma política que las visitas).
-export type PortalRental = {
+// Rendimiento del alquiler (cifras agregadas del inmueble). SIN identidad del
+// inquilino (misma política que las visitas).
+// Una línea por contrato relevante: piso entero (label null) o una habitación.
+export type PortalRoomLine = {
+  label: string | null; // nombre de la habitación; null = piso entero
   monthlyRent: number;
-  since: string; // yyyy-mm-dd
-  active: boolean; // false = contrato finalizado (pero sus cobros del año siguen contando)
+  active: boolean;
   collectedThisYear: number;
-  months: Array<{ period: string; status: RentalPayment["status"]; amount: number }>;
+  pendingMonths: number; // meses pendientes de cobro (solo cuenta si activa)
+};
+export type PortalRental = {
+  monthlyRent: number; // suma de las líneas
+  active: boolean; // true si alguna línea está activa
+  byRoom: boolean; // true si el inmueble se alquila por habitaciones
+  collectedThisYear: number; // suma
+  rooms: PortalRoomLine[]; // desglose (piso entero = 1 línea con label null)
 };
 
 // Gasto visible para el propietario, con su factura descargable si la hay.
@@ -96,13 +106,13 @@ export type PortalData = {
   properties: PortalProperty[];
 };
 
-/** Entre dos contratos del mismo inmueble, ¿cuál mostrar? Preferimos el activo;
- *  a igualdad de estado, el más reciente por fecha de creación. */
-function isMoreRelevant(candidate: Rental, current: Rental): boolean {
-  const candActive = candidate.status === "active";
-  const curActive = current.status === "active";
-  if (candActive !== curActive) return candActive;
-  return candidate.createdAt.getTime() > current.createdAt.getTime();
+/** Contratos relevantes de un inmueble: los activos; si no hay ninguno, el más
+ *  reciente aunque esté finalizado (sus cobros del año siguen contando). */
+function relevantRentalsOf(all: Rental[]): Rental[] {
+  const active = all.filter((r) => r.status === "active");
+  if (active.length > 0) return active;
+  const latest = [...all].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
+  return latest ? [latest] : [];
 }
 
 export async function getPortalData(token: string): Promise<PortalData | null> {
@@ -139,14 +149,23 @@ export async function getPortalData(token: string): Promise<PortalData | null> {
     ) as Promise<Invoice[]>,
   ]);
 
-  // Contrato relevante por inmueble: el activo si existe; si no, el más reciente
-  // aunque esté finalizado (sus cobros de este año siguen siendo ingresos reales).
-  const rentalByProperty = new Map<string, Rental>();
-  for (const r of allRentals) {
-    const cur = rentalByProperty.get(r.propertyId);
-    if (!cur || isMoreRelevant(r, cur)) rentalByProperty.set(r.propertyId, r);
+  // Contratos relevantes por inmueble: TODOS los activos (piso entero o varias
+  // habitaciones); si no hay ninguno activo, el más reciente aunque esté finalizado
+  // (sus cobros de este año siguen siendo ingresos reales).
+  const relevantByProperty = new Map<string, Rental[]>();
+  for (const id of ids) {
+    const rel = relevantRentalsOf(allRentals.filter((r) => r.propertyId === id));
+    if (rel.length > 0) relevantByProperty.set(id, rel);
   }
-  const relevantRentals = [...rentalByProperty.values()];
+  const relevantRentals = [...relevantByProperty.values()].flat();
+
+  const roomIds = relevantRentals.map((r) => r.roomId).filter(Boolean) as string[];
+  const roomRows = roomIds.length
+    ? ((await tenantDb().select(propertyRooms, inArray(propertyRooms.id, roomIds))) as PropertyRoom[])
+    : [];
+  const roomName = (id: string | null): string | null =>
+    id ? (roomRows.find((x) => x.id === id)?.name ?? "Habitación") : null;
+
   const payments =
     relevantRentals.length > 0
       ? ((await tenantDb().select(
@@ -157,31 +176,38 @@ export async function getPortalData(token: string): Promise<PortalData | null> {
 
   const yearPrefix = `${new Date().getFullYear()}-`;
   const toPortalRental = (propertyId: string): PortalRental | null => {
-    const rental = rentalByProperty.get(propertyId);
-    if (!rental) return null;
-    const pays = payments.filter((p) => p.rentalId === rental.id);
+    const rs = relevantByProperty.get(propertyId);
+    if (!rs || rs.length === 0) return null;
+    const lines: PortalRoomLine[] = rs
+      .map((rental) => {
+        const pays = payments.filter((p) => p.rentalId === rental.id);
+        const active = rental.status === "active";
+        return {
+          label: roomName(rental.roomId),
+          monthlyRent: rental.monthlyRent,
+          active,
+          collectedThisYear: pays
+            .filter((p) => p.status === "paid" && p.period.startsWith(yearPrefix))
+            .reduce((acc, p) => acc + p.amount, 0),
+          pendingMonths: active ? pays.filter((p) => p.status === "pending").length : 0,
+        };
+      })
+      .sort((a, b) => (a.label ?? "").localeCompare(b.label ?? "", "es"));
     return {
-      monthlyRent: rental.monthlyRent,
-      since: rental.startDate,
-      active: rental.status === "active",
-      collectedThisYear: pays
-        .filter((p) => p.status === "paid" && p.period.startsWith(yearPrefix))
-        .reduce((acc, p) => acc + p.amount, 0),
-      months: pays
-        .sort((a, b) => b.period.localeCompare(a.period))
-        .slice(0, 6)
-        .map((p) => ({ period: p.period.slice(0, 7), status: p.status, amount: p.amount })),
+      monthlyRent: lines.reduce((a, l) => a + l.monthlyRent, 0),
+      active: lines.some((l) => l.active),
+      byRoom: rs.some((r) => r.roomId != null),
+      collectedThisYear: lines.reduce((a, l) => a + l.collectedThisYear, 0),
+      rooms: lines,
     };
   };
 
   // Serie mensual (año en curso) de un inmueble: cobros pagados vs gastos.
   const monthlyFor = (propertyId: string): PortalMonthly[] => {
-    const rental = rentalByProperty.get(propertyId);
-    const paid = rental
-      ? payments.filter(
-          (p) => p.rentalId === rental.id && p.status === "paid" && p.period.startsWith(yearPrefix),
-        )
-      : [];
+    const rentalIds = new Set((relevantByProperty.get(propertyId) ?? []).map((r) => r.id));
+    const paid = payments.filter(
+      (p) => rentalIds.has(p.rentalId) && p.status === "paid" && p.period.startsWith(yearPrefix),
+    );
     const exps = allExpenses.filter(
       (e) => e.propertyId === propertyId && e.issueDate.startsWith(yearPrefix),
     );
@@ -248,10 +274,10 @@ export async function getPortalData(token: string): Promise<PortalData | null> {
       acc.collectedThisYearCents += collected;
       acc.expensesThisYearCents += p.expensesThisYearCents;
       acc.netThisYearCents += collected - p.expensesThisYearCents;
-      // Los "meses pendientes" solo tienen sentido para contratos vigentes:
-      // un contrato finalizado ya no genera cobros por reclamar.
-      acc.pendingPayments += p.rental?.active
-        ? p.rental.months.filter((m) => m.status === "pending").length
+      // Meses pendientes: suma de todas las líneas (habitaciones) activas del
+      // inmueble. Un contrato finalizado ya no genera cobros por reclamar.
+      acc.pendingPayments += p.rental
+        ? p.rental.rooms.reduce((s, l) => s + l.pendingMonths, 0)
         : 0;
       return acc;
     },
@@ -270,6 +296,15 @@ export type PortalPaymentRow = {
   paidAt: string | null;
 };
 
+// Una habitación (o el piso entero) dentro del detalle de un inmueble.
+export type PortalRentalRoom = {
+  label: string | null; // nombre de la habitación; null = piso entero
+  monthlyRent: number;
+  status: Rental["status"];
+  collectedThisYearCents: number;
+  payments: PortalPaymentRow[]; // registro COMPLETO de esa línea, desc
+};
+
 export type PortalPropertyDetail = {
   owner: { name: string };
   property: {
@@ -283,11 +318,12 @@ export type PortalPropertyDetail = {
     interested: number;
   };
   rental: {
-    monthlyRent: number;
-    since: string;
-    status: Rental["status"];
-    collectedThisYearCents: number;
-    payments: PortalPaymentRow[]; // registro COMPLETO, desc
+    monthlyRent: number; // suma de las habitaciones
+    since: string; // inicio más antiguo
+    active: boolean;
+    byRoom: boolean;
+    collectedThisYearCents: number; // suma
+    rooms: PortalRentalRoom[]; // una línea por contrato (piso entero = 1, label null)
   } | null;
   expenses: PortalExpense[]; // todos, desc
   expensesByCategory: Array<{ category: InvoiceCategory; totalCents: number }>;
@@ -331,16 +367,21 @@ export async function getPortalPropertyDetail(
     ) as Promise<Invoice[]>,
   ]);
 
-  const rental =
-    propRentals.find((r) => r.status === "active") ??
-    propRentals.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0] ??
-    null;
-  const pays = rental
-    ? ((await tenantDb().select(
-        rentalPayments,
-        eq(rentalPayments.rentalId, rental.id),
-      )) as RentalPayment[])
+  // Contratos relevantes del inmueble (piso entero o varias habitaciones).
+  const relevant = relevantRentalsOf(propRentals);
+  const pays =
+    relevant.length > 0
+      ? ((await tenantDb().select(
+          rentalPayments,
+          inArray(rentalPayments.rentalId, relevant.map((r) => r.id)),
+        )) as RentalPayment[])
+      : [];
+  const roomIds = relevant.map((r) => r.roomId).filter(Boolean) as string[];
+  const roomRows = roomIds.length
+    ? ((await tenantDb().select(propertyRooms, inArray(propertyRooms.id, roomIds))) as PropertyRoom[])
     : [];
+  const roomName = (id: string | null): string | null =>
+    id ? (roomRows.find((x) => x.id === id)?.name ?? "Habitación") : null;
 
   const yearPrefix = `${new Date().getFullYear()}-`;
   const now = Date.now();
@@ -379,25 +420,41 @@ export async function getPortalPropertyDetail(
       photo: prop.photos[0] ?? null,
       interested: interestedClients.length,
     },
-    rental: rental
-      ? {
-          monthlyRent: rental.monthlyRent,
-          since: rental.startDate,
-          status: rental.status,
-          collectedThisYearCents:
-            pays
-              .filter((p) => p.status === "paid" && p.period.startsWith(yearPrefix))
-              .reduce((a, p) => a + p.amount, 0) * 100,
-          payments: pays
-            .sort((a, b) => b.period.localeCompare(a.period))
-            .map((p) => ({
-              period: p.period.slice(0, 7),
-              amount: p.amount,
-              status: p.status,
-              paidAt: p.paidAt ? p.paidAt.toISOString() : null,
-            })),
-        }
-      : null,
+    rental:
+      relevant.length > 0
+        ? (() => {
+            const rooms: PortalRentalRoom[] = relevant
+              .map((r) => {
+                const rp = pays.filter((p) => p.rentalId === r.id);
+                return {
+                  label: roomName(r.roomId),
+                  monthlyRent: r.monthlyRent,
+                  status: r.status,
+                  collectedThisYearCents:
+                    rp
+                      .filter((p) => p.status === "paid" && p.period.startsWith(yearPrefix))
+                      .reduce((a, p) => a + p.amount, 0) * 100,
+                  payments: rp
+                    .sort((a, b) => b.period.localeCompare(a.period))
+                    .map((p) => ({
+                      period: p.period.slice(0, 7),
+                      amount: p.amount,
+                      status: p.status,
+                      paidAt: p.paidAt ? p.paidAt.toISOString() : null,
+                    })),
+                };
+              })
+              .sort((a, b) => (a.label ?? "").localeCompare(b.label ?? "", "es"));
+            return {
+              monthlyRent: rooms.reduce((a, l) => a + l.monthlyRent, 0),
+              since: [...relevant].map((r) => r.startDate).sort()[0]!,
+              active: relevant.some((r) => r.status === "active"),
+              byRoom: relevant.some((r) => r.roomId != null),
+              collectedThisYearCents: rooms.reduce((a, l) => a + l.collectedThisYearCents, 0),
+              rooms,
+            };
+          })()
+        : null,
     expenses: exps
       .sort((a, b) => b.issueDate.localeCompare(a.issueDate))
       .map((e) => ({

@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const createRentalSchema = z.object({
   propertyId: z.uuid(),
+  roomId: z.uuid().optional(), // habitación (alquiler por habitaciones); ausente = piso entero
   renterClientId: z.uuid().optional(),
   renterName: z.string().min(1, "El nombre del inquilino es obligatorio").max(200),
   monthlyRent: z.coerce.number().int().positive().max(1_000_000),

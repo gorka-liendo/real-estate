@@ -21,6 +21,7 @@ import { invoices } from "./modules/invoices/invoices.routes.js";
 import { leads } from "./modules/leads/leads.routes.js";
 import { portal } from "./modules/portal/portal.routes.js";
 import { rentals } from "./modules/rentals/rentals.routes.js";
+import { rooms } from "./modules/rentals/rooms.routes.js";
 import { valuations } from "./modules/valuations/valuations.routes.js";
 import { visits } from "./modules/visits/visits.routes.js";
 import { properties } from "./modules/properties/properties.routes.js";
@@ -184,6 +185,7 @@ tenant.route("/site", site);
 tenant.route("/clients", clients);
 tenant.route("/properties", properties);
 tenant.route("/rentals", rentals);
+tenant.route("/rooms", rooms);
 tenant.route("/invoices", invoices);
 
 app.route("/tenant", tenant);
