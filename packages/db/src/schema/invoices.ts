@@ -1,7 +1,7 @@
 import { date, integer, pgEnum, pgTable, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 import { clients } from "./clients.js";
 import { properties } from "./properties.js";
-import { rentals } from "./rentals.js";
+import { propertyRooms, rentals } from "./rentals.js";
 import { tenants } from "./tenants.js";
 
 // Contabilidad: un documento con DIRECCIÓN — gasto que la agencia paga
@@ -58,6 +58,9 @@ export const invoices = pgTable(
     // Todas nullable a propósito: una factura puede no pertenecer a ningún
     // piso ni cliente concreto (gasto general de la agencia).
     propertyId: uuid("property_id").references(() => properties.id, { onDelete: "set null" }),
+    // Habitación concreta del inmueble (contabilidad por habitación); NULL = todo
+    // el inmueble o gasto/factura no imputado a una habitación.
+    roomId: uuid("room_id").references(() => propertyRooms.id, { onDelete: "set null" }),
     clientId: uuid("client_id").references(() => clients.id, { onDelete: "set null" }),
     rentalId: uuid("rental_id").references(() => rentals.id, { onDelete: "set null" }),
     // Proveedor en texto libre cuando el gasto no viene de un cliente del CRM
