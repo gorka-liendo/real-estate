@@ -113,6 +113,13 @@
       "when": 1784559696687,
       "tag": "0015_dry_lizard",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1784658696815,
+      "tag": "0016_careful_serpent_society",
+      "breakpoints": true
     }
   ]
 }
