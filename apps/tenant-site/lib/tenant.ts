@@ -259,6 +259,7 @@ export async function submitVisitRequest(
 export type PortalRental = {
   monthlyRent: number;
   since: string;
+  active: boolean;
   collectedThisYear: number;
   months: Array<{ period: string; status: "pending" | "paid"; amount: number }>;
 };

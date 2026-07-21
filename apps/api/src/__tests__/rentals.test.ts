@@ -295,6 +295,40 @@ describe("Cobros mensuales", () => {
     expect(cross.status).toBe(404);
   });
 
+  it("un contrato FINALIZADO sigue reflejando los cobros del año en el portal", async () => {
+    const id = await createRental();
+    const year = new Date().getFullYear();
+    await req(`/${id}/payments/${year}-01`, { method: "PUT", body: JSON.stringify({ status: "paid" }) });
+    await req(`/${id}/payments/${year}-02`, { method: "PUT", body: JSON.stringify({ status: "paid" }) });
+    await req(`/${id}/payments/${year}-03`, { method: "PUT", body: JSON.stringify({ status: "pending" }) });
+
+    // finalizar el contrato
+    const end = await req(`/${id}`, { method: "PATCH", body: JSON.stringify({ status: "ended" }) });
+    expect(end.status).toBe(200);
+
+    const tokenRes = await app.request(`/tenant/portal/clients/${ownerId}/token`, {
+      method: "POST",
+      headers: { "x-tenant-slug": SLUGS[0]!, cookie },
+    });
+    const { token } = (await tokenRes.json()) as { token: string };
+
+    const portal = await app.request(`/tenant/portal/${token}`, {
+      headers: { "x-tenant-slug": SLUGS[0]! },
+    });
+    const data = (await portal.json()) as {
+      summary: { collectedThisYearCents: number; netThisYearCents: number; pendingPayments: number };
+      properties: Array<{ rental: { active: boolean; collectedThisYear: number } | null }>;
+    };
+    // el contrato ya no está activo, pero el dinero cobrado este año NO desaparece
+    expect(data.properties[0]!.rental).not.toBeNull();
+    expect(data.properties[0]!.rental!.active).toBe(false);
+    expect(data.properties[0]!.rental!.collectedThisYear).toBe(2400); // 2 meses cobrados
+    expect(data.summary.collectedThisYearCents).toBe(240000);
+    expect(data.summary.netThisYearCents).toBe(240000); // sin gastos
+    // pero un contrato finalizado NO genera "meses pendientes" que reclamar
+    expect(data.summary.pendingPayments).toBe(0);
+  });
+
   it("el rendimiento llega al portal del propietario (sin identidad del inquilino)", async () => {
     const id = await createRental();
     const year = new Date().getFullYear();

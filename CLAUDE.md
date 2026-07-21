@@ -233,7 +233,14 @@ tenant→auth→membership→`requireModule`. UI de cliente en `apps/dashboard/a
   detección de choques (409 `slot_conflict`).
 - **owner_portal**: enlace por token capability (`/portal/[token]`, público
   server-side, `noindex`) — el dueño ve rendimiento sin cuenta; detalle por
-  inmueble con tabs + gráfico SVG.
+  inmueble con tabs + gráfico SVG. Conexión con **rentals** por
+  `properties.owner_client_id` (la identidad del inquilino NUNCA se expone).
+  El portal muestra el **contrato relevante** por inmueble: el activo, o el más
+  reciente aunque esté finalizado (`isMoreRelevant`) — sus cobros del año siguen
+  contando como ingresos reales (`PortalRental.active`); solo los "meses
+  pendientes" se limitan a contratos vigentes. Lista y detalle usan la MISMA
+  selección (antes divergían: la lista solo miraba activos → el neto del año
+  desaparecía al finalizar el contrato).
 - **rentals**: contratos + `rental_payments` + rendimiento en el portal. Página de
   gestión por contrato `/alquileres/[id]` (`GET /tenant/rentals/:id` → `getRentalDetail`):
   inquilino y propietario vinculados a sus clientes del CRM, historial de cobros mes a
