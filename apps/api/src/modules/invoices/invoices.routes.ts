@@ -39,6 +39,7 @@ invoices.get("/", async (c) => {
   const list = await service.listInvoices({
     direction: q.direction as "expense" | "income" | undefined,
     propertyId: q.propertyId,
+    roomId: q.roomId,
     clientId: q.clientId,
     status: q.status,
   });
@@ -57,6 +58,7 @@ invoices.post("/expense", async (c) => {
   const body = await c.req.parseBody();
   const parsed = createExpenseSchema.safeParse({
     propertyId: body["propertyId"] || undefined,
+    roomId: body["roomId"] || undefined,
     clientId: body["clientId"] || undefined,
     vendorName: body["vendorName"] || undefined,
     category: body["category"] || undefined,

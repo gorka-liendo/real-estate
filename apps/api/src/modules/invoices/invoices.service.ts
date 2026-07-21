@@ -4,10 +4,12 @@ import {
   invoicePayments,
   invoices,
   properties,
+  propertyRooms,
   rentals,
   tenantDb,
   type Invoice,
   type InvoicePayment,
+  type PropertyRoom,
 } from "@rep/db";
 import type {
   CreateExpenseInput,
@@ -41,6 +43,7 @@ function decorate(invoice: Invoice, payments: InvoicePayment[]): InvoiceWithPaym
 export type ListFilters = {
   direction?: "expense" | "income";
   propertyId?: string;
+  roomId?: string;
   clientId?: string;
   status?: string;
 };
@@ -49,6 +52,7 @@ export async function listInvoices(filters: ListFilters): Promise<InvoiceWithPay
   const conds = [
     filters.direction ? eq(invoices.direction, filters.direction) : null,
     filters.propertyId ? eq(invoices.propertyId, filters.propertyId) : null,
+    filters.roomId ? eq(invoices.roomId, filters.roomId) : null,
     filters.clientId ? eq(invoices.clientId, filters.clientId) : null,
     filters.status ? eq(invoices.status, filters.status as Invoice["status"]) : null,
   ].filter((c): c is NonNullable<typeof c> => c !== null);
@@ -80,22 +84,34 @@ export async function getInvoice(id: string): Promise<InvoiceWithPayments | null
   return decorate(invoice, pays);
 }
 
-// Los tres son opcionales por diseño — validamos que, SI vienen, sean del tenant.
-async function assertBelongsToTenant(
-  propertyId?: string,
-  clientId?: string,
-  rentalId?: string,
-): Promise<"invalid_property" | "invalid_client" | "invalid_rental" | null> {
-  if (propertyId) {
-    const rows = await tenantDb().select(properties, eq(properties.id, propertyId));
+// Los vínculos son opcionales por diseño — validamos que, SI vienen, sean del
+// tenant. La habitación además debe pertenecer al inmueble indicado.
+async function assertBelongsToTenant(args: {
+  propertyId?: string;
+  roomId?: string;
+  clientId?: string;
+  rentalId?: string;
+}): Promise<"invalid_property" | "invalid_room" | "invalid_client" | "invalid_rental" | null> {
+  if (args.propertyId) {
+    const rows = await tenantDb().select(properties, eq(properties.id, args.propertyId));
     if (rows.length === 0) return "invalid_property";
   }
-  if (clientId) {
-    const rows = await tenantDb().select(clients, eq(clients.id, clientId));
+  if (args.roomId) {
+    const rows = (await tenantDb().select(
+      propertyRooms,
+      eq(propertyRooms.id, args.roomId),
+    )) as PropertyRoom[];
+    // La habitación debe existir y, si hay inmueble, pertenecer a ese inmueble.
+    if (rows.length === 0 || (args.propertyId && rows[0]!.propertyId !== args.propertyId)) {
+      return "invalid_room";
+    }
+  }
+  if (args.clientId) {
+    const rows = await tenantDb().select(clients, eq(clients.id, args.clientId));
     if (rows.length === 0) return "invalid_client";
   }
-  if (rentalId) {
-    const rows = await tenantDb().select(rentals, eq(rentals.id, rentalId));
+  if (args.rentalId) {
+    const rows = await tenantDb().select(rentals, eq(rentals.id, args.rentalId));
     if (rows.length === 0) return "invalid_rental";
   }
   return null;
@@ -103,10 +119,14 @@ async function assertBelongsToTenant(
 
 export type CreateResult =
   | { ok: true; invoice: InvoiceWithPayments }
-  | { ok: false; error: "invalid_property" | "invalid_client" | "invalid_rental" };
+  | { ok: false; error: "invalid_property" | "invalid_room" | "invalid_client" | "invalid_rental" };
 
 export async function createExpense(input: CreateExpenseInput): Promise<CreateResult> {
-  const invalid = await assertBelongsToTenant(input.propertyId, input.clientId);
+  const invalid = await assertBelongsToTenant({
+    propertyId: input.propertyId,
+    roomId: input.roomId,
+    clientId: input.clientId,
+  });
   if (invalid) return { ok: false, error: invalid };
 
   const totalCents = round(input.amount * 100);
@@ -115,6 +135,7 @@ export async function createExpense(input: CreateExpenseInput): Promise<CreateRe
       direction: "expense",
       status: input.status,
       propertyId: input.propertyId ?? null,
+      roomId: input.roomId ?? null,
       clientId: input.clientId ?? null,
       vendorName: input.vendorName ?? null,
       category: input.category,
@@ -172,7 +193,12 @@ async function nextInvoiceNumber(): Promise<string> {
 }
 
 export async function createIncome(input: CreateIncomeInput): Promise<CreateResult> {
-  const invalid = await assertBelongsToTenant(input.propertyId, input.clientId, input.rentalId);
+  const invalid = await assertBelongsToTenant({
+    propertyId: input.propertyId,
+    roomId: input.roomId,
+    clientId: input.clientId,
+    rentalId: input.rentalId,
+  });
   if (invalid) return { ok: false, error: invalid };
 
   const subtotalCents = round(input.amount * 100);
@@ -185,6 +211,7 @@ export async function createIncome(input: CreateIncomeInput): Promise<CreateResu
       direction: "income",
       status: "pending",
       propertyId: input.propertyId ?? null,
+      roomId: input.roomId ?? null,
       clientId: input.clientId ?? null,
       rentalId: input.rentalId ?? null,
       category: input.category,
@@ -205,7 +232,16 @@ export async function createIncome(input: CreateIncomeInput): Promise<CreateResu
 
 export type UpdateResult =
   | { ok: true; invoice: InvoiceWithPayments }
-  | { ok: false; error: "not_found" | "has_payments" | "invalid_property" | "invalid_client" | "invalid_rental" };
+  | {
+      ok: false;
+      error:
+        | "not_found"
+        | "has_payments"
+        | "invalid_property"
+        | "invalid_room"
+        | "invalid_client"
+        | "invalid_rental";
+    };
 
 export async function updateInvoice(id: string, input: UpdateInvoiceInput): Promise<UpdateResult> {
   const current = await getInvoice(id);
@@ -218,15 +254,21 @@ export async function updateInvoice(id: string, input: UpdateInvoiceInput): Prom
     return { ok: false, error: "has_payments" };
   }
 
-  const invalid = await assertBelongsToTenant(
-    input.propertyId ?? undefined,
-    input.clientId ?? undefined,
-    input.rentalId ?? undefined,
-  );
+  // La habitación se valida contra el inmueble EFECTIVO (el nuevo si se cambia,
+  // o el actual si no se toca).
+  const effectivePropertyId =
+    (input.propertyId !== undefined ? input.propertyId : current.propertyId) ?? undefined;
+  const invalid = await assertBelongsToTenant({
+    propertyId: effectivePropertyId,
+    roomId: input.roomId ?? undefined,
+    clientId: input.clientId ?? undefined,
+    rentalId: input.rentalId ?? undefined,
+  });
   if (invalid) return { ok: false, error: invalid };
 
   const patch: Record<string, unknown> = {};
   if (input.propertyId !== undefined) patch.propertyId = input.propertyId;
+  if (input.roomId !== undefined) patch.roomId = input.roomId;
   if (input.clientId !== undefined) patch.clientId = input.clientId;
   if (input.rentalId !== undefined) patch.rentalId = input.rentalId;
   if (input.vendorName !== undefined) patch.vendorName = input.vendorName;

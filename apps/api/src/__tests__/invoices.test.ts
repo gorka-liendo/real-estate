@@ -7,6 +7,7 @@ import {
   invoices as invoicesTable,
   memberships,
   properties,
+  propertyRooms,
   subscriptions,
   tenants,
   user,
@@ -119,7 +120,62 @@ type InvoiceJson = {
   fileName: string | null;
   paidCents: number;
   propertyId: string | null;
+  roomId: string | null;
 };
+
+describe("Contabilidad por habitación", () => {
+  it("imputa gasto/factura a una habitación y filtra por ella; rechaza habitación de otro piso", async () => {
+    const [room] = await db
+      .insert(propertyRooms)
+      .values({ tenantId: tenantA.id, propertyId: propId, name: "Habitación 1" })
+      .returning();
+
+    // gasto imputado a la habitación
+    const exp = await createExpense({
+      propertyId: propId,
+      roomId: room!.id,
+      category: "water",
+      amount: "30",
+      issueDate: `${year}-01-01`,
+    });
+    expect(exp.status).toBe(201);
+    expect(((await exp.json()) as { invoice: InvoiceJson }).invoice.roomId).toBe(room!.id);
+
+    // factura emitida imputada a la habitación
+    const inc = await createIncome({
+      propertyId: propId,
+      roomId: room!.id,
+      concept: "Gestión hab 1",
+      amount: 100,
+      issueDate: `${year}-01-01`,
+    });
+    expect(inc.status).toBe(201);
+    expect(((await inc.json()) as { invoice: InvoiceJson }).invoice.roomId).toBe(room!.id);
+
+    // filtro por habitación
+    const list = (await (
+      await app.request(`/tenant/invoices?roomId=${room!.id}`, {
+        headers: { "x-tenant-slug": SLUGS[0]!, cookie },
+      })
+    ).json()) as { invoices: InvoiceJson[] };
+    expect(list.invoices).toHaveLength(2);
+
+    // habitación de OTRO inmueble → 400 invalid_room
+    const [otherProp] = await db
+      .insert(properties)
+      .values({ tenantId: tenantA.id, title: "Otro", status: "published" })
+      .returning();
+    const bad = await createExpense({
+      propertyId: otherProp!.id,
+      roomId: room!.id,
+      category: "water",
+      amount: "10",
+      issueDate: `${year}-01-01`,
+    });
+    expect(bad.status).toBe(400);
+    expect(((await bad.json()) as { error: string }).error).toBe("invalid_room");
+  });
+});
 
 describe("Gastos (expense)", () => {
   it("crea con factura PDF adjunta (céntimos correctos), sin piso queda pagado por defecto", async () => {

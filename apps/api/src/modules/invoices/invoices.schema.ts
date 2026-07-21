@@ -19,6 +19,7 @@ const CATEGORY_VALUES = [
 // registra un pago por el total) o 'pending' (factura recibida sin pagar aún).
 export const createExpenseSchema = z.object({
   propertyId: z.uuid().optional(), // opcional a propósito: gasto general de la agencia
+  roomId: z.uuid().optional(), // habitación concreta del inmueble (opcional)
   clientId: z.uuid().optional(),
   vendorName: z.string().max(200).optional(),
   category: z.enum(CATEGORY_VALUES).default("other"),
@@ -34,6 +35,7 @@ export const createExpenseSchema = z.object({
 // se sube. taxRatePercent en porcentaje (21 = 21%) → se guarda en bps.
 export const createIncomeSchema = z.object({
   propertyId: z.uuid().optional(),
+  roomId: z.uuid().optional(), // habitación concreta del inmueble (opcional)
   clientId: z.uuid().optional(), // a quién se factura — recomendado, no forzado
   rentalId: z.uuid().optional(),
   category: z.enum(CATEGORY_VALUES).default("management_fee"),
@@ -52,6 +54,7 @@ export const createIncomeSchema = z.object({
 // el estado siguen editables siempre.
 export const updateInvoiceSchema = z.object({
   propertyId: z.uuid().nullable().optional(),
+  roomId: z.uuid().nullable().optional(),
   clientId: z.uuid().nullable().optional(),
   rentalId: z.uuid().nullable().optional(),
   vendorName: z.string().max(200).nullable().optional(),
