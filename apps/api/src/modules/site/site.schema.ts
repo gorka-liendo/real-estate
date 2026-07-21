@@ -24,6 +24,7 @@ const mediaUrl = z
 const sectionBase = {
   id: z.string().min(1).max(64),
   enabled: z.boolean(),
+  navLabel: z.string().max(40).optional(),
 };
 const heroSection = z.object({
   ...sectionBase,

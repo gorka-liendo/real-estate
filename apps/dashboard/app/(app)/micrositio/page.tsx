@@ -16,6 +16,7 @@ import {
 import { TENANT_SITE_URL } from "@/lib/config";
 import {
   deriveEditorSections,
+  effectiveNavLabel,
   newSection,
   SECTION_META_BY_TYPE,
   SECTION_TYPE_METAS,
@@ -300,6 +301,8 @@ function SectionCard({
   onRemove: (id: string) => void;
 }) {
   const meta = SECTION_META_BY_TYPE[section.type];
+  const navShown = effectiveNavLabel(section, meta) !== "";
+  const navLabelValue = section.navLabel ?? meta.defaultNavLabel ?? "";
 
   return (
     <Card>
@@ -349,6 +352,46 @@ function SectionCard({
               </Button>
             </div>
           </div>
+
+          {meta.navigable ? (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "var(--ui-sp-3)",
+                flexWrap: "wrap",
+                marginTop: "var(--ui-sp-3)",
+                paddingTop: "var(--ui-sp-3)",
+                borderTop: "1px solid var(--ui-border)",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "var(--ui-sp-2)" }}>
+                <Switch
+                  checked={navShown}
+                  onChange={(on) =>
+                    onPatch(
+                      section.id,
+                      "navLabel",
+                      on ? navLabelValue || meta.defaultNavLabel || meta.label : "",
+                    )
+                  }
+                  label="Mostrar en el menú de navegación"
+                />
+                <span className="du-muted" style={{ fontSize: 13 }}>
+                  Mostrar en el menú
+                </span>
+              </div>
+              {navShown ? (
+                <Input
+                  value={navLabelValue}
+                  onChange={(e) => onPatch(section.id, "navLabel", e.target.value)}
+                  placeholder={meta.defaultNavLabel || meta.label}
+                  aria-label="Etiqueta en el menú"
+                  style={{ maxWidth: 220 }}
+                />
+              ) : null}
+            </div>
+          ) : null}
 
           <div
             style={{

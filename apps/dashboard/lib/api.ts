@@ -83,7 +83,7 @@ export type SocialLink = { label: string; url: string };
 // Motor de secciones — espejo de `SiteSection` de @rep/db (el dashboard no
 // importa @rep/db: consume la API). Ver lib/microsite-sections.ts para los
 // metadatos de edición (etiquetas, campos) de cada tipo.
-export type SiteSectionBase = { id: string; enabled: boolean };
+export type SiteSectionBase = { id: string; enabled: boolean; navLabel?: string };
 export type HeroSection = SiteSectionBase & {
   type: "hero";
   template?: "editorial" | "minimal" | "bold";

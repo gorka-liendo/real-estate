@@ -44,8 +44,24 @@ export type SectionTypeMeta = {
   description: string;
   /** Requiere este módulo contratado para poder añadirse. */
   moduleGate?: string;
+  /** La sección puede aparecer en el navbar (tiene ancla). Hero no. */
+  navigable?: boolean;
+  /** Etiqueta de nav por defecto (sync con el registro de tenant-site). */
+  defaultNavLabel?: string;
   fields: SectionField[];
 };
+
+/** Etiqueta efectiva de una sección en el navbar (mismo criterio que el
+ *  tenant-site): navLabel si está definido (incluido "" = ocultar), o el default
+ *  del tipo si es undefined. Vacío = no aparece. */
+export function effectiveNavLabel(
+  section: { type: SiteSectionType; navLabel?: string },
+  meta: SectionTypeMeta,
+): string {
+  if (!meta.navigable) return "";
+  const label = section.navLabel !== undefined ? section.navLabel : (meta.defaultNavLabel ?? "");
+  return label.trim();
+}
 
 export const SECTION_TYPE_METAS: SectionTypeMeta[] = [
   {
@@ -91,6 +107,8 @@ export const SECTION_TYPE_METAS: SectionTypeMeta[] = [
     type: "properties",
     label: "Propiedades",
     description: "La rejilla con tus inmuebles publicados, en tiempo real.",
+    navigable: true,
+    defaultNavLabel: "Propiedades",
     fields: [
       { key: "eyebrow", label: "Antetítulo", type: "text", placeholder: "En venta y alquiler" },
       { key: "title", label: "Título", type: "text", placeholder: "Propiedades" },
@@ -101,6 +119,8 @@ export const SECTION_TYPE_METAS: SectionTypeMeta[] = [
     label: "Valoración",
     description: "Widget «Valora tu piso gratis» que capta propietarios como leads.",
     moduleGate: "valuation",
+    navigable: true,
+    defaultNavLabel: "Valora tu piso",
     fields: [
       { key: "eyebrow", label: "Antetítulo", type: "text", placeholder: "¿Vendes tu piso?" },
       { key: "title", label: "Título", type: "text", placeholder: "Valora tu piso gratis." },
@@ -116,6 +136,7 @@ export const SECTION_TYPE_METAS: SectionTypeMeta[] = [
     type: "stats",
     label: "Cifras",
     description: "Cifras clave que transmiten confianza (años, ventas, valoración…).",
+    navigable: true,
     fields: [
       { key: "eyebrow", label: "Antetítulo", type: "text", placeholder: "Por qué elegirnos" },
       { key: "title", label: "Título", type: "text", placeholder: "En cifras" },
@@ -136,6 +157,7 @@ export const SECTION_TYPE_METAS: SectionTypeMeta[] = [
     type: "testimonials",
     label: "Opiniones",
     description: "Testimonios de clientes: prueba social que ayuda a convertir.",
+    navigable: true,
     fields: [
       { key: "eyebrow", label: "Antetítulo", type: "text", placeholder: "Lo que dicen de nosotros" },
       { key: "title", label: "Título", type: "text", placeholder: "Opiniones de clientes" },
@@ -162,6 +184,7 @@ export const SECTION_TYPE_METAS: SectionTypeMeta[] = [
     type: "faq",
     label: "Preguntas frecuentes",
     description: "Resuelve dudas comunes y reduce fricción antes de que te escriban.",
+    navigable: true,
     fields: [
       { key: "eyebrow", label: "Antetítulo", type: "text", placeholder: "¿Dudas?" },
       { key: "title", label: "Título", type: "text", placeholder: "Preguntas frecuentes" },

@@ -35,9 +35,12 @@ export type SectionContext = {
 type SectionDef<T extends SiteSection = SiteSection> = {
   /** Módulo requerido (además de `enabled`) para que la sección sea visible. */
   moduleGate?: string;
-  /** Ancla + etiqueta de nav; si falta, la sección no aparece en el menú. */
+  /** Ancla del deep-link. Sin ancla, la sección no puede ir al navbar. */
   anchor?: string;
-  navLabel?: string;
+  /** Etiqueta de nav POR DEFECTO cuando la sección no define `navLabel`
+   *  (retrocompat: properties/valuation salen; el resto no). El cliente lo
+   *  controla por sección con `section.navLabel`. */
+  defaultNavLabel?: string;
   Body: ComponentType<{ section: T; ctx: SectionContext }>;
 };
 
@@ -257,19 +260,20 @@ function FaqBody({
 
 // Registro tipado: la clave es el `type` de la sección. eslint no infiere la
 // covarianza del ComponentType con Extract, de ahí el cast controlado.
-// `navLabel` presente = la sección aparece en la nav (las cintas de contenido
-// como Cifras llevan ancla para deep-links pero NO saturan el menú).
+// `anchor` = deep-link; `defaultNavLabel` = etiqueta de nav por defecto cuando la
+// sección no define `navLabel` (properties/valuation salen por defecto; el resto
+// no, hasta que el cliente les ponga etiqueta desde el editor).
 export const SECTION_REGISTRY: Record<SiteSectionType, SectionDef> = {
   hero: { Body: HeroBody as SectionDef["Body"] },
   properties: {
     anchor: "propiedades",
-    navLabel: "Propiedades",
+    defaultNavLabel: "Propiedades",
     Body: PropertiesBody as SectionDef["Body"],
   },
   valuation: {
     moduleGate: "valuation",
     anchor: "valoracion",
-    navLabel: "Valora tu piso",
+    defaultNavLabel: "Valora tu piso",
     Body: ValuationBody as SectionDef["Body"],
   },
   stats: {
@@ -322,13 +326,20 @@ export function visibleSections(
   });
 }
 
-/** Ítems de nav derivados de las secciones visibles con ancla Y etiqueta de
- *  nav (las cintas de contenido sin `navLabel` no entran en el menú). */
+/** Etiqueta efectiva de una sección en el navbar: su `navLabel` si está
+ *  definido (incluido "" = ocultar), o el default del tipo si es `undefined`. */
+export function effectiveNavLabel(section: SiteSection): string {
+  const def = SECTION_REGISTRY[section.type];
+  const label = section.navLabel !== undefined ? section.navLabel : (def.defaultNavLabel ?? "");
+  return def.anchor ? label.trim() : "";
+}
+
+/** Ítems del navbar: cada sección visible con etiqueta efectiva no vacía, en el
+ *  orden de las secciones. El cliente lo controla por sección (`navLabel`). */
 export function sectionNavItems(sections: SiteSection[]): { label: string; href: string }[] {
   return sections.flatMap((s) => {
-    const def = SECTION_REGISTRY[s.type];
-    return def.anchor && def.navLabel
-      ? [{ label: def.navLabel, href: `#${def.anchor}` }]
-      : [];
+    const label = effectiveNavLabel(s);
+    const anchor = SECTION_REGISTRY[s.type].anchor;
+    return label && anchor ? [{ label, href: `#${anchor}` }] : [];
   });
 }

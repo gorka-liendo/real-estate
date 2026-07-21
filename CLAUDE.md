@@ -261,8 +261,12 @@ tenant→auth→membership→`requireModule`. UI de cliente en `apps/dashboard/a
   con opciones editables en `site_config`: `headerStyle` ("floating" pastilla
   glass fixed / "solid" barra sólida clásica `rt-topbar--solid`), `headerBrand`
   ("logo"/"text", `TopbarBrand`), `logoScale` (×1–×2, vía `--rt-logo-scale` en
-  `.rt-root`). Animaciones sutiles (`RevealObserver` scroll + Ken Burns),
-  respetan `prefers-reduced-motion`.
+  `.rt-root`). **Navbar dinámico**: cada sección con ancla define si sale en el
+  menú vía `section.navLabel` (control "Mostrar en el menú" + etiqueta por sección
+  en el editor). `navLabel` undefined → default del tipo (properties/valuation
+  salen, resto no); `""` = oculto; texto = etiqueta custom. `effectiveNavLabel` +
+  `sectionNavItems` en sections.tsx. Animaciones sutiles (`RevealObserver` scroll +
+  Ken Burns), respetan `prefers-reduced-motion`.
 - Captación: leads/valoración/visitas públicos con honeypot + throttle en memoria
   (`leads/public-intake.ts`). CORS: rutas públicas del micrositio reflejan cualquier
   origen (dominios de tenant dinámicos); el resto, `TRUSTED_ORIGINS`.

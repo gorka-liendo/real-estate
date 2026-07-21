@@ -51,6 +51,10 @@ export type SocialLink = { label: string; url: string };
 export type SiteSectionBase = {
   id: string; // estable (React key, reordenado, edición); único dentro del array
   enabled: boolean;
+  // Etiqueta en el navbar. Si tiene texto, la sección aparece en el menú
+  // (enlazando a su ancla). Vacío/ausente = no aparece. `undefined` cae al
+  // default del tipo (properties/valuation salen por defecto; el resto no).
+  navLabel?: string;
 };
 export type HeroSection = SiteSectionBase & {
   type: "hero";

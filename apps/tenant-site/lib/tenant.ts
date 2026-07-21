@@ -6,7 +6,7 @@ export type SocialLink = { label: string; url: string };
 // Motor de secciones — espejo de `SiteSection` de @rep/db (el tenant-site no
 // importa @rep/db: consume la API, así que replica la forma como ya hace con
 // SiteConfig). Añadir un tipo aquí + su entrada en el registro de `sections.tsx`.
-export type SiteSectionBase = { id: string; enabled: boolean };
+export type SiteSectionBase = { id: string; enabled: boolean; navLabel?: string };
 export type HeroSection = SiteSectionBase & {
   type: "hero";
   template?: "editorial" | "minimal" | "bold";
