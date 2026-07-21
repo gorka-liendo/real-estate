@@ -249,12 +249,16 @@ tenant→auth→membership→`requireModule`. UI de cliente en `apps/dashboard/a
   `brand_config.theme`. Registro `THEMES` en `@rep/ui` (mantener sync).
 - **Motor de secciones**: el cuerpo del micrositio es `site_config.sections[]`
   (ordenable/activable, dentro del jsonb → sin migración). `SiteSection` = unión
-  discriminada (hero/properties/valuation/stats/testimonials/faq). Registro en
-  `app/s/[tenant]/sections.tsx` (**añadir sección = 1 entrada + 1 Body**);
+  discriminada (hero/properties/valuation/stats/testimonials/faq/**split** =
+  imagen+texto). Registro en `app/s/[tenant]/sections.tsx` (**añadir sección = 1
+  entrada + 1 Body**); cada Body recibe `index` para alternar layout/fondo.
   `resolveSections` retrocompatible (deriva de campos planos). Editor = gestor de
   secciones (`apps/dashboard/lib/microsite-sections.ts`, campos data-driven:
   text/textarea/select/list/media). Dos puertas: contenido (`enabled`) vs producto
   (`moduleGate`). Footer/contacto = "chrome" (campos planos, fuera del motor).
+  **Variedad visual automática**: `page.tsx` envuelve cada sección en `.rt-band`
+  con fondo alterno por posición (`.rt-band--alt`); la sección `split` alterna el
+  lado de la imagen (izq/der) según `index`. Cero config para el cliente.
 - Hero: plantillas editorial/minimal/bold + media de fondo self-serve
   (`backgroundImageUrl`/`backgroundVideoUrl` → hero "cover" `100svh`, vídeo manda).
   Header (`rt-topbar`, layout grid 3 zonas: logo · nav centrado · CTA a #contacto)

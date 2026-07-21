@@ -211,6 +211,29 @@ export const SECTION_TYPE_METAS: SectionTypeMeta[] = [
       },
     ],
   },
+  {
+    type: "split",
+    label: "Imagen + texto",
+    description: "Una foto junto a un bloque de texto. El lado se alterna solo entre secciones.",
+    navigable: true,
+    fields: [
+      { key: "eyebrow", label: "Antetítulo", type: "text", placeholder: "Quiénes somos" },
+      { key: "title", label: "Título", type: "text", placeholder: "Inmobiliaria de barrio, trato de barrio" },
+      {
+        key: "body",
+        label: "Texto",
+        type: "textarea",
+        placeholder: "Un par de párrafos contando vuestra historia, el equipo o cómo trabajáis.",
+      },
+      {
+        key: "imageUrl",
+        label: "Imagen",
+        type: "media",
+        accept: "image",
+        hint: "La foto que acompaña al texto. JPG/PNG/WebP, máx. 10 MB.",
+      },
+    ],
+  },
 ];
 
 export const SECTION_META_BY_TYPE: Record<SiteSectionType, SectionTypeMeta> =

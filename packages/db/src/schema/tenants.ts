@@ -99,13 +99,23 @@ export type FaqSection = SiteSectionBase & {
   title?: string;
   items?: FaqItem[];
 };
+// Imagen + texto en dos columnas. El LADO de la imagen se alterna solo según la
+// posición de la sección (automático). Layout editorial que rompe la planitud.
+export type SplitSection = SiteSectionBase & {
+  type: "split";
+  eyebrow?: string;
+  title?: string;
+  body?: string;
+  imageUrl?: string;
+};
 export type SiteSection =
   | HeroSection
   | PropertiesSection
   | ValuationSection
   | StatsSection
   | TestimonialsSection
-  | FaqSection;
+  | FaqSection
+  | SplitSection;
 export type SiteSectionType = SiteSection["type"];
 
 export type SiteConfig = {

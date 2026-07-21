@@ -117,13 +117,20 @@ export default async function Microsite({ params }: Params) {
       {sections[0]
         ? (() => {
             const { Body } = SECTION_REGISTRY[sections[0].type];
-            return <Body key={sections[0].id} section={sections[0]} ctx={ctx} />;
+            return <Body key={sections[0].id} section={sections[0]} ctx={ctx} index={0} />;
           })()
         : null}
       <RevealList>
-        {sections.slice(1).map((section) => {
+        {sections.slice(1).map((section, i) => {
           const { Body } = SECTION_REGISTRY[section.type];
-          return <Body key={section.id} section={section} ctx={ctx} />;
+          const index = i + 1; // absoluto (el hero es 0)
+          // fondo alterno por posición → ritmo vertical, menos plano.
+          const alt = index % 2 === 1;
+          return (
+            <div key={section.id} className={alt ? "rt-band rt-band--alt" : "rt-band"}>
+              <Body section={section} ctx={ctx} index={index} />
+            </div>
+          );
         })}
       </RevealList>
 

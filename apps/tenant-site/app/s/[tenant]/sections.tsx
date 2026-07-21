@@ -41,7 +41,8 @@ type SectionDef<T extends SiteSection = SiteSection> = {
    *  (retrocompat: properties/valuation salen; el resto no). El cliente lo
    *  controla por sección con `section.navLabel`. */
   defaultNavLabel?: string;
-  Body: ComponentType<{ section: T; ctx: SectionContext }>;
+  /** `index` = posición de la sección (para alternar lado/fondo automáticamente). */
+  Body: ComponentType<{ section: T; ctx: SectionContext; index: number }>;
 };
 
 // --- Hero -------------------------------------------------------------------
@@ -258,6 +259,38 @@ function FaqBody({
   );
 }
 
+// --- Imagen + texto (lado alternado automáticamente por `index`) -----------
+function SplitBody({
+  section,
+  index,
+}: {
+  section: Extract<SiteSection, { type: "split" }>;
+  ctx: SectionContext;
+  index: number;
+}) {
+  const hasContent = section.title || section.body || section.imageUrl;
+  if (!hasContent) return null;
+  // impar = imagen a la derecha (texto empieza a la izquierda) y viceversa →
+  // alternancia visual automática al apilar varias.
+  const imageRight = index % 2 === 1;
+  return (
+    <section id="nosotros" className={`rt-section rt-split${imageRight ? " rt-split--right" : ""}`}>
+      <div className="rt-wrap rt-split__grid">
+        <div className="rt-split__text">
+          {section.eyebrow ? <div className="rt-eyebrow">{section.eyebrow}</div> : null}
+          {section.title ? <h2 className="rt-section-title">{section.title}</h2> : null}
+          {section.body ? <p className="rt-split__body">{section.body}</p> : null}
+        </div>
+        {section.imageUrl ? (
+          <div className="rt-split__media">
+            <img src={section.imageUrl} alt={section.title ?? ""} decoding="async" loading="lazy" />
+          </div>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
 // Registro tipado: la clave es el `type` de la sección. eslint no infiere la
 // covarianza del ComponentType con Extract, de ahí el cast controlado.
 // `anchor` = deep-link; `defaultNavLabel` = etiqueta de nav por defecto cuando la
@@ -287,6 +320,10 @@ export const SECTION_REGISTRY: Record<SiteSectionType, SectionDef> = {
   faq: {
     anchor: "faq",
     Body: FaqBody as SectionDef["Body"],
+  },
+  split: {
+    anchor: "nosotros",
+    Body: SplitBody as SectionDef["Body"],
   },
 };
 

@@ -85,6 +85,14 @@ const faqSection = z.object({
     .max(20)
     .optional(),
 });
+const splitSection = z.object({
+  ...sectionBase,
+  type: z.literal("split"),
+  eyebrow: z.string().max(80).optional(),
+  title: z.string().max(120).optional(),
+  body: z.string().max(1200).optional(),
+  imageUrl: mediaUrl.optional(),
+});
 const siteSection = z.discriminatedUnion("type", [
   heroSection,
   propertiesSection,
@@ -92,6 +100,7 @@ const siteSection = z.discriminatedUnion("type", [
   statsSection,
   testimonialsSection,
   faqSection,
+  splitSection,
 ]);
 
 // Contenido del micrositio (site_config). Todo opcional: el editor manda el objeto
