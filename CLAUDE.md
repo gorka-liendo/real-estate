@@ -265,8 +265,10 @@ tenant→auth→membership→`requireModule`. UI de cliente en `apps/dashboard/a
   menú vía `section.navLabel` (control "Mostrar en el menú" + etiqueta por sección
   en el editor). `navLabel` undefined → default del tipo (properties/valuation
   salen, resto no); `""` = oculto; texto = etiqueta custom. `effectiveNavLabel` +
-  `sectionNavItems` en sections.tsx. Animaciones sutiles (`RevealObserver` scroll +
-  Ken Burns), respetan `prefers-reduced-motion`.
+  `sectionNavItems` en sections.tsx. Animaciones sutiles: **Motion** (Framer
+  Motion) con `LazyMotion`+`domAnimation` (bundle mínimo) → `RevealList` anima el
+  fade-up de cada sección al entrar en viewport (una vez); Ken Burns del hero por
+  CSS. Todo respeta `prefers-reduced-motion` (`useReducedMotion` → sin animar).
 - Captación: leads/valoración/visitas públicos con honeypot + throttle en memoria
   (`leads/public-intake.ts`). CORS: rutas públicas del micrositio reflejan cualquier
   origen (dominios de tenant dinámicos); el resto, `TRUSTED_ORIGINS`.

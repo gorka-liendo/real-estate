@@ -1434,24 +1434,9 @@
   letter-spacing: 0.03em;
 }
 
-/* ===== animaciones sutiles (premium) ===== */
-/* Aparición al hacer scroll. El estado inicial oculto SOLO se activa cuando el
-   RevealObserver (cliente) marca `data-reveal-on` en la raíz → progressive
-   enhancement: sin JS todo queda visible. */
-[data-reveal-on] .rt-section,
-[data-reveal-on] .rt-hero {
-  opacity: 0;
-  transform: translateY(18px);
-  transition:
-    opacity 0.7s cubic-bezier(0.2, 0.6, 0.2, 1),
-    transform 0.7s cubic-bezier(0.2, 0.6, 0.2, 1);
-  will-change: opacity, transform;
-}
-[data-reveal-on] .rt-section.is-visible,
-[data-reveal-on] .rt-hero.is-visible {
-  opacity: 1;
-  transform: none;
-}
+/* ===== animaciones sutiles (premium) =====
+   La aparición al hacer scroll de cada sección la gestiona Motion (RevealList,
+   en el tenant-site). Aquí solo queda el Ken Burns del hero. */
 
 /* Ken Burns: zoom lento del fondo del hero cover (solo si el media es imagen;
    el vídeo ya tiene movimiento propio). Detalle "caro" sin marear. */
@@ -1470,14 +1455,7 @@
   }
 }
 
-/* Respeto total a quien pide menos movimiento: nada de reveal ni zoom. */
 @media (prefers-reduced-motion: reduce) {
-  [data-reveal-on] .rt-section,
-  [data-reveal-on] .rt-hero {
-    opacity: 1 !important;
-    transform: none !important;
-    transition: none;
-  }
   .rt-hero--cover .rt-hero__bg {
     animation: none;
   }

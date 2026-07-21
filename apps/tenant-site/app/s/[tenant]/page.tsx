@@ -16,7 +16,7 @@ import {
   visibleSections,
   type SectionContext,
 } from "./sections";
-import { RevealObserver } from "./RevealObserver";
+import { RevealList } from "./RevealList";
 import { SiteFooter } from "./SiteFooter";
 import { TopbarBrand } from "./TopbarBrand";
 
@@ -111,14 +111,14 @@ export default async function Microsite({ params }: Params) {
         </div>
       </header>
 
-      {/* animaciones de aparición al hacer scroll (progressive enhancement) */}
-      <RevealObserver />
-
-      {/* cuerpo del micrositio: secciones ordenadas y activables (motor). */}
-      {sections.map((section) => {
-        const { Body } = SECTION_REGISTRY[section.type];
-        return <Body key={section.id} section={section} ctx={ctx} />;
-      })}
+      {/* cuerpo del micrositio: secciones ordenadas y activables (motor).
+          RevealList anima la aparición sutil de cada sección al hacer scroll. */}
+      <RevealList>
+        {sections.map((section) => {
+          const { Body } = SECTION_REGISTRY[section.type];
+          return <Body key={section.id} section={section} ctx={ctx} />;
+        })}
+      </RevealList>
 
       {/* footer personalizado de la inmobiliaria (compartido con la ficha) */}
       <SiteFooter tenant={tenant} />
