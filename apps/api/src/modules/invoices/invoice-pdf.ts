@@ -15,6 +15,9 @@ const STATUS_LABELS: Record<string, string> = {
 export type InvoicePdfContext = {
   clientName?: string;
   clientEmail?: string;
+  clientCompany?: string;
+  clientTaxId?: string;
+  clientAddress?: string;
   propertyTitle?: string;
 };
 
@@ -49,11 +52,16 @@ export function renderInvoicePdf(
 
     if (ctx.clientName || ctx.propertyTitle) {
       doc.moveDown(1);
-      doc.fontSize(12).text("Datos", { underline: true });
+      doc.fontSize(12).text("Facturar a", { underline: true });
       doc.fontSize(10);
-      if (ctx.clientName) doc.text(`Cliente: ${ctx.clientName}`);
-      if (ctx.clientEmail) doc.text(`Email: ${ctx.clientEmail}`);
-      if (ctx.propertyTitle) doc.text(`Inmueble: ${ctx.propertyTitle}`);
+      if (ctx.clientName) doc.text(ctx.clientName);
+      if (ctx.clientCompany) doc.text(ctx.clientCompany);
+      if (ctx.clientTaxId) doc.text(`NIF/CIF: ${ctx.clientTaxId}`);
+      if (ctx.clientAddress) doc.text(ctx.clientAddress);
+      if (ctx.clientEmail) doc.text(ctx.clientEmail);
+      if (ctx.propertyTitle) {
+        doc.moveDown(0.3).fillColor("#555").text(`Inmueble: ${ctx.propertyTitle}`).fillColor("#000");
+      }
     }
 
     doc.moveDown(1.5);

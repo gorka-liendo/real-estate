@@ -328,18 +328,31 @@ export async function addPayment(
   return { ok: true, invoice: updated! };
 }
 
-export async function getInvoicePdfContext(
-  invoice: Invoice,
-): Promise<{ clientName?: string; clientEmail?: string; propertyTitle?: string }> {
-  const ctx: { clientName?: string; clientEmail?: string; propertyTitle?: string } = {};
+export type InvoicePdfCtx = {
+  clientName?: string;
+  clientEmail?: string;
+  clientCompany?: string;
+  clientTaxId?: string;
+  clientAddress?: string;
+  propertyTitle?: string;
+};
+
+export async function getInvoicePdfContext(invoice: Invoice): Promise<InvoicePdfCtx> {
+  const ctx: InvoicePdfCtx = {};
   if (invoice.clientId) {
     const rows = (await tenantDb().select(clients, eq(clients.id, invoice.clientId))) as Array<{
       name: string;
       email: string | null;
+      company: string | null;
+      taxId: string | null;
+      address: string | null;
     }>;
     if (rows[0]) {
       ctx.clientName = rows[0].name;
       ctx.clientEmail = rows[0].email ?? undefined;
+      ctx.clientCompany = rows[0].company ?? undefined;
+      ctx.clientTaxId = rows[0].taxId ?? undefined;
+      ctx.clientAddress = rows[0].address ?? undefined;
     }
   }
   if (invoice.propertyId) {
