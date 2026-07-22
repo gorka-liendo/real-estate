@@ -62,3 +62,41 @@ brand.delete("/logo", requireRole("owner"), async (c) => {
     .returning();
   return c.json({ brandConfig: row!.brandConfig });
 });
+
+// Favicon (icono de la pestaña del navegador en el micrositio). Admite además
+// .ico. Si no hay favicon, el micrositio usa el icono por defecto.
+const FAVICON_ALLOWED = new Set([...ALLOWED, "image/x-icon", "image/vnd.microsoft.icon"]);
+const FAVICON_EXT: Record<string, string> = {
+  ...EXT,
+  "image/x-icon": "ico",
+  "image/vnd.microsoft.icon": "ico",
+};
+
+brand.post("/favicon", requireRole("owner"), async (c) => {
+  const body = await c.req.parseBody();
+  const file = body["file"];
+  if (!(file instanceof File)) return c.json({ error: "no_file" }, 400);
+  if (!FAVICON_ALLOWED.has(file.type)) return c.json({ error: "invalid_type" }, 400);
+  if (file.size > 1024 * 1024) return c.json({ error: "too_large" }, 400);
+
+  const tenant = c.get("tenant");
+  const key = tenantKey(tenant.id, "brand", `favicon-${randomUUID()}.${FAVICON_EXT[file.type]}`);
+  const { url } = await getStorage().put(key, Buffer.from(await file.arrayBuffer()), file.type);
+  const [row] = await db
+    .update(tenants)
+    .set({ brandConfig: { ...tenant.brandConfig, faviconUrl: url } })
+    .where(eq(tenants.id, tenant.id))
+    .returning();
+  return c.json({ brandConfig: row!.brandConfig });
+});
+
+brand.delete("/favicon", requireRole("owner"), async (c) => {
+  const tenant = c.get("tenant");
+  const { faviconUrl: _drop, ...rest } = tenant.brandConfig;
+  const [row] = await db
+    .update(tenants)
+    .set({ brandConfig: rest })
+    .where(eq(tenants.id, tenant.id))
+    .returning();
+  return c.json({ brandConfig: row!.brandConfig });
+});

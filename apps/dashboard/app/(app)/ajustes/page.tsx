@@ -10,8 +10,10 @@ function LogoManager({ slug, name }: { slug: string; name: string }) {
   const { brandConfig: wsBrand, setBrandConfig } = useWorkspace();
   const [brand, setBrand] = useState<BrandConfig | null>(wsBrand);
   const [busy, setBusy] = useState(false);
+  const [faviconBusy, setFaviconBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const faviconRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
     try {
@@ -45,6 +47,26 @@ function LogoManager({ slug, name }: { slug: string; name: string }) {
     const { brandConfig } = await api.brand.removeLogo(slug);
     setBrand(brandConfig);
     setBrandConfig(brandConfig);
+  }
+
+  async function onFavicon(file: File | null) {
+    if (!file) return;
+    setFaviconBusy(true);
+    setError(null);
+    try {
+      const { brandConfig } = await api.brand.uploadFavicon(slug, file);
+      setBrand(brandConfig);
+    } catch {
+      setError("No se pudo subir el favicon (png, svg, webp o ico, máx 1 MB).");
+    } finally {
+      setFaviconBusy(false);
+      if (faviconRef.current) faviconRef.current.value = "";
+    }
+  }
+
+  async function removeFavicon() {
+    const { brandConfig } = await api.brand.removeFavicon(slug);
+    setBrand(brandConfig);
   }
 
   if (brand === null) return <p className="du-muted">Cargando…</p>;
@@ -112,6 +134,62 @@ function LogoManager({ slug, name }: { slug: string; name: string }) {
           accept="image/jpeg,image/png,image/webp,image/svg+xml"
           hidden
           onChange={(e) => void onFile(e.target.files?.[0] ?? null)}
+        />
+      </Card>
+
+      <Card>
+        <h2 className="du-h3" style={{ marginBottom: "var(--ui-sp-4)" }}>
+          Favicon
+        </h2>
+        <div style={{ display: "flex", alignItems: "center", gap: "var(--ui-sp-4)" }}>
+          <div
+            style={{
+              width: 48,
+              height: 48,
+              borderRadius: "var(--ui-radius-sm)",
+              border: "1px solid var(--ui-border)",
+              background: "var(--ui-hover)",
+              display: "grid",
+              placeItems: "center",
+              overflow: "hidden",
+            }}
+          >
+            {brand.faviconUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={brand.faviconUrl}
+                alt="Favicon"
+                style={{ width: "100%", height: "100%", objectFit: "contain" }}
+              />
+            ) : (
+              <span className="du-muted" style={{ fontSize: 11 }}>
+                —
+              </span>
+            )}
+          </div>
+          <div style={{ display: "flex", gap: "var(--ui-sp-2)" }}>
+            <Button variant="outline" size="sm" onClick={() => faviconRef.current?.click()} disabled={faviconBusy}>
+              <ImagePlus size={15} />
+              {faviconBusy ? "Subiendo…" : brand.faviconUrl ? "Cambiar favicon" : "Subir favicon"}
+            </Button>
+            {brand.faviconUrl ? (
+              <Button variant="ghost" size="sm" onClick={() => void removeFavicon()}>
+                <Trash2 size={15} />
+                Quitar
+              </Button>
+            ) : null}
+          </div>
+        </div>
+        <p className="du-muted" style={{ fontSize: 12, marginTop: "var(--ui-sp-3)" }}>
+          El icono de la pestaña del navegador en tu micrositio. Mejor una imagen
+          cuadrada (png, svg, webp o ico). Si no pones ninguno, se usa el icono por defecto.
+        </p>
+        <input
+          ref={faviconRef}
+          type="file"
+          accept="image/png,image/webp,image/svg+xml,image/x-icon,.ico"
+          hidden
+          onChange={(e) => void onFavicon(e.target.files?.[0] ?? null)}
         />
       </Card>
 

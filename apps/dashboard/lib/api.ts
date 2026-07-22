@@ -555,6 +555,26 @@ export const api = {
         method: "DELETE",
         headers: { "x-tenant-slug": slug },
       }),
+    uploadFavicon: async (slug: string, file: File) => {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch(`${API_URL}/tenant/brand/favicon`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "x-tenant-slug": slug },
+        body: fd,
+      });
+      if (!res.ok) {
+        const b = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new ApiError(res.status, b.error ?? `HTTP ${res.status}`);
+      }
+      return (await res.json()) as { brandConfig: BrandConfig };
+    },
+    removeFavicon: (slug: string) =>
+      request<{ brandConfig: BrandConfig }>("/tenant/brand/favicon", {
+        method: "DELETE",
+        headers: { "x-tenant-slug": slug },
+      }),
   },
 
   // --- editor del micrositio (site_config) ---
