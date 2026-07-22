@@ -44,6 +44,13 @@ export type Client = {
   name: string;
   email: string | null;
   phone: string | null;
+  secondaryPhone: string | null;
+  language: string | null;
+  birthday: string | null;
+  company: string | null;
+  taxId: string | null;
+  address: string | null;
+  tags: string[];
   stage: ClientStage;
   source: ClientSource;
   kind: ClientKind;
@@ -56,6 +63,13 @@ export type ClientInput = {
   name: string;
   email?: string;
   phone?: string;
+  secondaryPhone?: string;
+  language?: string;
+  birthday?: string;
+  company?: string;
+  taxId?: string;
+  address?: string;
+  tags?: string[];
   stage?: ClientStage;
   kind?: ClientKind;
   monthlyFeeCents?: number | null;
@@ -63,6 +77,22 @@ export type ClientInput = {
 };
 export type ClientNote = { id: string; body: string; createdAt: string };
 export type TimelineEvent = { at: string; type: string; label: string };
+export type ClientFinance = {
+  facturadoCents: number;
+  cobradoCents: number;
+  pendienteCents: number;
+  invoiceCount: number;
+  recent: Array<{
+    id: string;
+    direction: InvoiceDirection;
+    concept: string | null;
+    number: string | null;
+    issueDate: string;
+    totalCents: number;
+    status: InvoiceStatus;
+  }>;
+};
+export type ClientVisit = { id: string; propertyTitle: string; at: string; status: VisitStatus };
 export type ClientProfile = {
   client: Client;
   ownedProperties: Array<{ id: string; title: string; status: string }>;
@@ -74,6 +104,8 @@ export type ClientProfile = {
     since: string;
   }>;
   interestProperty: { id: string; title: string } | null;
+  finance: ClientFinance;
+  visits: { upcoming: ClientVisit[]; past: ClientVisit[] };
   timeline: TimelineEvent[];
   notes: ClientNote[];
 };

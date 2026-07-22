@@ -230,8 +230,13 @@ Detalle fino de cada cambio: historia de git. Aquí, solo lo que hay y dónde.
 ### Módulos
 Todos tenant-scoped, patrón `apps/api/src/modules/<x>/`, guardas
 tenant→auth→membership→`requireModule`. UI de cliente en `apps/dashboard/app/(app)/`.
-- **clients** (CRM): stage, `kind` (owner/renter/buyer/…), cuota, notas; perfil
-  `/clientes/[id]` con timeline. Auto-clasificación en captación.
+- **clients** (CRM): stage, `kind` (owner/renter/buyer/…), cuota, notas +
+  **contacto ampliado** (`secondary_phone`, `language`, `birthday`), **facturación**
+  (`company`, `tax_id`, `address`) y **etiquetas** (`tags` jsonb, segmentación). Perfil
+  `/clientes/[id]` enriquecido: KPIs económicos (facturado/cobrado/pendiente de sus
+  `invoices`), datos editables por secciones, finanzas (últimas facturas → cuenta de
+  contabilidad), vínculos (propiedades/contratos enlazados), visitas (upcoming/pasadas),
+  timeline y notas. `getClientProfile` agrega todo. Auto-clasificación en captación.
 - **properties**: operation/kind/status/precio/…, fotos + vídeos (multipart),
   `owner_client_id`. Público: `GET /tenant/listings` (solo `published`). UI: listado
   en **tarjetas** (foto, estado, chip Alquilado/Libre) → **detalle** `/propiedades/[id]`
