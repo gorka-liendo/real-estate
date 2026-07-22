@@ -1,4 +1,4 @@
-import { integer, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { date, integer, jsonb, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { tenants } from "./tenants.js";
 
 // Etapa del cliente en el pipeline (CRM básico).
@@ -32,6 +32,16 @@ export const clients = pgTable("clients", {
   name: text("name").notNull(),
   email: text("email"),
   phone: text("phone"),
+  // Contacto ampliado (trato más personal).
+  secondaryPhone: text("secondary_phone"),
+  language: text("language"), // idioma preferido: "es", "en", "eu"…
+  birthday: date("birthday"),
+  // Datos de facturación (para emitir facturas correctas).
+  company: text("company"), // empresa / razón social
+  taxId: text("tax_id"), // NIF / CIF
+  address: text("address"),
+  // Segmentación libre (VIP, inversor, moroso…). Filtrable en el listado.
+  tags: jsonb("tags").$type<string[]>().notNull().default([]),
   stage: clientStage("stage").notNull().default("lead"),
   notes: text("notes"),
   // Captación: de dónde vino el cliente y, si es un lead del micrositio, qué

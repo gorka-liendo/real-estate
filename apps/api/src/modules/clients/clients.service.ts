@@ -36,11 +36,15 @@ export async function deleteClient(id: string): Promise<boolean> {
 import { inArray } from "drizzle-orm";
 import {
   clientNotes,
+  invoicePayments,
+  invoices,
   properties,
   rentalPayments,
   rentals,
   visits,
   type ClientNote,
+  type Invoice,
+  type InvoicePayment,
   type Property,
   type Rental,
   type RentalPayment,
@@ -48,6 +52,28 @@ import {
 } from "@rep/db";
 
 export type TimelineEvent = { at: string; type: string; label: string };
+
+export type ClientFinance = {
+  facturadoCents: number; // total facturado (income, sin anuladas)
+  cobradoCents: number;
+  pendienteCents: number;
+  invoiceCount: number;
+  recent: Array<{
+    id: string;
+    direction: Invoice["direction"];
+    concept: string | null;
+    number: string | null;
+    issueDate: string;
+    totalCents: number;
+    status: Invoice["status"];
+  }>;
+};
+export type ClientVisit = {
+  id: string;
+  propertyTitle: string;
+  at: string;
+  status: Visit["status"];
+};
 
 export type ClientProfile = {
   client: Client;
@@ -60,6 +86,8 @@ export type ClientProfile = {
     since: string;
   }>;
   interestProperty: { id: string; title: string } | null;
+  finance: ClientFinance;
+  visits: { upcoming: ClientVisit[]; past: ClientVisit[] };
   timeline: TimelineEvent[];
   notes: ClientNote[];
 };
@@ -75,12 +103,46 @@ export async function getClientProfile(id: string): Promise<ClientProfile | null
   const client = rows[0];
   if (!client) return null;
 
-  const [owned, renting, clientVisits, notes] = await Promise.all([
+  const [owned, renting, clientVisits, notes, clientInvoices] = await Promise.all([
     tenantDb().select(properties, eq(properties.ownerClientId, id)) as Promise<Property[]>,
     tenantDb().select(rentals, eq(rentals.renterClientId, id)) as Promise<Rental[]>,
     tenantDb().select(visits, eq(visits.clientId, id)) as Promise<Visit[]>,
     tenantDb().select(clientNotes, eq(clientNotes.clientId, id)) as Promise<ClientNote[]>,
+    tenantDb().select(invoices, eq(invoices.clientId, id)) as Promise<Invoice[]>,
   ]);
+
+  // Finanzas del cliente (facturas emitidas a su nombre).
+  const invPays =
+    clientInvoices.length > 0
+      ? ((await tenantDb().select(
+          invoicePayments,
+          inArray(invoicePayments.invoiceId, clientInvoices.map((i) => i.id)),
+        )) as InvoicePayment[])
+      : [];
+  const paidByInvoice = new Map<string, number>();
+  for (const p of invPays) paidByInvoice.set(p.invoiceId, (paidByInvoice.get(p.invoiceId) ?? 0) + p.amountCents);
+  const activeInv = clientInvoices.filter((i) => i.status !== "cancelled");
+  const incomeInv = activeInv.filter((i) => i.direction === "income");
+  const facturadoCents = incomeInv.reduce((a, i) => a + i.totalCents, 0);
+  const cobradoCents = incomeInv.reduce((a, i) => a + Math.min(i.totalCents, paidByInvoice.get(i.id) ?? 0), 0);
+  const finance: ClientFinance = {
+    facturadoCents,
+    cobradoCents,
+    pendienteCents: Math.max(0, facturadoCents - cobradoCents),
+    invoiceCount: incomeInv.length,
+    recent: [...activeInv]
+      .sort((a, b) => b.issueDate.localeCompare(a.issueDate))
+      .slice(0, 6)
+      .map((i) => ({
+        id: i.id,
+        direction: i.direction,
+        concept: i.concept,
+        number: i.number,
+        issueDate: i.issueDate,
+        totalCents: i.totalCents,
+        status: i.status,
+      })),
+  };
 
   // Pagos de sus contratos como inquilino (para el timeline).
   const pays =
@@ -156,6 +218,29 @@ export async function getClientProfile(id: string): Promise<ClientProfile | null
     interestProperty: client.interestPropertyId
       ? { id: client.interestPropertyId, title: title(client.interestPropertyId) }
       : null,
+    finance,
+    visits: (() => {
+      const now = Date.now();
+      const isUpcoming = (v: Visit) =>
+        v.scheduledAt.getTime() >= now && (v.status === "requested" || v.status === "confirmed");
+      const toOut = (v: Visit): ClientVisit => ({
+        id: v.id,
+        propertyTitle: title(v.propertyId),
+        at: v.scheduledAt.toISOString(),
+        status: v.status,
+      });
+      return {
+        upcoming: clientVisits
+          .filter(isUpcoming)
+          .sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime())
+          .map(toOut),
+        past: clientVisits
+          .filter((v) => !isUpcoming(v))
+          .sort((a, b) => b.scheduledAt.getTime() - a.scheduledAt.getTime())
+          .slice(0, 12)
+          .map(toOut),
+      };
+    })(),
     timeline,
     notes: notes.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
   };
