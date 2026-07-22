@@ -27,5 +27,12 @@ export const updateSharedExpenseSchema = z.object({
   amount: z.coerce.number().positive().max(1_000_000).optional(),
 });
 
+// Visibilidad de la liquidación (la controla la inmobiliaria).
+export const shareConfigSchema = z.object({
+  propertyId: z.uuid(),
+  ownerVisible: z.boolean().optional(),
+  tenantShared: z.boolean().optional(),
+});
+
 export type CreateSharedExpenseInput = z.infer<typeof createSharedExpenseSchema>;
 export type UpdateSharedExpenseInput = z.infer<typeof updateSharedExpenseSchema>;

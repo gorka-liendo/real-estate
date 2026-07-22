@@ -18,6 +18,11 @@ import {
   type RentalPayment,
   type Visit,
 } from "@rep/db";
+import {
+  getPropertySettlement,
+  isOwnerSettlementVisible,
+  type PropertySettlement,
+} from "../rentals/shared-expenses.service.js";
 
 // Portal del propietario: el token es la credencial (capability URL) que la
 // agencia genera y comparte. Todo va por tenantDb → un token solo funciona
@@ -332,6 +337,8 @@ export type PortalPropertyDetail = {
     past: Array<{ at: string; status: Visit["status"] }>;
   };
   monthly: PortalMonthly[];
+  // Reparto de gastos entre inquilinos — solo si la inmobiliaria lo hace visible.
+  settlement: PropertySettlement | null;
 };
 
 /**
@@ -483,5 +490,8 @@ export async function getPortalPropertyDetail(
         .map((v) => ({ at: v.scheduledAt.toISOString(), status: v.status })),
     },
     monthly,
+    settlement: (await isOwnerSettlementVisible(prop.id))
+      ? await getPropertySettlement(prop.id)
+      : null,
   };
 }

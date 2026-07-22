@@ -166,6 +166,48 @@ describe("Reparto de gastos compartidos", () => {
       expect(t.totalCents).toBe(t.monthlyRentCents + t.expensesTotalCents);
   });
 
+  it("visibilidad: la inmobiliaria activa/revoca el enlace público del inquilino", async () => {
+    await addRoomRental("A", 500, "2026-01-01", null);
+    await post({ type: "electricity", periodStart: "2026-01-01", periodEnd: "2026-01-31", amount: 100 });
+
+    const put = (body: Record<string, unknown>) =>
+      app.request("/tenant/shared-expenses/share", {
+        method: "PUT",
+        headers: { "x-tenant-slug": SLUG, cookie, "content-type": "application/json" },
+        body: JSON.stringify({ propertyId: propId, ...body }),
+      });
+
+    // por defecto no visible
+    const initial = (await (
+      await app.request(`/tenant/shared-expenses/share?propertyId=${propId}`, {
+        headers: { "x-tenant-slug": SLUG, cookie },
+      })
+    ).json()) as { ownerVisible: boolean; tenantToken: string | null };
+    expect(initial.ownerVisible).toBe(false);
+    expect(initial.tenantToken).toBeNull();
+
+    // activar enlace de inquilinos → genera token
+    const on = (await (await put({ tenantShared: true, ownerVisible: true })).json()) as {
+      ownerVisible: boolean;
+      tenantToken: string | null;
+    };
+    expect(on.ownerVisible).toBe(true);
+    expect(on.tenantToken).toBeTruthy();
+    const token = on.tenantToken!;
+
+    // el enlace PÚBLICO (sin sesión) devuelve la liquidación
+    const pub = await app.request(`/tenant/settlement/${token}`, { headers: { "x-tenant-slug": SLUG } });
+    expect(pub.status).toBe(200);
+    const data = (await pub.json()) as { propertyTitle: string; settlement: { tenants: unknown[] } };
+    expect(data.propertyTitle).toBe("Txabarri 85");
+    expect(data.settlement.tenants).toHaveLength(1);
+
+    // revocar → el token anterior deja de funcionar (404)
+    const off = (await (await put({ tenantShared: false })).json()) as { tenantToken: string | null };
+    expect(off.tenantToken).toBeNull();
+    expect((await app.request(`/tenant/settlement/${token}`, { headers: { "x-tenant-slug": SLUG } })).status).toBe(404);
+  });
+
   it("gating y validación: sin módulo 403, sin periodo válido 400", async () => {
     const anon = await app.request(`/tenant/shared-expenses?propertyId=${propId}`, {
       headers: { "x-tenant-slug": SLUG },

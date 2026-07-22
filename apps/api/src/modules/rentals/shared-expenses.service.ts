@@ -1,11 +1,14 @@
+import { randomUUID } from "node:crypto";
 import { and, eq, inArray, isNotNull } from "drizzle-orm";
 import {
   properties,
   propertyRooms,
+  propertySettlementShare,
   rentals,
   sharedExpenses,
   tenantDb,
   type PropertyRoom,
+  type PropertySettlementShare,
   type Rental,
   type SharedExpense,
   type SharedExpenseType,
@@ -197,4 +200,70 @@ export async function getPropertySettlement(propertyId: string): Promise<Propert
   });
 
   return { expenses, tenants: [...line.values()], totalsByType };
+}
+
+// ---------- Visibilidad (control de la inmobiliaria) ----------
+
+export type ShareConfig = { ownerVisible: boolean; tenantToken: string | null };
+
+export async function getShareConfig(propertyId: string): Promise<ShareConfig> {
+  const rows = (await tenantDb().select(
+    propertySettlementShare,
+    eq(propertySettlementShare.propertyId, propertyId),
+  )) as PropertySettlementShare[];
+  const r = rows[0];
+  return { ownerVisible: r?.ownerVisible ?? false, tenantToken: r?.tenantToken ?? null };
+}
+
+/** Actualiza la visibilidad. `tenantShared` true genera enlace, false lo revoca. */
+export async function setShareConfig(
+  propertyId: string,
+  input: { ownerVisible?: boolean; tenantShared?: boolean },
+): Promise<ShareConfig> {
+  const rows = (await tenantDb().select(
+    propertySettlementShare,
+    eq(propertySettlementShare.propertyId, propertyId),
+  )) as PropertySettlementShare[];
+  const existing = rows[0];
+
+  const ownerVisible = input.ownerVisible ?? existing?.ownerVisible ?? false;
+  let tenantToken = existing?.tenantToken ?? null;
+  if (input.tenantShared === true && !tenantToken) tenantToken = randomUUID();
+  if (input.tenantShared === false) tenantToken = null;
+
+  if (existing) {
+    await tenantDb().update(
+      propertySettlementShare,
+      { ownerVisible, tenantToken },
+      eq(propertySettlementShare.propertyId, propertyId),
+    );
+  } else {
+    await tenantDb().insert(propertySettlementShare, { propertyId, ownerVisible, tenantToken });
+  }
+  return { ownerVisible, tenantToken };
+}
+
+export async function isOwnerSettlementVisible(propertyId: string): Promise<boolean> {
+  const rows = (await tenantDb().select(
+    propertySettlementShare,
+    eq(propertySettlementShare.propertyId, propertyId),
+  )) as PropertySettlementShare[];
+  return rows[0]?.ownerVisible ?? false;
+}
+
+// Liquidación pública por token (enlace para inquilinos). null si el token no
+// existe o se revocó. El scope de tenantDb ya limita al tenant del dominio.
+export type PublicSettlement = { propertyTitle: string; settlement: PropertySettlement };
+
+export async function getSettlementByToken(token: string): Promise<PublicSettlement | null> {
+  const rows = (await tenantDb().select(
+    propertySettlementShare,
+    eq(propertySettlementShare.tenantToken, token),
+  )) as PropertySettlementShare[];
+  const share = rows[0];
+  if (!share || !share.tenantToken) return null;
+  const props = await tenantDb().select(properties, eq(properties.id, share.propertyId));
+  if (props.length === 0) return null;
+  const settlement = await getPropertySettlement(share.propertyId);
+  return { propertyTitle: props[0]!.title, settlement };
 }

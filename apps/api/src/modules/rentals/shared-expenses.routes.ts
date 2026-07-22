@@ -9,6 +9,7 @@ import {
 import { requireModule } from "../../middlewares/module.middleware.js";
 import {
   createSharedExpenseSchema,
+  shareConfigSchema,
   updateSharedExpenseSchema,
 } from "./shared-expenses.schema.js";
 import { renderSettlementPdf } from "./settlement-pdf.js";
@@ -48,6 +49,21 @@ sharedExpenses.get("/settlement/pdf", async (c) => {
       "Content-Disposition": `inline; filename="liquidacion-${props[0]!.title.replace(/[^\w]+/g, "-").toLowerCase()}.pdf"`,
     },
   });
+});
+
+// Visibilidad de la liquidación (control de la inmobiliaria).
+// GET /tenant/shared-expenses/share?propertyId=xxx
+sharedExpenses.get("/share", async (c) => {
+  const propertyId = c.req.query("propertyId");
+  if (!propertyId) return c.json({ error: "missing_property" }, 400);
+  return c.json(await service.getShareConfig(propertyId));
+});
+
+sharedExpenses.put("/share", async (c) => {
+  const body = shareConfigSchema.safeParse(await c.req.json().catch(() => null));
+  if (!body.success) return c.json({ error: "invalid_body", issues: body.error.issues }, 400);
+  const { propertyId, ...rest } = body.data;
+  return c.json(await service.setShareConfig(propertyId, rest));
 });
 
 // GET /tenant/shared-expenses?propertyId=xxx
