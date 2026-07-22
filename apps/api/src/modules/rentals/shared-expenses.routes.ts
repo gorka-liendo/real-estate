@@ -1,3 +1,4 @@
+import { isAiConfigured } from "@rep/ai";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { properties, tenantDb } from "@rep/db";
@@ -7,6 +8,7 @@ import {
   type MemberEnv,
 } from "../../middlewares/auth.middleware.js";
 import { requireModule } from "../../middlewares/module.middleware.js";
+import { extractSharedExpense } from "./shared-expenses.extract.js";
 import {
   createSharedExpenseSchema,
   shareConfigSchema,
@@ -14,6 +16,13 @@ import {
 } from "./shared-expenses.schema.js";
 import { renderSettlementPdf } from "./settlement-pdf.js";
 import * as service from "./shared-expenses.service.js";
+
+const EXTRACT_TYPES: Record<string, boolean> = {
+  "application/pdf": true,
+  "image/jpeg": true,
+  "image/png": true,
+  "image/webp": true,
+};
 
 // Gastos compartidos + liquidación de un piso por habitaciones. Bajo
 // /tenant/shared-expenses. Guardas: tenant → auth → membership → módulo 'rentals'.
@@ -71,6 +80,26 @@ sharedExpenses.get("/", async (c) => {
   const propertyId = c.req.query("propertyId");
   if (!propertyId) return c.json({ error: "missing_property" }, 400);
   return c.json({ expenses: await service.listSharedExpenses(propertyId) });
+});
+
+// Extrae con IA (Haiku) los datos de una factura subida para pre-rellenar el
+// formulario. NO guarda nada — el agente revisa y confirma. Multipart.
+sharedExpenses.post("/extract", async (c) => {
+  if (!isAiConfigured()) return c.json({ error: "ai_not_configured" }, 503);
+  const body = await c.req.parseBody();
+  const file = body["file"];
+  if (!(file instanceof File)) return c.json({ error: "no_file" }, 400);
+  if (!EXTRACT_TYPES[file.type]) return c.json({ error: "invalid_type" }, 400);
+  if (file.size > 10 * 1024 * 1024) return c.json({ error: "file_too_large" }, 400);
+  try {
+    const data = await extractSharedExpense({
+      data: Buffer.from(await file.arrayBuffer()),
+      mimeType: file.type,
+    });
+    return c.json({ extracted: data });
+  } catch {
+    return c.json({ error: "extract_failed" }, 502);
+  }
 });
 
 sharedExpenses.post("/", async (c) => {
