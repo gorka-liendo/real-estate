@@ -122,7 +122,9 @@ packages/
   nosotros"). API `/tenant/brand`: GET + `POST/DELETE /logo` + `POST/DELETE /favicon`
   (owner). El favicon (`brand_config.faviconUrl`) lo aplica el tenant-site en el
   `layout.tsx` de `s/[tenant]` (`generateMetadata` → `icons`, una vez para todas sus
-  páginas); si no hay favicon, se usa el icono por defecto (no el logo). NO hay PATCH de
+  páginas); si no hay favicon, se usa el icono por defecto (no el logo). El **dashboard**
+  también lo usa: `DynamicFavicon` (cliente) actualiza el `<link rel="icon">` según la
+  inmobiliaria seleccionada (`brandConfig.faviconUrl` del workspace). NO hay PATCH de
   design system para el cliente. (Pendiente: editor de design system en el superadmin.)
 
 ### Dashboard de la inmobiliaria (revisión de concepto — jul 2026)

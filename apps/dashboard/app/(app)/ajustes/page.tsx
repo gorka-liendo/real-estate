@@ -56,6 +56,7 @@ function LogoManager({ slug, name }: { slug: string; name: string }) {
     try {
       const { brandConfig } = await api.brand.uploadFavicon(slug, file);
       setBrand(brandConfig);
+      setBrandConfig(brandConfig); // la pestaña del dashboard toma el favicon al instante
     } catch {
       setError("No se pudo subir el favicon (png, svg, webp o ico, máx 1 MB).");
     } finally {
@@ -67,6 +68,7 @@ function LogoManager({ slug, name }: { slug: string; name: string }) {
   async function removeFavicon() {
     const { brandConfig } = await api.brand.removeFavicon(slug);
     setBrand(brandConfig);
+    setBrandConfig(brandConfig);
   }
 
   if (brand === null) return <p className="du-muted">Cargando…</p>;

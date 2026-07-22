@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { Select } from "@rep/ui";
 import { Breadcrumbs, type Crumb } from "@/components/breadcrumbs";
+import { DynamicFavicon } from "@/components/dynamic-favicon";
 import { useAuth } from "@/contexts/auth-context";
 import { useBreadcrumbs } from "@/contexts/breadcrumbs-context";
 import { useWorkspace } from "@/contexts/workspace-context";
@@ -39,6 +40,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="dash-shell" data-theme={theme} data-mode={mode}>
+      <DynamicFavicon />
       <aside className="dash-sidebar">
         <div className="dash-brand">
           {logoUrl ? (
