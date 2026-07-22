@@ -33,6 +33,7 @@ function ClientesInner({ slug }: { slug: string }) {
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [activeTag, setActiveTag] = useState<string | null>(null);
 
   // Portal del propietario: genera el token y copia el enlace para compartir.
   async function copyPortalLink(c: Client) {
@@ -68,6 +69,9 @@ function ClientesInner({ slug }: { slug: string }) {
     setClients((prev) => (prev ?? []).filter((c) => c.id !== id));
   }
 
+  const allTags = [...new Set((clients ?? []).flatMap((c) => c.tags))].sort((a, b) => a.localeCompare(b, "es"));
+  const visible = activeTag ? (clients ?? []).filter((c) => c.tags.includes(activeTag)) : clients;
+
   return (
     <div style={{ display: "grid", gap: "var(--ui-sp-5)" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -91,14 +95,28 @@ function ClientesInner({ slug }: { slug: string }) {
         />
       ) : null}
 
+      {/* Filtro por etiqueta (solo si hay etiquetas) */}
+      {allTags.length > 0 ? (
+        <div style={{ display: "flex", gap: "var(--ui-sp-2)", flexWrap: "wrap" }}>
+          <TagChip label="Todas" active={activeTag === null} onClick={() => setActiveTag(null)} />
+          {allTags.map((t) => (
+            <TagChip key={t} label={t} active={activeTag === t} onClick={() => setActiveTag(t)} />
+          ))}
+        </div>
+      ) : null}
+
       <Card padded={false}>
-        {clients === null ? (
+        {clients === null || visible === null ? (
           <p className="du-muted" style={{ padding: "var(--ui-sp-5)" }}>
             Cargando…
           </p>
         ) : clients.length === 0 ? (
           <p className="du-muted" style={{ padding: "var(--ui-sp-5)" }}>
             Aún no tienes clientes. Añade el primero con “Nuevo cliente”.
+          </p>
+        ) : visible.length === 0 ? (
+          <p className="du-muted" style={{ padding: "var(--ui-sp-5)" }}>
+            Ningún cliente con la etiqueta “{activeTag}”.
           </p>
         ) : (
           <div style={{ overflowX: "auto" }}>
@@ -113,11 +131,11 @@ function ClientesInner({ slug }: { slug: string }) {
                 </tr>
               </thead>
               <tbody>
-                {clients.map((c) => (
+                {visible.map((c) => (
                   <tr key={c.id}>
                     <td style={{ fontWeight: 500 }}>
                       <span
-                        style={{ display: "inline-flex", alignItems: "center", gap: "var(--ui-sp-2)" }}
+                        style={{ display: "inline-flex", alignItems: "center", gap: "var(--ui-sp-2)", flexWrap: "wrap" }}
                       >
                         <Link href={`/clientes/${c.id}`} style={{ color: "inherit" }}>
                           {c.name}
@@ -125,6 +143,11 @@ function ClientesInner({ slug }: { slug: string }) {
                         {SOURCE_LABEL[c.source] ? (
                           <Badge variant="default">{SOURCE_LABEL[c.source]}</Badge>
                         ) : null}
+                        {c.tags.map((t) => (
+                          <Badge key={t} variant="muted">
+                            {t}
+                          </Badge>
+                        ))}
                       </span>
                     </td>
                     <td>
@@ -251,6 +274,27 @@ function NewClientForm({
         </div>
       </form>
     </Card>
+  );
+}
+
+function TagChip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        padding: "var(--ui-sp-2) var(--ui-sp-3)",
+        borderRadius: 999,
+        border: "1px solid var(--ui-border)",
+        background: active ? "var(--ui-primary)" : "transparent",
+        color: active ? "var(--ui-on-primary)" : "var(--ui-text)",
+        cursor: "pointer",
+        font: "inherit",
+        fontSize: 13,
+        fontWeight: 500,
+      }}
+    >
+      {label}
+    </button>
   );
 }
 
