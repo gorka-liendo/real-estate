@@ -1,4 +1,6 @@
+import { eq } from "drizzle-orm";
 import { Hono } from "hono";
+import { properties, tenantDb } from "@rep/db";
 import {
   authMiddleware,
   requireMembership,
@@ -9,6 +11,7 @@ import {
   createSharedExpenseSchema,
   updateSharedExpenseSchema,
 } from "./shared-expenses.schema.js";
+import { renderSettlementPdf } from "./settlement-pdf.js";
 import * as service from "./shared-expenses.service.js";
 
 // Gastos compartidos + liquidación de un piso por habitaciones. Bajo
@@ -25,6 +28,26 @@ sharedExpenses.get("/settlement", async (c) => {
   const propertyId = c.req.query("propertyId");
   if (!propertyId) return c.json({ error: "missing_property" }, 400);
   return c.json(await service.getPropertySettlement(propertyId));
+});
+
+// PDF de la liquidación (para pasar a los inquilinos).
+// GET /tenant/shared-expenses/settlement/pdf?propertyId=xxx
+sharedExpenses.get("/settlement/pdf", async (c) => {
+  const propertyId = c.req.query("propertyId");
+  if (!propertyId) return c.json({ error: "missing_property" }, 400);
+  const props = await tenantDb().select(properties, eq(properties.id, propertyId));
+  if (props.length === 0) return c.json({ error: "not_found" }, 404);
+  const settlement = await service.getPropertySettlement(propertyId);
+  const pdf = await renderSettlementPdf(settlement, {
+    tenant: c.get("tenant"),
+    propertyTitle: props[0]!.title,
+  });
+  return new Response(new Uint8Array(pdf), {
+    headers: {
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `inline; filename="liquidacion-${props[0]!.title.replace(/[^\w]+/g, "-").toLowerCase()}.pdf"`,
+    },
+  });
 });
 
 // GET /tenant/shared-expenses?propertyId=xxx

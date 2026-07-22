@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Trash2 } from "lucide-react";
+import { Download, Plus, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Badge, Button, Card, Input, Label, Select } from "@rep/ui";
 import {
@@ -57,6 +57,18 @@ export function SharedExpensesSection({ slug, propertyId }: { slug: string; prop
     }
   }
 
+  async function downloadPdf() {
+    setError(null);
+    try {
+      const blob = await api.sharedExpenses.settlementPdf(slug, propertyId);
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank");
+      setTimeout(() => URL.revokeObjectURL(url), 30_000);
+    } catch {
+      setError("No se pudo generar el PDF.");
+    }
+  }
+
   if (!data) {
     return error ? <p className="du-alert">{error}</p> : null;
   }
@@ -74,10 +86,18 @@ export function SharedExpensesSection({ slug, propertyId }: { slug: string; prop
         <h2 className="du-h3" style={{ margin: 0 }}>
           Gastos compartidos y reparto
         </h2>
-        <Button size="sm" onClick={() => setShowForm((v) => !v)}>
-          <Plus size={15} />
-          Añadir factura
-        </Button>
+        <div style={{ display: "flex", gap: "var(--ui-sp-2)" }}>
+          {data.expenses.length > 0 ? (
+            <Button variant="outline" size="sm" onClick={() => void downloadPdf()}>
+              <Download size={15} />
+              PDF
+            </Button>
+          ) : null}
+          <Button size="sm" onClick={() => setShowForm((v) => !v)}>
+            <Plus size={15} />
+            Añadir factura
+          </Button>
+        </div>
       </div>
 
       {error ? <p className="du-alert">{error}</p> : null}

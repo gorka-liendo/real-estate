@@ -732,6 +732,15 @@ export const api = {
         headers: { "x-tenant-slug": slug },
       }),
 
+    settlementPdf: async (slug: string, propertyId: string) => {
+      const res = await fetch(
+        `${API_URL}/tenant/shared-expenses/settlement/pdf?propertyId=${propertyId}`,
+        { credentials: "include", headers: { "x-tenant-slug": slug } },
+      );
+      if (!res.ok) throw new ApiError(res.status, `HTTP ${res.status}`);
+      return res.blob();
+    },
+
     create: (slug: string, data: SharedExpenseInput) =>
       request<{ expense: SharedExpense }>("/tenant/shared-expenses", {
         method: "POST",
