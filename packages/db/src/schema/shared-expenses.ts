@@ -1,4 +1,4 @@
-import { date, integer, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, date, integer, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { properties } from "./properties.js";
 import { tenants } from "./tenants.js";
 
@@ -42,3 +42,26 @@ export const sharedExpenses = pgTable("shared_expenses", {
 });
 
 export type SharedExpense = typeof sharedExpenses.$inferSelect;
+
+// Visibilidad de la liquidación de un piso — LA CONTROLA LA INMOBILIARIA.
+// - ownerVisible: el propietario ve la liquidación en su portal.
+// - tenantToken: enlace público (capability URL) para que los inquilinos vean el
+//   reparto; null = no compartido. Activar genera token, desactivar lo revoca
+//   (null) → el enlace anterior deja de funcionar.
+export const propertySettlementShare = pgTable("property_settlement_share", {
+  propertyId: uuid("property_id")
+    .primaryKey()
+    .references(() => properties.id, { onDelete: "cascade" }),
+  tenantId: uuid("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "cascade" }),
+  ownerVisible: boolean("owner_visible").notNull().default(false),
+  tenantToken: uuid("tenant_token"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});
+
+export type PropertySettlementShare = typeof propertySettlementShare.$inferSelect;
