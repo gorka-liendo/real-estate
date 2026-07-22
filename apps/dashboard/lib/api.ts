@@ -292,6 +292,64 @@ export type PropertyRoom = {
   refPrice: number | null;
 };
 export type RoomInput = { propertyId: string; name: string; areaM2?: number; refPrice?: number };
+
+// --- Gastos compartidos (reparto por días entre inquilinos de un piso por habitaciones) ---
+export type SharedExpenseType =
+  | "electricity"
+  | "water"
+  | "gas"
+  | "internet"
+  | "community"
+  | "heating"
+  | "other";
+export type SharedExpense = {
+  id: string;
+  propertyId: string;
+  type: SharedExpenseType;
+  concept: string | null;
+  periodStart: string;
+  periodEnd: string;
+  amountCents: number;
+};
+export type SharedExpenseInput = {
+  propertyId: string;
+  type: SharedExpenseType;
+  concept?: string;
+  periodStart: string;
+  periodEnd: string;
+  amount: number; // euros
+};
+export type ExpenseShare = {
+  rentalId: string;
+  renterName: string;
+  roomName: string | null;
+  days: number;
+  cents: number;
+};
+export type ExpenseWithSplit = {
+  id: string;
+  type: SharedExpenseType;
+  concept: string | null;
+  periodStart: string;
+  periodEnd: string;
+  amountCents: number;
+  shares: ExpenseShare[];
+};
+export type TenantLine = {
+  rentalId: string;
+  renterName: string;
+  roomName: string | null;
+  status: RentalStatus;
+  monthlyRentCents: number;
+  byType: Partial<Record<SharedExpenseType, number>>;
+  expensesTotalCents: number;
+  totalCents: number;
+};
+export type PropertySettlement = {
+  expenses: ExpenseWithSplit[];
+  tenants: TenantLine[];
+  totalsByType: Partial<Record<SharedExpenseType, number>>;
+};
 export type RentalClientRef = {
   id: string;
   name: string;
@@ -662,6 +720,38 @@ export const api = {
 
     remove: (slug: string, id: string) =>
       request<{ ok: true }>(`/tenant/rooms/${id}`, {
+        method: "DELETE",
+        headers: { "x-tenant-slug": slug },
+      }),
+  },
+
+  // --- Gastos compartidos + liquidación de un piso por habitaciones ---
+  sharedExpenses: {
+    settlement: (slug: string, propertyId: string) =>
+      request<PropertySettlement>(`/tenant/shared-expenses/settlement?propertyId=${propertyId}`, {
+        headers: { "x-tenant-slug": slug },
+      }),
+
+    create: (slug: string, data: SharedExpenseInput) =>
+      request<{ expense: SharedExpense }>("/tenant/shared-expenses", {
+        method: "POST",
+        headers: { "x-tenant-slug": slug },
+        body: JSON.stringify(data),
+      }),
+
+    update: (
+      slug: string,
+      id: string,
+      data: Partial<Omit<SharedExpenseInput, "propertyId">>,
+    ) =>
+      request<{ expense: SharedExpense }>(`/tenant/shared-expenses/${id}`, {
+        method: "PATCH",
+        headers: { "x-tenant-slug": slug },
+        body: JSON.stringify(data),
+      }),
+
+    remove: (slug: string, id: string) =>
+      request<{ ok: true }>(`/tenant/shared-expenses/${id}`, {
         method: "DELETE",
         headers: { "x-tenant-slug": slug },
       }),

@@ -280,6 +280,17 @@ tenant→auth→membership→`requireModule`. UI de cliente en `apps/dashboard/a
   agregada (nº habitaciones, renta total, cobradas este mes) → vista del piso
   `/alquileres/propiedad/[propertyId]`: stats + una tarjeta por habitación
   (inquilino, renta, cobro del mes, gestionar) + contratos finalizados.
+- **Reparto de gastos compartidos** (luz/agua/gas…) entre inquilinos de un piso por
+  habitaciones, **igual que el Excel del cliente**: tabla `shared_expenses` (piso, tipo,
+  periodo inicio–fin, importe). Cada factura se reparte proporcional a los **días que la
+  estancia de cada contrato solapa con su periodo** (`overlapDays`), denominador = suma
+  de solapes (solo entre presentes), cuadrado al céntimo (`splitCents`, resto al mayor
+  decimal). Incluye ex-inquilinos cuyo contrato solapa. Reparto **calculado al vuelo**
+  desde los contratos (no se persiste) → corregir una fecha lo recalcula.
+  `GET /tenant/shared-expenses/settlement?propertyId=` → `getPropertySettlement`: cada
+  factura con su desglose + liquidación por inquilino (**Alquiler + Σgastos = Total**).
+  UI en la vista del piso (`shared-expenses-section.tsx`). Solo dashboard (portal, fase 2).
+  Reproducción verificada con los números reales del Excel en tests.
 - **accounting**: `invoices` (`direction` income/expense, IVA en bps, pagos
   parciales, PDF de `income` con pdfkit), páginas de cuenta por inmueble/cliente.
   Absorbió el antiguo `property_expenses`. UI: `SummaryCard` con icono+acento;

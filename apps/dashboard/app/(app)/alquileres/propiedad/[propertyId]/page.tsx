@@ -7,6 +7,7 @@ import { Badge, ButtonLink, Card } from "@rep/ui";
 import { useSetBreadcrumbs } from "@/contexts/breadcrumbs-context";
 import { useRequireModule, useWorkspace } from "@/contexts/workspace-context";
 import { api, type Property, type Rental } from "@/lib/api";
+import { SharedExpensesSection } from "./shared-expenses-section";
 
 // Vista de un inmueble alquilado por habitaciones: todas sus habitaciones y
 // contratos en un solo sitio. Cada habitación enlaza a la gestión del contrato.
@@ -161,6 +162,9 @@ function PropertyRentalsInner({ slug, propertyId }: { slug: string; propertyId: 
           ))}
         </Card>
       ) : null}
+
+      {/* Gastos compartidos + liquidación por inquilino (como el Excel) */}
+      <SharedExpensesSection slug={slug} propertyId={propertyId} />
     </div>
   );
 }
