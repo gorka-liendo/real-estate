@@ -5,6 +5,7 @@ import { OPERATION_LABELS } from "@rep/ui-tenant";
 import { fetchPortalProperty, fetchTenant } from "@/lib/tenant";
 import { SiteFooter } from "../../../SiteFooter";
 import { PortalChart } from "../PortalChart";
+import { SettlementView } from "../../../SettlementView";
 import { PortalTabs } from "./PortalTabs";
 
 // Detalle de un inmueble del portal del propietario: toda la información en
@@ -297,6 +298,10 @@ export default async function PortalPropertyDetail({ params }: Params) {
             tabs={[
               { id: "resumen", label: "Resumen", content: resumen },
               { id: "cobros", label: "Cobros", content: cobros },
+              // Reparto de gastos entre inquilinos — solo si la inmobiliaria lo hace visible.
+              ...(detail.settlement
+                ? [{ id: "reparto", label: "Reparto", content: <SettlementView settlement={detail.settlement} /> }]
+                : []),
               { id: "gastos", label: "Gastos", content: gastos },
               { id: "visitas", label: "Visitas", content: visitas },
             ]}

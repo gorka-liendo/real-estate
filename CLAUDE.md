@@ -289,8 +289,17 @@ tenant→auth→membership→`requireModule`. UI de cliente en `apps/dashboard/a
   desde los contratos (no se persiste) → corregir una fecha lo recalcula.
   `GET /tenant/shared-expenses/settlement?propertyId=` → `getPropertySettlement`: cada
   factura con su desglose + liquidación por inquilino (**Alquiler + Σgastos = Total**).
-  UI en la vista del piso (`shared-expenses-section.tsx`). Solo dashboard (portal, fase 2).
-  Reproducción verificada con los números reales del Excel en tests.
+  UI en la vista del piso (`shared-expenses-section.tsx`). **PDF** de la liquidación
+  (`settlement-pdf.ts`, pdfkit) con el color de marca del tenant. Reproducción verificada
+  con los números reales del Excel en tests.
+- **Visibilidad de la liquidación** (la controla la inmobiliaria): tabla
+  `property_settlement_share` (`owner_visible` + `tenant_token` capability). Interruptores
+  en la vista del piso: *Propietario* → ve una pestaña "Reparto" en su portal
+  (`getPortalPropertyDetail.settlement`, solo si `owner_visible`); *Inquilinos* → enlace
+  público revocable `/liquidacion/[token]` en el tenant-site (server-side, `noindex`,
+  vía `GET /tenant/settlement/:token` — público por token, `settlement-public.routes.ts`).
+  Activar genera token, desactivar lo revoca (el enlace deja de funcionar). Componente
+  `SettlementView` compartido por el portal y la página pública.
 - **accounting**: `invoices` (`direction` income/expense, IVA en bps, pagos
   parciales, PDF de `income` con pdfkit), páginas de cuenta por inmueble/cliente.
   Absorbió el antiguo `property_expenses`. UI: `SummaryCard` con icono+acento;

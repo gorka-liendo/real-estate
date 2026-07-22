@@ -325,6 +325,38 @@ export type PortalPaymentRow = {
   status: "pending" | "paid";
   paidAt: string | null;
 };
+// Reparto de gastos compartidos (liquidación) — espejo del tipo de la API.
+export type SettlementType =
+  | "electricity"
+  | "water"
+  | "gas"
+  | "internet"
+  | "community"
+  | "heating"
+  | "other";
+export type PropertySettlement = {
+  expenses: Array<{
+    id: string;
+    type: SettlementType;
+    concept: string | null;
+    periodStart: string;
+    periodEnd: string;
+    amountCents: number;
+    shares: Array<{ renterName: string; roomName: string | null; days: number; cents: number }>;
+  }>;
+  tenants: Array<{
+    rentalId: string;
+    renterName: string;
+    roomName: string | null;
+    status: "active" | "ended";
+    monthlyRentCents: number;
+    byType: Partial<Record<SettlementType, number>>;
+    expensesTotalCents: number;
+    totalCents: number;
+  }>;
+  totalsByType: Partial<Record<SettlementType, number>>;
+};
+
 export type PortalPropertyDetail = {
   owner: { name: string };
   property: {
@@ -358,6 +390,7 @@ export type PortalPropertyDetail = {
     past: Array<{ at: string; status: string }>;
   };
   monthly: PortalMonthly[];
+  settlement: PropertySettlement | null; // solo si la inmobiliaria lo hace visible
 };
 
 /** Detalle de un inmueble del portal (página con tabs). */
@@ -372,6 +405,17 @@ export async function fetchPortalProperty(
   );
   if (!res.ok) return null;
   return (await res.json()) as PortalPropertyDetail;
+}
+
+// Liquidación pública por token (enlace para inquilinos). null si no existe/revocado.
+export type PublicSettlement = { propertyTitle: string; settlement: PropertySettlement };
+export async function fetchSettlement(slug: string, token: string): Promise<PublicSettlement | null> {
+  const res = await fetch(`${tenantSiteEnv.NEXT_PUBLIC_API_URL}/tenant/settlement/${token}`, {
+    headers: { "x-tenant-slug": slug },
+    cache: "no-store",
+  });
+  if (!res.ok) return null;
+  return (await res.json()) as PublicSettlement;
 }
 
 /** Ficha de una propiedad publicada por id. */

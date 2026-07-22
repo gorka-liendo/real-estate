@@ -1,13 +1,15 @@
 "use client";
 
-import { Download, Plus, Trash2 } from "lucide-react";
+import { Check, Copy, Download, Eye, Plus, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { Badge, Button, Card, Input, Label, Select } from "@rep/ui";
+import { Badge, Button, Card, Input, Label, Select, Switch } from "@rep/ui";
 import {
   api,
   type PropertySettlement,
+  type ShareConfig,
   type SharedExpenseType,
 } from "@/lib/api";
+import { TENANT_SITE_URL } from "@/lib/config";
 
 const eurCents = (c: number) =>
   `${new Intl.NumberFormat("es-ES", { minimumFractionDigits: 2 }).format(c / 100)} €`;
@@ -32,12 +34,19 @@ const fmtDay = (iso: string) => {
 // (Alquiler + gastos = Total). Igual que el Excel del cliente.
 export function SharedExpensesSection({ slug, propertyId }: { slug: string; propertyId: string }) {
   const [data, setData] = useState<PropertySettlement | null>(null);
+  const [share, setShare] = useState<ShareConfig | null>(null);
+  const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
 
   const load = useCallback(async () => {
     try {
-      setData(await api.sharedExpenses.settlement(slug, propertyId));
+      const [settlement, shareCfg] = await Promise.all([
+        api.sharedExpenses.settlement(slug, propertyId),
+        api.sharedExpenses.getShare(slug, propertyId),
+      ]);
+      setData(settlement);
+      setShare(shareCfg);
     } catch {
       setError("No se pudo cargar el reparto de gastos.");
     }
@@ -46,6 +55,26 @@ export function SharedExpensesSection({ slug, propertyId }: { slug: string; prop
   useEffect(() => {
     void load();
   }, [load]);
+
+  async function updateShare(patch: { ownerVisible?: boolean; tenantShared?: boolean }) {
+    setError(null);
+    try {
+      setShare(await api.sharedExpenses.setShare(slug, propertyId, patch));
+    } catch {
+      setError("No se pudo cambiar la visibilidad.");
+    }
+  }
+
+  const tenantLink = share?.tenantToken
+    ? `${TENANT_SITE_URL}/liquidacion/${share.tenantToken}?__tenant=${slug}`
+    : null;
+
+  async function copyLink() {
+    if (!tenantLink) return;
+    await navigator.clipboard.writeText(tenantLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
 
   async function remove(id: string) {
     setError(null);
@@ -112,6 +141,55 @@ export function SharedExpensesSection({ slug, propertyId }: { slug: string; prop
           }}
           onCancel={() => setShowForm(false)}
         />
+      ) : null}
+
+      {/* Compartir — LO CONTROLA LA INMOBILIARIA */}
+      {share ? (
+        <Card>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: "var(--ui-sp-3)" }}>
+            <Eye size={15} className="du-muted" />
+            <strong>Compartir la liquidación</strong>
+          </div>
+          <div style={{ display: "grid", gap: "var(--ui-sp-3)" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "var(--ui-sp-3)" }}>
+              <div>
+                <div style={{ fontWeight: 500 }}>Propietario</div>
+                <div className="du-muted" style={{ fontSize: 13 }}>
+                  Lo verá en su portal.
+                </div>
+              </div>
+              <Switch
+                checked={share.ownerVisible}
+                onChange={(v) => void updateShare({ ownerVisible: v })}
+                label="Visible para el propietario"
+              />
+            </div>
+            <div style={{ borderTop: "1px solid var(--ui-border)", paddingTop: "var(--ui-sp-3)" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "var(--ui-sp-3)" }}>
+                <div>
+                  <div style={{ fontWeight: 500 }}>Inquilinos</div>
+                  <div className="du-muted" style={{ fontSize: 13 }}>
+                    Enlace público que puedes pasarles; lo revocas cuando quieras.
+                  </div>
+                </div>
+                <Switch
+                  checked={!!share.tenantToken}
+                  onChange={(v) => void updateShare({ tenantShared: v })}
+                  label="Compartir con inquilinos"
+                />
+              </div>
+              {tenantLink ? (
+                <div style={{ display: "flex", gap: "var(--ui-sp-2)", marginTop: "var(--ui-sp-3)" }}>
+                  <Input readOnly value={tenantLink} onFocus={(e) => e.currentTarget.select()} />
+                  <Button variant="outline" size="sm" onClick={() => void copyLink()}>
+                    {copied ? <Check size={15} /> : <Copy size={15} />}
+                    {copied ? "Copiado" : "Copiar"}
+                  </Button>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </Card>
       ) : null}
 
       {/* Liquidación por inquilino */}

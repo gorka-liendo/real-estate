@@ -350,6 +350,7 @@ export type PropertySettlement = {
   tenants: TenantLine[];
   totalsByType: Partial<Record<SharedExpenseType, number>>;
 };
+export type ShareConfig = { ownerVisible: boolean; tenantToken: string | null };
 export type RentalClientRef = {
   id: string;
   name: string;
@@ -740,6 +741,22 @@ export const api = {
       if (!res.ok) throw new ApiError(res.status, `HTTP ${res.status}`);
       return res.blob();
     },
+
+    getShare: (slug: string, propertyId: string) =>
+      request<ShareConfig>(`/tenant/shared-expenses/share?propertyId=${propertyId}`, {
+        headers: { "x-tenant-slug": slug },
+      }),
+
+    setShare: (
+      slug: string,
+      propertyId: string,
+      data: { ownerVisible?: boolean; tenantShared?: boolean },
+    ) =>
+      request<ShareConfig>("/tenant/shared-expenses/share", {
+        method: "PUT",
+        headers: { "x-tenant-slug": slug },
+        body: JSON.stringify({ propertyId, ...data }),
+      }),
 
     create: (slug: string, data: SharedExpenseInput) =>
       request<{ expense: SharedExpense }>("/tenant/shared-expenses", {
