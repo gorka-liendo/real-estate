@@ -80,6 +80,8 @@ packages/
   queue/          # @rep/queue — BullMQ; enqueue no-op sin Redis (local)
   storage/        # @rep/storage — driver local (fs) por defecto · R2 en prod
   email/          # @rep/email — driver console por defecto · Resend en prod
+  ai/             # @rep/ai — Anthropic (Haiku por defecto); SDK perezoso, sin
+                  #   ANTHROPIC_API_KEY la IA queda deshabilitada. TODA la IA usa este paquete
 ```
 
 ### Infraestructura con drivers (local por defecto, cloud por env)
@@ -296,7 +298,10 @@ tenant→auth→membership→`requireModule`. UI de cliente en `apps/dashboard/a
   factura con su desglose + liquidación por inquilino (**Alquiler + Σgastos = Total**).
   UI en la vista del piso (`shared-expenses-section.tsx`). **PDF** de la liquidación
   (`settlement-pdf.ts`, pdfkit) con el color de marca del tenant. Reproducción verificada
-  con los números reales del Excel en tests.
+  con los números reales del Excel en tests. **Escaneo con IA** (`shared-expenses.extract.ts`
+  + `@rep/ai`, Haiku, tool-use): `POST /tenant/shared-expenses/extract` (multipart) lee una
+  factura (PDF/imagen) y pre-rellena tipo/periodo/importe; el agente revisa antes de guardar.
+  Gateado por `isAiConfigured()` → 503 sin `ANTHROPIC_API_KEY` (la UI degrada con aviso).
 - **Visibilidad de la liquidación** (la controla la inmobiliaria): tabla
   `property_settlement_share` (`owner_visible` + `tenant_token` capability). Interruptores
   en la vista del piso: *Propietario* → ve una pestaña "Reparto" en su portal

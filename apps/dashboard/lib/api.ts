@@ -351,6 +351,14 @@ export type PropertySettlement = {
   totalsByType: Partial<Record<SharedExpenseType, number>>;
 };
 export type ShareConfig = { ownerVisible: boolean; tenantToken: string | null };
+// Datos extraídos por IA de una factura subida (para pre-rellenar el formulario).
+export type ExtractedExpense = {
+  type: SharedExpenseType | null;
+  concept: string | null;
+  periodStart: string | null;
+  periodEnd: string | null;
+  amount: number | null;
+};
 export type RentalClientRef = {
   id: string;
   name: string;
@@ -760,6 +768,22 @@ export const api = {
       );
       if (!res.ok) throw new ApiError(res.status, `HTTP ${res.status}`);
       return res.blob();
+    },
+
+    extract: async (slug: string, file: File) => {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch(`${API_URL}/tenant/shared-expenses/extract`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "x-tenant-slug": slug },
+        body: fd,
+      });
+      if (!res.ok) {
+        const b = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new ApiError(res.status, b.error ?? `HTTP ${res.status}`);
+      }
+      return (await res.json()) as { extracted: ExtractedExpense };
     },
 
     getShare: (slug: string, propertyId: string) =>

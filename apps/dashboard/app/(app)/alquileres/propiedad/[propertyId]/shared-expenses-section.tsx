@@ -1,10 +1,11 @@
 "use client";
 
-import { Check, Copy, Download, Eye, Plus, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { Check, Copy, Download, Eye, Plus, Sparkles, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Badge, Button, Card, Input, Label, Select, Switch } from "@rep/ui";
 import {
   api,
+  ApiError,
   type PropertySettlement,
   type ShareConfig,
   type SharedExpenseType,
@@ -332,7 +333,43 @@ function ExpenseForm({
   const [periodEnd, setPeriodEnd] = useState("");
   const [amount, setAmount] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const [scanMsg, setScanMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const scanRef = useRef<HTMLInputElement>(null);
+
+  async function onScan(file: File | null) {
+    if (!file) return;
+    setScanning(true);
+    setError(null);
+    setScanMsg(null);
+    try {
+      const { extracted } = await api.sharedExpenses.extract(slug, file);
+      if (extracted.type) setType(extracted.type);
+      if (extracted.concept) setConcept(extracted.concept);
+      if (extracted.periodStart) setPeriodStart(extracted.periodStart);
+      if (extracted.periodEnd) setPeriodEnd(extracted.periodEnd);
+      if (extracted.amount != null) setAmount(String(extracted.amount));
+      const missing = [
+        !extracted.periodStart || !extracted.periodEnd ? "el periodo" : null,
+        extracted.amount == null ? "el importe" : null,
+      ].filter(Boolean);
+      setScanMsg(
+        missing.length
+          ? `Revisa los datos: no pude leer ${missing.join(" y ")}.`
+          : "Datos leídos de la factura. Revísalos antes de guardar.",
+      );
+    } catch (err) {
+      setError(
+        err instanceof ApiError && err.message === "ai_not_configured"
+          ? "El escaneo con IA no está configurado en este entorno."
+          : "No se pudo leer la factura. Rellena los campos a mano.",
+      );
+    } finally {
+      setScanning(false);
+      if (scanRef.current) scanRef.current.value = "";
+    }
+  }
 
   async function submit(ev: React.FormEvent) {
     ev.preventDefault();
@@ -362,6 +399,40 @@ function ExpenseForm({
   return (
     <Card>
       <form onSubmit={submit} style={{ display: "grid", gap: "var(--ui-sp-4)" }}>
+        {/* Escaneo con IA: sube la factura y rellena los campos (el agente revisa). */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "var(--ui-sp-3)",
+            flexWrap: "wrap",
+            padding: "var(--ui-sp-3)",
+            background: "var(--ui-hover)",
+            borderRadius: "var(--ui-radius)",
+          }}
+        >
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => scanRef.current?.click()}
+            disabled={scanning}
+          >
+            <Sparkles size={15} />
+            {scanning ? "Leyendo factura…" : "Escanear factura (IA)"}
+          </Button>
+          <span className="du-muted" style={{ fontSize: 13 }}>
+            {scanMsg ?? "Sube el PDF o la foto de la factura y rellenamos los campos por ti."}
+          </span>
+          <input
+            ref={scanRef}
+            type="file"
+            accept="application/pdf,image/png,image/jpeg,image/webp"
+            hidden
+            onChange={(e) => void onScan(e.target.files?.[0] ?? null)}
+          />
+        </div>
+
         <div
           style={{
             display: "grid",
